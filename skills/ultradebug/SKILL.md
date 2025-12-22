@@ -29,25 +29,63 @@ Parse the prompt and any provided assets:
 - **YES** → Can add instrumentation and generate fresh evidence
 - **NO** → Work with provided evidence only; may need more logs from user
 
-### Step 3: Check Existing Logs
+### Step 3: Dispatch Discovery Agents (PARALLEL)
 
-| Situation | Action |
-|-----------|--------|
-| Logs in prompt | Parse for timestamps, errors, stack traces |
-| Know log paths | Check CLAUDE.md, README, common locations |
-| Need to discover | Ask user or check framework conventions |
-| Can infer | Use stack traces, error messages as starting point |
+**CRITICAL:** Use the `Task` tool to dispatch these as subagents. This keeps discovery OUT of main context - only summaries return.
 
-### Step 4: Check Git History
+**Launch ALL THREE in a single message (parallel execution):**
 
-Dispatch subagent with:
+#### Agent 1: Log Analysis
 ```
-Issue: [description from Step 1]
-Look for: commits touching [relevant files/keywords from logs]
-Return: Summary of potentially related changes
+Task(
+  subagent_type="Explore",
+  description="Analyze logs for [issue]",
+  prompt="Issue: [description from Step 1]
+
+  Find and analyze relevant logs:
+  1. Check CLAUDE.md, README, config files for log locations
+  2. Search common paths: logs/, *.log, tmp/, ~/.local/state/
+  3. Look for errors, warnings, stack traces related to: [keywords]
+
+  Return: Summary of relevant log entries with timestamps and error patterns"
+)
 ```
 
-**Output:** Initial hypothesis about root cause.
+#### Agent 2: Git History
+```
+Task(
+  subagent_type="Explore",
+  description="Check git history for [issue]",
+  prompt="Issue: [description from Step 1]
+
+  Analyze git history for related changes:
+  1. Check last 20 commits for changes to [relevant files/keywords]
+  2. Look for recent refactors that might have introduced the bug
+  3. Check staged/unstaged changes
+
+  Return: Summary of potentially related commits with dates and descriptions"
+)
+```
+
+#### Agent 3: Code Path Analysis
+```
+Task(
+  subagent_type="Explore",
+  description="Trace code paths for [issue]",
+  prompt="Issue: [description from Step 1]
+
+  Trace the code paths involved:
+  1. Find entry points for the affected feature
+  2. Map the call chain from trigger to symptom
+  3. Identify state changes along the path
+
+  Return: Summary of code flow with key files:lines"
+)
+```
+
+**Wait for all agents to complete, then synthesize findings into initial hypothesis.**
+
+**Output:** Initial hypothesis about root cause based on agent findings.
 
 ## Instrumentation Loop
 
