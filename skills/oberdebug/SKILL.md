@@ -1,9 +1,9 @@
 ---
-name: ultradebug
+name: oberdebug
 description: Use when debugging any bug or error - guides a hypothesis-driven debugging session with instrumentation loops until root cause is confirmed with evidence
 ---
 
-# Ultradebug
+# Oberdebug
 
 ## Overview
 
@@ -104,7 +104,7 @@ Based on hypothesis, propose instrumentation:
 - Timestamps (for timing issues)
 - Stack traces (for "how did we get here")
 
-**Format:** `[ULTRADEBUG-001] func=X var=Y value=Z`
+**Format:** `[OBERDEBUG-001] func=X var=Y value=Z`
 
 **Include expected outcome:**
 > "If hypothesis is correct, you should see X. If wrong, you'll see Y instead."

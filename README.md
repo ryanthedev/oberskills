@@ -1,10 +1,10 @@
-# ultra-skills
+# oberskills
 
 Personal Claude Code skills for enhanced workflows.
 
 ## Skills
 
-### ultradebug
+### oberdebug
 
 Hypothesis-driven debugging with instrumentation loops. Never fix without proof.
 
@@ -16,7 +16,7 @@ Add to your Claude Code skills directory:
 
 ```bash
 # Symlink to Claude skills
-ln -s /path/to/ultra-skills/skills/* ~/.claude/skills/
+ln -s /path/to/oberskills/skills/* ~/.claude/skills/
 ```
 
 Or copy individual skills as needed.
