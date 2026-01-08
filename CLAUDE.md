@@ -1,17 +1,25 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with this repository.
 
 ## Repository Purpose
 
-This is a collection of personal Claude Code skills - reusable workflow patterns that guide Claude through specific tasks like debugging.
+This is a Claude Code plugin containing reusable skills - workflow patterns that guide Claude through specific tasks like debugging, prompt engineering, and agent dispatch.
 
 ## Structure
 
 ```
-skills/
-  <skill-name>/
-    SKILL.md       # Skill definition with frontmatter (name, description) and workflow steps
+oberskills/
+├── .claude-plugin/
+│   └── plugin.json      # Plugin manifest (name, version, description)
+└── skills/
+    ├── oberagent/       # Agent dispatch enforcement
+    │   └── SKILL.md
+    ├── oberdebug/       # Hypothesis-driven debugging
+    │   └── SKILL.md
+    └── oberprompt/      # Prompt engineering
+        ├── SKILL.md
+        └── optimization-reference.md
 ```
 
 ## Skill File Format
@@ -33,8 +41,17 @@ The `description` field is critical - it tells Claude when to invoke the skill.
 
 ## Installation
 
-Skills are symlinked to `~/.claude/skills/` for Claude Code to discover them:
+Install via the RTD marketplace:
 
 ```bash
-ln -s /path/to/oberskills/skills/* ~/.claude/skills/
+/plugin marketplace add ryanthedev/rtd-claude-inn
+/plugin install oberskills@rtd
 ```
+
+## Skills
+
+| Skill | Purpose |
+|-------|---------|
+| **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis |
+| **oberprompt** | Research-backed prompt engineering for LLM systems |
+| **oberagent** | Enforces oberprompt principles before any agent dispatch |
