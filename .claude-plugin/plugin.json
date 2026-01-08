@@ -1,7 +1,7 @@
 {
   "name": "oberskills",
-  "version": "1.0.0",
-  "description": "Advanced Claude Code skills: hypothesis-driven debugging, prompt optimization, and parallel agent dispatch",
+  "version": "1.1.0",
+  "description": "Advanced Claude Code skills: hypothesis-driven debugging, prompt optimization, agent dispatch enforcement, and parallel agents",
   "author": {
     "name": "r"
   },

@@ -1,6 +1,6 @@
 ---
 name: oberprompt
-description: Use when writing prompts, system messages, agent instructions, hooks, or skills. Use when prompts produce inconsistent results, wrong outputs, or hallucinations. Use when optimizing prompts for accuracy, calibration, or efficiency. Use when debugging broken prompts. Triggers on "improve my prompt", "prompt engineering", "system prompt design", "agent instructions", "flaky LLM outputs", "overconfident responses", "prompt not working", "hallucinating", "prompt injection defense".
+description: MUST use before writing ANY prompt for Task tool, subagents, or agent dispatch. Use when writing prompts, system messages, agent instructions, hooks, or skills. Use when prompts produce inconsistent results, wrong outputs, or hallucinations. Use when optimizing prompts for accuracy, calibration, or efficiency. Use when debugging broken prompts. Triggers on "improve my prompt", "prompt engineering", "system prompt design", "agent instructions", "Task tool prompt", "subagent prompt", "agent dispatch", "flaky LLM outputs", "overconfident responses", "prompt not working", "hallucinating", "prompt injection defense".
 ---
 
 # Skill: oberprompt
