@@ -1,0 +1,10 @@
+{
+  "name": "oberskills",
+  "version": "1.0.0",
+  "description": "Advanced Claude Code skills: hypothesis-driven debugging, prompt optimization, and parallel agent dispatch",
+  "author": {
+    "name": "r"
+  },
+  "license": "MIT",
+  "keywords": ["debugging", "skills", "workflow", "agents"]
+}
