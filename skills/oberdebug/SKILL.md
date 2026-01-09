@@ -1,6 +1,6 @@
 ---
 name: oberdebug
-description: Use when debugging any bug or error - guides a hypothesis-driven debugging session with instrumentation loops until root cause is confirmed with evidence
+description: Use when encountering ANY bug, error, unexpected behavior, test failure, crash, wrong output, missing output, flaky behavior, race condition, regression, "it doesn't work", "something's wrong", "not working as expected", "should do X but does Y", broken functionality, logic error, runtime error, exception, assertion failure, timeout, hang, or any situation where code behavior differs from intent. Triggers on "debug", "fix", "broken", "failing", "investigate", "figure out why", "not working".
 ---
 
 # Oberdebug
