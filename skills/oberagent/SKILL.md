@@ -30,11 +30,13 @@ This applies to:
       ↓
 2. Select Agent Type (match to purpose)
       ↓
-3. Apply Oberprompt Principles (constraint budget, progressive disclosure)
+3. Identify Applicable Skills (subagents don't inherit skill awareness)
       ↓
-4. Write Prompt (following template)
+4. Apply Oberprompt Principles (constraint budget, progressive disclosure)
       ↓
-5. Validate (checklist)
+5. Write Prompt (following template, include skill instructions)
+      ↓
+6. Validate (checklist)
 ```
 
 ---
@@ -66,7 +68,51 @@ Before writing ANY prompt, answer:
 
 ---
 
-## Step 3: Apply Oberprompt Principles
+## Step 3: Identify Applicable Skills
+
+**Subagents don't inherit skill awareness.** They start fresh without knowing which skills you have access to. You must explicitly pass relevant skills.
+
+### Process
+
+1. **Review your available skills** - Check what skills exist that could apply to the agent's task
+2. **Match skills to the agent's work** - What type of work is the agent doing?
+3. **Include skill invocation in prompt** - Tell the agent to invoke relevant skills first
+
+### Skill-to-Task Mapping
+
+| If Agent Will Do... | Consider These Skills |
+|---------------------|----------------------|
+| Write/modify code | code-foundations, strategic-coding |
+| Review code/plans | code-foundations, reviewing-module-design |
+| Debug issues | oberdebug, systematic-debugging |
+| Design interfaces | designing-deep-modules |
+| Build features | brainstorming, feature-dev |
+| Write prompts | oberprompt |
+
+### Example
+
+**Without skill inheritance (gap):**
+```
+Review the implementation plan and identify any issues.
+```
+
+**With skill inheritance (correct):**
+```
+First invoke the code-foundations skill. Then review the
+implementation plan and identify any issues with the design.
+```
+
+### When to Skip
+
+- **Explore agents** doing pure search/navigation - no skills needed
+- **Bash agents** running simple commands - no skills needed
+- **Agents doing research only** - typically no skills needed
+
+**When in doubt, pass the skill.** Extra skill invocation is cheap; missing it causes failures.
+
+---
+
+## Step 4: Apply Oberprompt Principles
 
 ### Constraint Budget for Agent Prompts
 
@@ -100,11 +146,13 @@ Start simple. Add detail ONLY when agents fail.
 
 ---
 
-## Step 4: Write the Prompt
+## Step 5: Write the Prompt
 
 ### Template
 
 ```
+[SKILLS]: "First invoke [skill-name]" (if applicable - see Step 3)
+
 [OUTCOME]: What you need to know/have when agent completes
 
 [CONTEXT]: Only if agent lacks necessary background (usually unnecessary)
@@ -142,7 +190,7 @@ inconsistent error messages and need to understand the current pattern.
 
 ---
 
-## Step 5: Validation Checklist
+## Step 6: Validation Checklist
 
 **Complete EVERY item before dispatching.**
 
@@ -150,9 +198,10 @@ inconsistent error messages and need to understand the current pattern.
 |---|-------|-------|
 | 1 | Purpose is an OUTCOME, not a list of actions | [ ] |
 | 2 | Agent type matches the purpose | [ ] |
-| 3 | Prompt is ≤3 sentences (or justified if longer) | [ ] |
-| 4 | No step-by-step instructions telling agent HOW | [ ] |
-| 5 | Context included ONLY if agent truly lacks it | [ ] |
+| 3 | Relevant skills identified and passed to agent | [ ] |
+| 4 | Prompt is ≤3 sentences (or justified if longer) | [ ] |
+| 5 | No step-by-step instructions telling agent HOW | [ ] |
+| 6 | Context included ONLY if agent truly lacks it | [ ] |
 
 ---
 
