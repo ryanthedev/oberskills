@@ -17,6 +17,8 @@ oberskills/
     │   └── SKILL.md
     ├── oberdebug/       # Hypothesis-driven debugging
     │   └── SKILL.md
+    ├── oberplan/        # Meta-planning orchestration
+    │   └── SKILL.md
     └── oberprompt/      # Prompt engineering
         ├── SKILL.md
         └── optimization-reference.md
@@ -55,3 +57,4 @@ Install via the RTD marketplace:
 | **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis |
 | **oberprompt** | Research-backed prompt engineering for LLM systems |
 | **oberagent** | Enforces oberprompt principles before any agent dispatch |
+| **oberplan** | Meta-planning orchestration with lens skills and final review |
