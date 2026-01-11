@@ -12,8 +12,11 @@ This is a Claude Code plugin containing reusable skills - workflow patterns that
 oberskills/
 ├── .claude-plugin/
 │   └── plugin.json      # Plugin manifest (name, version, description)
+├── assets/              # Demo screenshots and images
 ├── examples/            # Real-world usage examples
 │   └── oberplan-multi-line-picker.md
+├── research/            # Research papers and best practices
+│   └── anthropic-best-practices.md
 └── skills/
     ├── oberagent/       # Agent dispatch enforcement
     │   └── SKILL.md

@@ -68,6 +68,38 @@ Meta-skill that enforces oberprompt principles before dispatching agents.
 
 ---
 
+### oberplan
+
+Meta-skill that orchestrates planning by loading domain-specific lens skills, clarifying requirements, and producing agent-executable plans.
+
+**Flow:** Lens selection → Requirements clarification → Plan construction (with checkpoints) → User confirmation → Final review → Output → Execution handoff
+
+**Key features:**
+- Loads domain-specific "lens skills" based on user intent (frontend-design, code-foundations, etc.)
+- Enforces mandatory checkpoints after every implementation phase
+- Requires capability proofs before visual/rendering work
+- Produces structured plans with agent assignments, dependencies, and validation criteria
+
+**Triggers:** "build", "create", "implement", "add feature", "design", "plan for", "how should we approach"
+
+---
+
+### oberexec
+
+Subagent-driven plan executor that orchestrates implementation phases with checkpoints and code reviews.
+
+**Flow:** Plan validation → Phase dispatch → Checkpoint validation → Progress update → Loop until complete → Final validation
+
+**Key features:**
+- Context-saving: implementation agents return FILE NAMES ONLY
+- Code review subagent after every implementation phase
+- Max 2 revision cycles per phase before escalating to user
+- Integration review after all phases complete
+
+**Triggers:** "execute the plan", "run the plan", "implement the plan", "start execution"
+
+---
+
 ## Updating
 
 ```bash
