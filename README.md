@@ -82,6 +82,45 @@ Meta-skill that orchestrates planning by loading domain-specific lens skills, cl
 
 **Triggers:** "build", "create", "implement", "add feature", "design", "plan for", "how should we approach"
 
+#### Demo
+
+User describes a UI behavior change for a picker window. oberplan activates, selects a lens (or determines none fits), then explores the codebase to understand the current implementation before constructing a plan:
+
+```
+❯ can we please come up with a new plan. Right now my picker is working
+  really well, but I would like a tweak. today when I type and the options
+  reduce the entire window shifts and gets smaller. If the number of items
+  changes, I would like the windows x/y position to change. I would like
+  for it to just shrink.
+
+  two ways to do this. The window size is fixed and we just hide options,
+  or to shrink the window from the bottom up and left the top position
+  pinned. That way my eyes always know where I typed my text.
+
+⏺ I'll help you plan this picker window behavior change. Let me invoke
+  the planning skill to properly scope this.
+
+⏺ Skill(oberskills:oberplan)
+  ⎿  Successfully loaded skill
+
+⏺ I'll plan this picker window behavior change. Let me start by
+  understanding the current implementation.
+
+  Phase 1: Lens Selection
+
+  LENS SELECTED: None (macOS/Swift window management - no specific lens skill)
+  RATIONALE: This is native macOS window geometry management, not general frontend
+  APPROACH: Direct codebase exploration + architectural planning
+
+  Let me explore the current picker implementation to understand how
+  window sizing works.
+
+⏺ Explore(Explore picker window sizing)
+  ⎿  Found 31 lines across 4 files...
+```
+
+oberplan then continues through requirements clarification, plan construction with checkpoints, user confirmation, and final review before handing off to oberexec for execution.
+
 ---
 
 ### oberexec
