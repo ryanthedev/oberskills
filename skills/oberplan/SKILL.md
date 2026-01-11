@@ -1,276 +1,398 @@
 ---
 name: oberplan
-description: Use when planning ANY implementation, feature, project, or multi-step task. Triggers on "plan", "design", "build", "implement", "create", "add feature", "how should I approach", "where do I start", "help me think through", "I want to build", "let's make", "need to implement", "new project", "from scratch". Also triggers when user seems unsure how to approach a problem or is about to start coding without a clear plan.
+description: Use when ANY planning, scoping, or design work is needed BEFORE implementation. Invoke when user asks to "build", "create", "implement", "add feature", "design", or describes desired functionality. CRITICAL - this skill dispatches FIRST, identifies relevant lens skills, clarifies requirements, and produces agent-executable plans. Triggers on "help me build", "I want to create", "let's implement", "design a", "plan for", "how should we approach", "figure out how to", or any request that requires understanding WHAT to build before building it.
 ---
 
-# Oberplan
+# Skill: oberplan
 
-Meta-planning skill that orchestrates the entire planning process - from understanding the problem domain, through iterative plan development, to final quality review.
+Meta-skill that orchestrates planning by loading domain-specific lens skills, clarifying requirements, and producing agent-executable plans.
 
 ## The Iron Law
 
 ```
-NO PLAN SHIPS WITHOUT FINAL REVIEW
+NO PLAN SHIPS WITHOUT USER CONFIRMATION AND FINAL REVIEW
 ```
 
 This applies to:
-- "Quick" plans
-- "Simple" features
-- Plans you've "done before"
-- Your 10th plan after 9 successes
+- "Quick" features
+- "Obvious" implementations
+- Plans that "should be straightforward"
+- Your 5th plan after 4 successes
 
-**Skipping final review = shipping gaps you didn't catch.**
+**Skipping phases = agents execute wrong plans = rework.**
 
 ---
 
-## Workflow
+## Required Workflow
 
 ```
-1. Skill Discovery (identify domain lens)
+1. Lens Selection (match user intent to domain skill)
       ↓
-2. Load Lens Skill (invoke if applicable)
+2. Requirements Clarification (guiding questions, expected outputs)
       ↓
-3. Clarify the Idea (natural dialogue)
+3. Plan Construction (phase-by-phase OR finalized, per user preference)
       ↓
-4. Plan Development (iterative or direct)
+4. User Confirmation (explicit approval)
       ↓
-5. User Approval
+5. Final Review (catch gaps before dispatch)
       ↓
-6. Final Review (automated gap analysis)
+6. Output (agent-executable planning document)
       ↓
-7. Output Planning Document
+7. Execution Handoff (chain to oberexec)
 ```
 
 ---
 
-## Phase 1: Skill Discovery
+## Phase 1: Lens Selection
 
-**Purpose:** Identify which creative/design skill serves as the "lens" for the user's problem domain.
+**Before ANY planning, identify the domain skill that provides the right "lens" for understanding this problem.**
 
-| User Signal | Domain | Lens Skill |
-|-------------|--------|------------|
-| "UI", "frontend", "page", "component", "web app" | Frontend | frontend-design |
-| "API", "interface", "module", "service", "abstraction" | Architecture | designing-deep-modules |
-| "feature", "functionality", "add X to Y" | Feature Dev | brainstorming |
-| "prompt", "skill", "agent", "LLM", "system message" | Prompt/Agent | oberprompt |
-| "refactor", "clean up", "improve structure" | Refactor | cc-refactoring-guidance |
-| General/unclear | General | brainstorming |
+### Process
 
-### Redirects (Not Planning)
+1. Parse user request for domain signals
+2. Match to available lens skills
+3. Load the skill to inform subsequent phases
 
-| Signal | Redirect To |
-|--------|-------------|
-| "debug", "fix", "broken", "not working" | oberdebug |
-| "review", "check this code" | code-foundations |
+### Domain-to-Skill Mapping
 
-### Behavior
+| User Intent Signals | Lens Skill | Why |
+|---------------------|------------|-----|
+| "frontend", "UI", "component", "page", "design" | frontend-design | Visual/interaction patterns |
+| "API", "endpoint", "backend", "service" | backend architecture skill | System integration patterns |
+| "debug", "fix", "broken", "not working" | oberdebug | Hypothesis-driven investigation |
+| "prompt", "agent", "LLM", "AI behavior" | oberprompt | Prompt engineering principles |
+| "refactor", "clean up", "improve code" | code-foundations | Construction principles |
+| General/unclear | None (proceed with generic planning) | Avoid over-specialization |
 
-- **High confidence** → auto-select lens, announce: "Using [skill] as our lens for this."
-- **Uncertain** → ask user to confirm lens selection
-- **Multiple domains** → ask which to focus on first
-
----
-
-## Phase 2: Load Lens Skill
-
-If a lens skill was identified, invoke it now.
-
-The lens skill provides domain-specific guidance that informs the planning process. For example:
-- frontend-design will guide UI/UX considerations
-- designing-deep-modules will guide API design
-- oberprompt will guide prompt structure
-
-**Announce:** "Loading [skill] to guide our planning."
-
----
-
-## Phase 3: Clarify the Idea
-
-**Purpose:** Natural dialogue to understand what we're building.
-
-### The Approach
-
-- Check project context first (files, docs, recent commits)
-- Ask questions one at a time to refine the idea
-- Prefer multiple choice when possible, open-ended when needed
-- Only one question per message
-- Focus on: purpose, constraints, success criteria
-- Stop when you have enough to propose approaches
-
-### Then
-
-- Propose 2-3 different approaches with trade-offs
-- Lead with your recommendation and why
-- Let user pick or refine
-
-### Key Principles
-
-- **One question at a time** - don't overwhelm
-- **Multiple choice preferred** - easier to answer
-- **YAGNI ruthlessly** - remove unnecessary scope
-- **Be flexible** - go back and clarify when needed
-
-### Planning-Specific Questions
-
-Once the idea is clear, also cover:
-- Execution mode (single agent vs parallel agents)
-- Plan granularity needed
-- Skills executing agents should invoke
-
----
-
-## Phase 4: Plan Development
-
-### Two Modes
-
-**Iterative Mode (default):**
-- Present plan section by section (200-300 words each)
-- Check after each: "Does this look right?"
-- User can adjust, continue, or say "just give me the full plan"
-
-**Direct Mode:**
-- User asks for complete plan upfront
-- Generate full plan, present for review
-- Faster, but less collaborative
-
-### Plan Sections (Iterative Order)
-
-1. "Here's my understanding of what we're building..." → confirm
-2. "Here's the approach I recommend..." → confirm
-3. "Here's Task 1..." → confirm
-4. Continue for each major task
-5. "Here's how we'll validate it works..." → confirm
-
-### User Controls
-
-| User Says | Action |
-|-----------|--------|
-| "looks good" / "continue" | Next section |
-| "change X" | Revise and re-present |
-| "skip to full plan" | Switch to direct mode |
-| "start over" | Back to Phase 3 |
-
-### Task Structure
-
-Each task includes:
-- **Outcome** - what exists when done
-- **Files** - explicit paths to create/modify
-- **Steps** - bite-sized (2-5 min each)
-- **Success criteria** - how to verify
-- **Skills** - for executing agent to invoke
-
----
-
-## Phase 5: User Approval
-
-Before final review, confirm:
-
-**"Here's the complete plan. Does this capture what you want to build?"**
-
-User options:
-- "Yes, looks good" → proceed to Final Review
-- "Change X" → revise and re-confirm
-- "Let's discuss Y" → back to clarification
-
----
-
-## Phase 6: Final Review
-
-**Purpose:** Automatically review for gaps the user might have missed. This is the Iron Law - non-negotiable.
-
-### Review Checklist
-
-| Check | Looking For |
-|-------|-------------|
-| **Completeness** | Every task has success criteria? Dependencies explicit? Edge cases covered? |
-| **Executability** | File paths explicit? Steps small enough for single agent? Commands exact? |
-| **Consistency** | Follows existing project patterns? Matches stated constraints? |
-| **Risk** | Steps that could break existing code? Hidden assumptions? Missing error handling? |
-| **Skills** | Right skills identified for executing agents? |
-
-### Output Format
+### Output
 
 ```
-PLAN REVIEW COMPLETE
-
-✓ Passed: [list what's solid]
-
-⚠ Suggestions: [non-blocking improvements]
-
-✗ Issues: [must fix before execution]
+LENS SELECTED: [skill-name]
+RATIONALE: [why this lens fits]
+LOADING: [invoke skill to inform subsequent phases]
 ```
 
-### If Issues Found
-
-- Present issues to user
-- Revise plan together
-- Re-run review after fixes
-
-### If Clean
-
-"Plan passed review. Ready to save and execute?"
+**If no lens matches, proceed directly to Phase 2 with generic planning approach.**
 
 ---
 
-## Phase 7: Output Planning Document
+## Phase 2: Requirements Clarification
 
-**Save to:** `docs/plans/YYYY-MM-DD-<name>-plan.md`
+**Do NOT plan until requirements are understood.**
 
-### Document Template
+### Guiding Questions (ask in batches of 2-3)
+
+| Category | Questions |
+|----------|-----------|
+| **Outcome** | "What does success look like?" / "How will you know it's done?" |
+| **Scope** | "What's in scope? What's explicitly NOT in scope?" |
+| **Constraints** | "Any technical constraints, timeline, or dependencies?" |
+| **Users** | "Who uses this? What's their workflow?" |
+| **Integration** | "What existing systems does this touch?" |
+| **Output format** | "Should I walk through phase-by-phase, or deliver a finalized plan?" |
+
+### Decision: Interactive vs Finalized
+
+| User Says | Interpretation | Action |
+|-----------|----------------|--------|
+| "walk me through it", "let's discuss", "phase by phase" | Interactive mode | Present each plan section, get feedback, iterate |
+| "just give me the plan", "finalized", "I trust you" | Finalized mode | Complete full plan, present for single approval |
+| Unclear | Default to interactive | Safer - catches misalignment early |
+
+### Output
+
+```
+REQUIREMENTS CONFIRMED:
+- Outcome: [what success looks like]
+- Scope: [in/out boundaries]
+- Constraints: [technical, timeline, dependencies]
+- Mode: [Interactive | Finalized]
+```
+
+---
+
+## Phase 3: Plan Construction
+
+### Plan Structure
+
+Every plan MUST include:
+
+| Section | Purpose | Required? |
+|---------|---------|-----------|
+| **Objective** | Single sentence: what we're building | YES |
+| **Deliverables** | Concrete outputs agents will produce | YES |
+| **Phases** | Ordered steps with clear boundaries | YES |
+| **Agent Assignment** | Which agent type handles each phase | YES |
+| **Dependencies** | What must complete before each phase | YES |
+| **Validation Criteria** | How to verify each phase succeeded | YES |
+| **Checkpoints** | Quality gates between phases | YES |
+| **Risks/Assumptions** | What could go wrong, what we're assuming | YES |
+
+---
+
+### Mandatory Checkpoints
+
+**Every plan MUST include quality gates.** Don't just chain implementation phases - insert checkpoints to catch issues early.
+
+#### Checkpoint Types
+
+| Type | Purpose | When to Use |
+|------|---------|-------------|
+| **Code Review** | Verify implementation quality, patterns, edge cases | After any phase that writes/modifies code |
+| **Test Validation** | Confirm functionality works as expected | After implementation, before integration |
+| **Integration Check** | Verify components work together | When phases connect or share state |
+| **Build/Lint Gate** | Catch syntax errors, type issues, style violations | After any code changes |
+| **Capability Proof** | Prove you CAN do something before building on it | Before any visual/rendering/hardware work |
+
+#### Capability Proofs (Visual & Rendering)
+
+**If the plan involves rendering, displaying, or visual output - PROVE IT WORKS FIRST.**
+
+Don't assume APIs, libraries, or rendering pipelines work. Build a minimal proof before investing in the full implementation.
+
+| If Building... | Capability Proof Required |
+|----------------|---------------------------|
+| Desktop app with UI | Render a basic window with test content |
+| Charts/graphs | Render one hardcoded chart, verify it displays |
+| PDF/document generation | Generate minimal PDF, open and verify |
+| Image processing | Load one image, apply one transform, save and verify |
+| Canvas/WebGL | Render a colored rectangle, confirm it appears |
+| Native graphics APIs | Call the API, render primitive, screenshot proof |
+| Electron/Tauri app | Window opens, IPC works, basic render confirmed |
+| Print output | Generate and preview one test page |
+
+**Capability Proof Template:**
 
 ```markdown
-# [Feature Name] Implementation Plan
+## Checkpoint: [Component] Capability Proof
 
-> **For Agents:** Invoke [relevant skills] before starting each task.
+**Type:** Capability Proof
 
-**Goal:** [One sentence - what exists when done]
+**Proves:** [The specific rendering/visual capability works]
 
-**Approach:** [2-3 sentences - how we're building it]
+**Minimal Test:**
+1. [Simplest possible code to exercise the capability]
+2. [How to run it]
+3. [What output proves success - screenshot, file, etc.]
 
-**Execution Mode:** [Single agent / Parallel agents]
+**Pass Criteria:**
+- [ ] Output is visible/verifiable (not just "no errors")
+- [ ] API/library behaves as documented
+- [ ] Performance is acceptable for use case
 
----
-
-## Task 1: [Name]
-
-**Outcome:** [What exists when this task is done]
-
-**Files:**
-- Create: `exact/path/to/file.ts`
-- Modify: `exact/path/to/existing.ts`
-
-**Steps:**
-1. [Bite-sized step]
-2. [Bite-sized step]
-3. [Verify/test step]
-
-**Success:** [How to know it worked]
-
----
-
-## Task 2: [Name]
-...
-
----
-
-## Validation
-
-**How to verify the full plan worked:**
-- [ ] [Criteria 1]
-- [ ] [Criteria 2]
+**If Fails:** Stop. Research alternatives before proceeding.
 ```
 
-### After Saving
+**Why This Matters:**
 
-Offer execution options:
+| Skipping Proof | What Happens |
+|----------------|--------------|
+| "The docs say it works" | Docs lie. Environment differs. Versions conflict. |
+| "I've used this before" | Different OS, different deps, different context. |
+| "We'll fix rendering later" | You build 10 phases on broken foundation. |
 
-**"Plan saved to `docs/plans/<filename>.md`. How do you want to execute?"**
+#### Checkpoint Placement Rules
 
-1. **Subagent-Driven (this session)** - Dispatch fresh subagent per task, review between tasks
-2. **Parallel Session** - Open new session with executing-plans skill
+| After This... | Insert This Checkpoint |
+|---------------|------------------------|
+| Implementation phase | Test + Code Review |
+| Multiple implementation phases | Integration Check |
+| Refactoring phase | Test (ensure no regression) |
+| API/interface changes | Integration Check + Test |
+| Final implementation phase | Full validation (all types) |
 
-If subagent-driven: invoke `superpowers:subagent-driven-development`
-If parallel session: guide user to open new session, invoke `superpowers:executing-plans`
+| Before This... | Insert This Checkpoint |
+|----------------|------------------------|
+| Any visual/rendering work | Capability Proof |
+| Using new library/API | Capability Proof |
+| Hardware/device integration | Capability Proof |
+| External service integration | Capability Proof (API responds) |
+
+#### Checkpoint Template
+
+```markdown
+## Checkpoint: [Name]
+
+**Type:** [Code Review | Test Validation | Integration Check | Build Gate]
+
+**Verifies:** [What this checkpoint confirms]
+
+**Pass Criteria:**
+- [ ] [Specific, testable criterion]
+- [ ] [Specific, testable criterion]
+
+**If Fails:** [What to do - usually "return to Phase N"]
+```
+
+#### Example Checkpoint Sequence
+
+```
+Phase 1: Implement auth service
+    ↓
+Checkpoint: Auth unit tests pass
+    ↓
+Phase 2: Implement auth middleware
+    ↓
+Checkpoint: Code review + integration test
+    ↓
+Phase 3: Update API routes
+    ↓
+Checkpoint: Full auth flow validation
+```
+
+---
+
+### Interactive Mode
+
+For each phase:
+1. Present phase details
+2. Ask: "Does this align with your expectations? Any adjustments?"
+3. Incorporate feedback
+4. Proceed to next phase
+
+### Finalized Mode
+
+1. Construct complete plan
+2. Present entire plan
+3. Ask for single approval
+
+### Phase Template
+
+```markdown
+## Phase N: [Name]
+
+**Objective:** [What this phase accomplishes]
+
+**Agent:** [agent-type] with [relevant skills]
+
+**Inputs:** [What this phase needs to start]
+
+**Outputs:** [Concrete deliverables]
+
+**Validation:** [How to verify success]
+
+**Dependencies:** [What must complete first]
+```
+
+### Checkpoint Red Flags
+
+| If You're Thinking | Reality | Action |
+|--------------------|---------|--------|
+| "We'll test at the end" | Bugs compound; late discovery = expensive fixes | Add checkpoint after each impl phase |
+| "This phase is too small for review" | Small phases still introduce bugs | At minimum: build/lint gate |
+| "Tests slow us down" | Debugging without tests is slower | Tests are non-negotiable |
+| "Code review is overkill" | Fresh eyes catch what you missed | Review after significant changes |
+| "The rendering library definitely works" | Prove it. In THIS environment. | Capability proof before building on it |
+| "I'll verify the UI later" | You'll build 5 phases on broken rendering | Prove visual output works FIRST |
+
+---
+
+## Phase 4: User Confirmation
+
+**MANDATORY - Do not proceed without explicit approval.**
+
+### Confirmation Request
+
+```
+PLAN COMPLETE
+
+[Summary of phases]
+
+Ready to proceed? Please confirm:
+- [ ] Scope is correct
+- [ ] Phase order makes sense
+- [ ] Agent assignments are appropriate
+- [ ] Nothing critical is missing
+
+Reply "approved" to proceed to final review, or specify changes.
+```
+
+| User Response | Action |
+|---------------|--------|
+| "approved", "looks good", "yes" | Proceed to Phase 5 |
+| Specific feedback | Revise plan, re-present for confirmation |
+| "wait", "hold on", "not sure" | Pause, ask clarifying questions |
+
+---
+
+## Phase 5: Final Review
+
+**After user approval, systematic gap check.**
+
+### Review Checklist (Complete EVERY item)
+
+| # | Check | Verification |
+|---|-------|--------------|
+| 1 | Each phase has exactly ONE responsible agent | No shared ownership |
+| 2 | Agent skills are explicitly assigned | Subagents don't inherit |
+| 3 | Dependencies form valid DAG (no cycles) | Phases can execute in order |
+| 4 | Validation criteria are testable | Not vague like "works correctly" |
+| 5 | Checkpoints after every implementation phase | No impl→impl without quality gate |
+| 6 | Tests specified for each checkpoint | Not just "verify it works" |
+| 7 | Capability proofs before visual/rendering work | Prove it renders before building on it |
+| 8 | Edge cases considered | What if X fails? |
+| 9 | Integration points identified | Where do phases connect? |
+| 10 | Rollback path exists | Can we undo if wrong? |
+
+### Gap Detection
+
+For each phase, ask:
+- "What could go wrong here?"
+- "What am I assuming that might not be true?"
+- "What would an agent need to know that isn't explicitly stated?"
+
+### Output
+
+```
+FINAL REVIEW COMPLETE:
+- Gaps identified: [list or "none"]
+- Mitigations added: [list or "n/a"]
+- Plan status: READY FOR EXECUTION
+```
+
+---
+
+## Phase 6: Output
+
+**Produce agent-executable planning document.**
+
+### Document Format
+
+```markdown
+# Plan: [Title]
+
+## Objective
+[Single sentence]
+
+## Phases
+
+### Phase 1: [Name]
+- **Agent:** [type] | **Skills:** [list]
+- **Prompt:** [exact prompt for agent dispatch]
+- **Inputs:** [what agent receives]
+- **Outputs:** [what agent produces]
+- **Validation:** [how to verify]
+
+### Checkpoint: [Name]
+- **Type:** [Code Review | Test Validation | Integration Check | Build Gate]
+- **Pass Criteria:**
+  - [ ] [Criterion 1]
+  - [ ] [Criterion 2]
+- **If Fails:** Return to Phase 1
+
+### Phase 2: [Name]
+[...]
+
+## Execution Order
+[Dependency graph showing phases AND checkpoints]
+
+## Risk Register
+| Risk | Likelihood | Mitigation |
+|------|------------|------------|
+
+## Assumptions
+- [List of assumptions]
+```
 
 ---
 
@@ -278,21 +400,63 @@ If parallel session: guide user to open new session, invoke `superpowers:executi
 
 | If You're Thinking | Reality | Action |
 |--------------------|---------|--------|
-| "I'll just start coding" | You'll build the wrong thing or miss cases | Complete the planning process |
-| "The plan is in my head" | Heads don't have version control or review | Write it down |
-| "This is too simple to plan" | Simple things have hidden complexity | At minimum, do quick plan + review |
-| "Planning takes too long" | Rework takes longer | 15 min planning saves hours of rework |
-| "I'll figure it out as I go" | You'll figure out you missed something | Plan first, then execute |
-| "The user approved it, we're done" | User approval ≠ gap-free plan | Final review is mandatory |
+| "Requirements are obvious" | Obvious to you ≠ obvious to user | Ask the guiding questions anyway |
+| "Skip to finalized, user is busy" | Fast planning = slow rework | Default to interactive mode |
+| "This phase is too small to plan" | Small gaps compound | Every phase needs the template |
+| "User already approved" | Approval ≠ no gaps exist | Final review is mandatory |
+| "I'll figure it out during execution" | That's not planning | Complete the plan first |
+| "No lens skill matches" | Proceed without over-specializing | Generic planning is valid |
+| "We can test everything at the end" | Late bugs are 10x more expensive | Checkpoint after every impl phase |
+| "Checkpoints add overhead" | Debugging without checkpoints adds more | Quality gates are mandatory |
 
 ---
 
-## Integration with Other Skills
+## Phase 7: Execution Handoff
 
-| Skill | Relationship |
-|-------|--------------|
-| **brainstorming** | Often used as lens skill; oberplan adds execution focus |
-| **writing-plans** | Complementary - oberplan discovers, writing-plans formats |
-| **oberagent** | Use when dispatching agents to execute plan tasks |
-| **oberdebug** | Redirect if user actually needs debugging, not planning |
-| **executing-plans** | Handoff target for plan execution |
+**After final review passes, chain to oberexec for execution.**
+
+### Handoff Decision
+
+| User Intent | Action |
+|-------------|--------|
+| "execute", "implement", "build it" | Invoke oberexec immediately |
+| "I'll implement later", "save the plan" | Output plan document, stop |
+| Unclear | Ask: "Ready to execute this plan?" |
+
+### Handoff Process
+
+```
+1. Confirm user wants execution
+2. Invoke oberexec skill
+3. Pass the approved plan
+4. oberexec takes over execution loop
+```
+
+### Handoff Output
+
+```
+PLAN APPROVED - HANDING OFF TO EXECUTION
+
+Invoking oberexec with:
+- [N] implementation phases
+- [M] checkpoints
+- Skills: [list of skills to pass to agents]
+
+[Invoke oberexec skill]
+```
+
+---
+
+## Integration
+
+### With oberexec
+After plan approval and final review, chain to `oberexec` for subagent-driven execution with checkpoints.
+
+### With oberagent
+When dispatching agents from the plan, invoke `oberagent` to validate each agent prompt.
+
+### With oberprompt
+If plan involves LLM prompts, invoke `oberprompt` for prompt engineering phases.
+
+### With oberdebug
+If user request involves fixing bugs, redirect to `oberdebug` - debugging is not planning.

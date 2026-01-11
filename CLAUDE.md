@@ -17,6 +17,8 @@ oberskills/
     │   └── SKILL.md
     ├── oberdebug/       # Hypothesis-driven debugging
     │   └── SKILL.md
+    ├── oberexec/        # Subagent plan execution
+    │   └── SKILL.md
     ├── oberplan/        # Meta-planning orchestration
     │   └── SKILL.md
     └── oberprompt/      # Prompt engineering
@@ -58,3 +60,4 @@ Install via the RTD marketplace:
 | **oberprompt** | Research-backed prompt engineering for LLM systems |
 | **oberagent** | Enforces oberprompt principles before any agent dispatch |
 | **oberplan** | Meta-planning orchestration with lens skills and final review |
+| **oberexec** | Subagent-driven plan executor with checkpoints and code reviews |
