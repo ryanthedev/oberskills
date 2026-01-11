@@ -28,16 +28,20 @@ This applies to:
 ```
 1. Plan Validation (verify plan structure)
       ↓
-2. Phase Dispatch (execute with context-minimal subagents)
+2. Invoke oberagent (validate prompt before EVERY dispatch)
       ↓
-3. Checkpoint Validation (code review subagent)
+3. Phase Dispatch (execute with context-minimal subagents)
       ↓
-4. Progress Update (mark complete, advance)
+4. Checkpoint Validation (code review subagent via oberagent)
+      ↓
+5. Progress Update (mark complete, advance)
       ↓
    Loop to Step 2 until all phases complete
       ↓
-5. Final Validation (integration review)
+6. Final Validation (integration review via oberagent)
 ```
+
+**Every agent dispatch in oberexec goes through oberagent first.**
 
 ---
 
@@ -102,6 +106,20 @@ PLAN VALIDATION FAILED:
 
 ## Phase 2: Phase Dispatch
 
+### Before Every Dispatch: Invoke oberagent
+
+**Before writing any Task call, invoke the oberagent skill.** This ensures:
+- Prompt follows oberprompt principles (outcome-focused, minimal constraints)
+- Agent type matches the purpose
+- Relevant skills are passed to the subagent
+- Validation checklist is completed
+
+```
+1. Invoke oberagent skill
+2. Follow oberagent workflow (define purpose → select type → identify skills → write prompt → validate)
+3. Only then dispatch the Task
+```
+
 ### Dispatch Template
 
 For each implementation phase, dispatch using this pattern:
@@ -123,6 +141,8 @@ Task(
   [Additional context from plan if needed]"
 )
 ```
+
+**Note:** The template above is the OUTPUT of following oberagent. Don't skip oberagent and jump to the template.
 
 ### Agent Type Selection
 
@@ -316,6 +336,7 @@ Task(
 | "Agent returned full code, I'll use it" | You're burning context | Re-dispatch with constraints |
 | "Failed checkpoint twice, keep trying" | Escalate to user | Stop after 2 revision cycles |
 | "Phase 3 doesn't need code-foundations" | All impl phases need it | Pass the skill |
+| "I know oberagent, I'll skip it" | You'll miss the checklist | Invoke oberagent every time |
 
 ---
 
@@ -382,10 +403,13 @@ SUMMARY: Implementation follows codebase patterns, handles edge cases.
 Receives approved plans for execution.
 
 ### With oberagent
-All agent dispatches follow oberagent principles (outcome-focused, minimal constraints).
+**Explicitly invoked before EVERY agent dispatch.** oberagent validates prompt structure, ensures oberprompt principles are followed, and completes the agent prompt checklist. This is not optional - it's part of the workflow.
+
+### With oberprompt
+Invoked transitively through oberagent. oberagent applies oberprompt principles (outcome-focused, constraint budget, progressive disclosure) to each agent prompt.
 
 ### With code-foundations
-All implementation and review agents invoke code-foundations first.
+All implementation and review agents invoke code-foundations first (specified in their prompts).
 
 ### With oberdebug
 If execution reveals bugs, escalate to oberdebug workflow.
