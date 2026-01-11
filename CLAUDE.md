@@ -12,6 +12,8 @@ This is a Claude Code plugin containing reusable skills - workflow patterns that
 oberskills/
 ├── .claude-plugin/
 │   └── plugin.json      # Plugin manifest (name, version, description)
+├── examples/            # Real-world usage examples
+│   └── oberplan-multi-line-picker.md
 └── skills/
     ├── oberagent/       # Agent dispatch enforcement
     │   └── SKILL.md
@@ -61,3 +63,11 @@ Install via the RTD marketplace:
 | **oberagent** | Enforces oberprompt principles before any agent dispatch |
 | **oberplan** | Meta-planning orchestration with lens skills and final review |
 | **oberexec** | Subagent-driven plan executor with checkpoints and code reviews |
+
+## Examples
+
+The `examples/` folder contains real-world transcripts showing how skills work together:
+
+| Example | Demonstrates |
+|---------|--------------|
+| [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) | oberplan + code-foundations + oberagent orchestrating a feature with review checkpoints |
