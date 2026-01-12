@@ -449,6 +449,57 @@ Planning consumes context. oberplan:
 - Ends the planning session cleanly
 - User starts fresh for execution with full context budget
 
+### 8. Full Skill Chain (oberplan → oberexec → oberagent → oberprompt → code-foundations)
+
+During execution, all skills work together. Here's a checkpoint review subagent:
+
+```
+→ Task(Review: Phase 3 icon resolver)
+  Prompt:
+    First invoke the code-foundations skill.
+
+    REVIEW TASK: Validate the Phase 3 bundle icon resolver implementation.
+
+    FILE TO REVIEW: /Users/r/repos/theGrid/grid-server/Sources/GridPicker/main.swift
+
+    Search for the bundle icon loading code (should be in IconRenderer or similar).
+
+    CHECK FOR:
+    1. Handles "bundle:" prefix correctly (checks hasPrefix, drops first 7 chars)
+    2. Uses NSWorkspace.shared.urlForApplication(withBundleIdentifier:)
+    3. Gets icon via NSWorkspace.shared.icon(forFile:) or equivalent
+    4. Returns nil gracefully for unknown bundle IDs (no crash)
+    5. Returns properly scaled NSImage
+
+    RETURN FORMAT:
+    VERDICT: [PASS | FAIL | NEEDS_REVISION]
+
+    If FAIL/NEEDS_REVISION:
+    ISSUES:
+    - [file.swift:line] - [issue description]
+
+    SUMMARY: [1-2 sentences]
+
+  ❯ First invoke the code-foundations skill.
+  Skill(code-foundations)
+  Successfully loaded skill
+  Search(pattern: "bundle:", path: "/Users/r/repos/theGrid/...")
+```
+
+**Skill Chain in Action:**
+1. **oberplan** created the plan with this checkpoint
+2. **oberexec** dispatched the review agent at the checkpoint
+3. **oberagent** structured the prompt (outcome-focused, specific criteria)
+4. **oberprompt** principles visible (minimal constraints, clear return format)
+5. **code-foundations** invoked by subagent as first action
+
+The subagent prompt demonstrates:
+- Clear objective (REVIEW TASK)
+- Specific scope (single file)
+- Explicit check criteria (5 numbered points)
+- Structured return format (VERDICT/ISSUES/SUMMARY)
+- Skill inheritance ("First invoke the code-foundations skill")
+
 ---
 
 ## oberplan Workflow (v1.7.0)
