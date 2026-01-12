@@ -345,16 +345,34 @@ Rather than jumping into planning, Claude first:
 2. Explored git history to understand recent work
 3. Identified what needs to be understood (picker, CLI, window management)
 
-### 3. Building on Previous Work
+### 3. Model Selection for Exploration (Emergent)
+
+**Observed behavior (never instructed):** oberplan autonomously selected Sonnet 4.5 for the exploration phase:
+
+```
+→ Explore(Explore picker and CLI architecture) Sonnet 4.5
+  Read 150 lines
+  Found 190 lines
+  Found 9 files
+  +38 more tool uses
+```
+
+**Why this matters:**
+- Opus context is expensive - save it for planning decisions
+- Exploration is read-heavy, not reasoning-heavy
+- Sonnet handles file discovery and pattern matching efficiently
+- Emergent cost optimization without explicit instruction
+
+### 4. Building on Previous Work
 The task builds on prior commits, demonstrating incremental feature development with oberplan guiding each phase.
 
-### 4. Multi-Question Clarification
+### 5. Multi-Question Clarification
 oberplan batches related questions and uses checkbox navigation to gather all requirements before planning:
 - Command naming preferences
 - Display format choices
 - Integration scope (BFD hotkey)
 
-### 5. Structured Plan with Checkpoints
+### 6. Structured Plan with Checkpoints
 The plan includes:
 - Clear phases with objectives and validation
 - Build gates and capability proofs
