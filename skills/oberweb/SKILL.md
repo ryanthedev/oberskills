@@ -10,10 +10,13 @@ Web search orchestrator that dispatches parallel subagents for multi-dimensional
 ## The Iron Law
 
 ```
-RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS
+GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
 ```
 
+**Grounding is mandatory.** Web results without local context are generic advice that may not apply.
+
 The main agent's context is precious. Every search result returned must:
+- Be grounded against local config/code
 - Be directly relevant to the query
 - Include the source URL for verification
 - Be concise (no full page content)
@@ -34,6 +37,8 @@ oberweb breaks a query into dimensions and searches them in parallel with fast, 
 ## Required Workflow
 
 ```
+0. Ground in Local Context (check config/code FIRST)
+      ↓
 1. Analyze Search Request (identify dimensions)
       ↓
 2. Invoke oberagent → Dispatch Orchestrator (haiku)
@@ -42,12 +47,74 @@ oberweb breaks a query into dimensions and searches them in parallel with fast, 
       ↓
 4. Invoke oberagent → Dispatch Synthesis Agent (haiku)
       ↓
-5. Return Results (relevant info + URLs only)
+5. Ground Results (validate against local context)
+      ↓
+6. Return Results (relevant info + URLs only)
 ```
 
 **Every agent dispatch goes through oberagent.** oberagent invokes oberprompt, validates the prompt, and completes the checklist. This is not optional.
 
 **The chain:** oberweb → oberagent → oberprompt → agent prompt
+
+---
+
+## Step 0: Ground in Local Context
+
+**CRITICAL: Before ANY web search, check local context.**
+
+Web search results are useless if they don't apply to the user's actual setup. Check relevant local files FIRST.
+
+### What to Check
+
+| Query Type | Local Context to Check |
+|------------|------------------------|
+| Config troubleshooting | The config file itself |
+| Library/framework issues | package.json, lock files, installed versions |
+| Build/tooling problems | Build configs, toolchain versions |
+| Code behavior | The actual code in question |
+| Environment issues | .env files, system info |
+
+### Grounding Pattern
+
+```
+BEFORE searching, read the relevant local file(s):
+- Read(~/.config/ghostty/config) for Ghostty issues
+- Read(package.json) for Node.js library issues
+- Read(tsconfig.json) for TypeScript issues
+- etc.
+
+Extract key facts:
+- Current settings/versions
+- What's already configured
+- What's NOT configured (gaps)
+```
+
+### Pass Context to Orchestrator
+
+Include local context in the orchestrator prompt so search dimensions are grounded:
+
+```
+LOCAL CONTEXT:
+- Ghostty config shows: toggle_visibility bound to cmd+backtick
+- No quick_terminal setting found
+- Version: 1.0.1
+
+USER QUERY: floating terminal creates new instance instead of reusing
+```
+
+### Why This Matters
+
+| Without Grounding | With Grounding |
+|-------------------|----------------|
+| "Try toggle_quick_terminal" | "You have toggle_visibility, not toggle_quick_terminal. That's the issue." |
+| Generic advice | Specific to user's setup |
+| May not apply | Guaranteed to apply |
+| User must verify | Already verified |
+
+**Skip grounding ONLY if:**
+- Query is purely conceptual ("what is X?")
+- No local files are relevant
+- User explicitly says "don't check my files"
 
 ---
 
@@ -231,7 +298,52 @@ Task(
 
 ---
 
-## Step 5: Return Results
+## Step 5: Ground Results
+
+**After synthesis, validate results against local context.**
+
+### Validation Checklist
+
+| Check | Action |
+|-------|--------|
+| Does advice match local config? | Flag conflicts ("web says X, but you have Y") |
+| Are recommended versions compatible? | Check against package.json/lock files |
+| Does solution require changes? | Specify exactly what to change |
+| Are there gaps in local setup? | Highlight missing config/code |
+
+### Grounding Output
+
+Add a `GROUNDING` section to the synthesis:
+
+```
+GROUNDING (based on your config):
+- Your config uses toggle_visibility, not toggle_quick_terminal
+- This is likely the root cause of new window spawning
+- Recommendation: Replace toggle_visibility with toggle_quick_terminal
+
+CONFLICTS:
+- None found
+
+VERIFIED:
+- Version 1.0.1 matches recommended version
+```
+
+### When Results Don't Apply
+
+If web results don't match local context:
+
+```
+WARNING: Web results may not apply to your setup.
+- Web assumes: toggle_quick_terminal
+- Your config: toggle_visibility (different keybind)
+- Action needed: [specific change]
+```
+
+**Never return generic advice when you have specific local context.**
+
+---
+
+## Step 6: Return Results
 
 Return the synthesis to the main agent. The main agent receives:
 - A concise summary answering their query
@@ -317,6 +429,10 @@ SOURCES:
 
 | If You're Thinking | Reality | Action |
 |--------------------|---------|--------|
+| "Skip grounding, just search" | Generic results won't apply | Check local context FIRST |
+| "I don't know where the config is" | Ask the user or search for it | Find the file before searching web |
+| "Grounding takes too long" | Wrong advice takes longer to fix | 1 file read < debugging mismatch |
+| "Web results are universal" | Every setup is different | Ground results against local context |
 | "One search is enough" | Single searches miss angles | Use 2-5 dimensions |
 | "Return all results" | Context pollution | Filter aggressively |
 | "Use sonnet for better quality" | Adds latency, cost; haiku is sufficient | Stick with haiku |
