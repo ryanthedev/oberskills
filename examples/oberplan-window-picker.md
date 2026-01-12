@@ -327,7 +327,70 @@ to adjust or expand?
 ✻ Cogitated for 1m 52s
 ```
 
-*[Awaiting user approval...]*
+*[User approves plan...]*
+
+---
+
+### Phase 6-10: Plan Finalization and Bootstrap
+
+After user approval, oberplan executes the new phases:
+
+**Plan Saved:**
+
+```
+PLAN SAVED:
+- Location: ~/.local/state/oberplan/plans/thegrid-window-picker-2026-01-12.md
+- Ready for: Fresh context execution
+```
+
+**Bootstrap Prompt Generated (via oberprompt):**
+
+```
+PLAN COMPLETE - READY FOR EXECUTION
+
+Plan saved to: ~/.local/state/oberplan/plans/thegrid-window-picker-2026-01-12.md
+
+To execute, open a fresh Claude Code session and paste this prompt:
+
+─────────────────────────────────────────────────────────────────────────────
+Navigate to: /Users/r/repos/theGrid
+
+I need you to execute an approved implementation plan for adding a window
+picker feature.
+
+First, invoke the oberexec skill.
+
+Then read the plan file at:
+~/.local/state/oberplan/plans/thegrid-window-picker-2026-01-12.md
+
+Execute the plan following oberexec's workflow:
+- Start with Phase 0 to verify server capabilities
+- Dispatch implementation agents phase by phase
+- Run checkpoint reviews after each phase
+- Track progress through all 6 phases (0-5)
+- Complete final integration review
+
+The plan has 6 phases and 4 checkpoints.
+
+Required skills for agents: code-foundations
+
+Begin execution now.
+─────────────────────────────────────────────────────────────────────────────
+
+Instructions:
+1. Open a new Claude Code session
+2. Navigate to /Users/r/repos/theGrid
+3. Paste the bootstrap prompt above
+4. oberexec will begin plan execution
+
+Planning session complete.
+```
+
+**Key:** The bootstrap prompt is:
+- Self-contained (no dependencies on prior conversation)
+- Outcome-focused (what to do, not how)
+- Minimal constraints (trusts oberexec to handle details)
+- Specific enough to start immediately (file path, skill invocation, phase count)
 
 ---
 
@@ -379,11 +442,16 @@ The plan includes:
 - Risk register with mitigations
 - Execution flow diagram
 
+### 7. Fresh Context Handoff
+Planning consumes context. oberplan:
+- Saves the plan to a persistent file
+- Generates a bootstrap prompt via oberprompt principles
+- Ends the planning session cleanly
+- User starts fresh for execution with full context budget
+
 ---
 
-## oberplan Workflow (Updated)
-
-This case study was captured before oberplan was updated with additional phases:
+## oberplan Workflow (v1.7.0)
 
 ```
 1. Lens Selection
@@ -391,17 +459,18 @@ This case study was captured before oberplan was updated with additional phases:
 3. Plan Construction
 4. User Confirmation
 5. Final Review
-6. Plan Quality Review (NEW)     ← Code review the plan itself
-7. Save Plan to File (NEW)       ← Persist for execution
+6. Plan Quality Review        ← Code review the plan itself
+7. Save Plan to File          ← Persist for execution
 8. Output
-9. Generate Execution Prompt (NEW) ← oberprompt bootstrap for fresh context
-10. Execution Handoff (UPDATED)   ← Always fresh context (planning spent the context)
+9. Generate Execution Prompt  ← oberprompt bootstrap for fresh context
+10. Execution Handoff         ← Always fresh context (planning spent the context)
 ```
 
-The new phases enable:
+Key phases:
 - **Plan Quality Review**: Review the plan like code before execution
 - **Save Plan to File**: Persist at `~/.local/state/oberplan/plans/`
-- **Generate Execution Prompt**: Use oberprompt to create a bootstrap prompt for fresh context execution
+- **Generate Execution Prompt**: Use oberprompt to create a bootstrap prompt
+- **Fresh Context Only**: No option to continue in current context
 
 ---
 
