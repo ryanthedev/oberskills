@@ -525,6 +525,67 @@ Key phases:
 
 ---
 
+## Follow-Up: Feature Enhancement with oberplan
+
+After the initial window picker was implemented, a follow-up enhancement was requested:
+
+### User Request
+
+```
+User: i need your help creating a new plan to update an existing feature.
+right now I can do window picker. but for a lot of my windows it shows
+ghostty and '. .' because i'm running tmux session stuff.
+
+anyway we can show the tmux session name instead?
+```
+
+### oberplan Response
+
+```
+Claude: This is a great feature request - showing tmux session names would
+make the picker much more useful for terminal-heavy workflows.
+
+Let me invoke the planning skill to help design this properly.
+
+→ Skill(oberskills:oberplan)
+  Successfully loaded skill
+
+Lens Selection
+
+LENS SELECTED: code-foundations
+RATIONALE: This is a feature enhancement to existing code - we need to
+understand current patterns before modifying
+
+Let me explore the current window picker implementation to understand
+what we're working with.
+
+→ Explore(Explore window picker implementation)
+  Prompt:
+    Find and understand the window picker implementation in this codebase.
+    I need to know:
+
+    1. Where is the window picker command defined?
+    2. How does it get window information (title, app name, etc.)?
+    3. What data structure represents a window?
+    4. How is the picker UI rendered?
+
+    Focus on the data flow: where does window title/name come from,
+    and how is it displayed in the picker?
+```
+
+### Key Pattern: Enhancement vs. New Feature
+
+| Aspect | New Feature (Initial) | Enhancement (Follow-up) |
+|--------|----------------------|-------------------------|
+| Lens | code-foundations (construction) | code-foundations (understand existing) |
+| First action | Explore architecture | Explore current implementation |
+| Focus | "How should we build this?" | "How does it work now? What do we modify?" |
+| Risk | Integration with existing | Regression in existing functionality |
+
+oberplan adapts its approach based on whether you're building new or enhancing existing code.
+
+---
+
 ## When to Use This Pattern
 
 Use this pattern when:
@@ -532,3 +593,4 @@ Use this pattern when:
 - Building CLI tools with system-level interactions
 - Features requiring understanding of prior work
 - Window management or focus-shifting functionality
+- **Enhancing existing features** (oberplan explores current implementation first)
