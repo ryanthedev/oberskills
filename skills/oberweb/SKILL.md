@@ -36,16 +36,18 @@ oberweb breaks a query into dimensions and searches them in parallel with fast, 
 ```
 1. Analyze Search Request (identify dimensions)
       ↓
-2. Invoke oberagent (for orchestrator prompt)
+2. Invoke oberagent → Dispatch Orchestrator (haiku)
       ↓
-3. Dispatch Orchestrator (haiku, plans search dimensions)
+3. Invoke oberagent → Dispatch Search Agents (parallel haiku)
       ↓
-4. Dispatch Search Agents (parallel haiku agents)
+4. Invoke oberagent → Dispatch Synthesis Agent (haiku)
       ↓
-5. Dispatch Synthesis Agent (haiku, filters and ranks)
-      ↓
-6. Return Results (relevant info + URLs only)
+5. Return Results (relevant info + URLs only)
 ```
+
+**Every agent dispatch goes through oberagent.** oberagent invokes oberprompt, validates the prompt, and completes the checklist. This is not optional.
+
+**The chain:** oberweb → oberagent → oberprompt → agent prompt
 
 ---
 
@@ -76,22 +78,18 @@ Before searching, identify the search dimensions:
 
 ---
 
-## Step 2: Invoke oberagent
+## Step 2: Dispatch Orchestrator (via oberagent)
 
-**Before dispatching any agent, invoke oberagent.** This ensures:
-- Prompts are outcome-focused
-- Constraint budget is respected
-- oberprompt principles are applied
-
+**Invoke oberagent first:**
 ```
 Invoke oberagent for oberweb orchestrator.
-Skills identified: (none - orchestrator is pure coordination)
-Objective: Plan and execute multi-dimensional web search
+Skills identified: (none - pure coordination)
+Objective: Plan search dimensions for multi-dimensional web search
 ```
 
----
+oberagent will invoke oberprompt, then validate the prompt.
 
-## Step 3: Dispatch Orchestrator Agent
+**Then dispatch:**
 
 The orchestrator plans the search dimensions and dispatches search agents.
 
@@ -121,9 +119,16 @@ Task(
 
 ---
 
-## Step 4: Dispatch Search Agents
+## Step 3: Dispatch Search Agents (via oberagent)
 
-**Dispatch all search agents in parallel.** Use haiku for speed and cost.
+**Invoke oberagent for EACH search agent:**
+```
+Invoke oberagent for oberweb search agent.
+Skills identified: (none - search/fetch only)
+Objective: Search [dimension] and extract relevant information
+```
+
+**Then dispatch all in parallel.** Use haiku for speed and cost.
 
 For each dimension from the orchestrator:
 
@@ -141,6 +146,11 @@ Task(
   1. Use WebSearch to find relevant results
   2. Use WebFetch on the top 2-3 most promising URLs
   3. Extract key information relevant to the query
+
+  CONSTRAINTS:
+  - MAX 2-3 sentences per URL
+  - NO full page content or long quotes
+  - NO more than 5 URLs total
 
   RETURN FORMAT:
   RESULTS:
@@ -161,7 +171,14 @@ Task(haiku, "search dimension 3", ...)
 
 ---
 
-## Step 5: Dispatch Synthesis Agent
+## Step 4: Dispatch Synthesis Agent (via oberagent)
+
+**Invoke oberagent:**
+```
+Invoke oberagent for oberweb synthesis agent.
+Skills identified: (none - filtering/organizing only)
+Objective: Synthesize search results into concise summary with source URLs
+```
 
 After all search agents return, synthesize the results:
 
@@ -201,7 +218,20 @@ Task(
 
 ---
 
-## Step 6: Return Results
+## Handling Failures
+
+| Situation | Action |
+|-----------|--------|
+| Search agent returns no results | Exclude from synthesis, note the gap |
+| Search agent fails/times out | Continue with other results |
+| All search agents fail | Report failure to main agent with attempted queries |
+| Synthesis returns empty | Return raw results with warning |
+
+**Don't fail silently.** If searches return nothing useful, tell the main agent what was attempted.
+
+---
+
+## Step 5: Return Results
 
 Return the synthesis to the main agent. The main agent receives:
 - A concise summary answering their query
@@ -291,17 +321,31 @@ SOURCES:
 | "Return all results" | Context pollution | Filter aggressively |
 | "Use sonnet for better quality" | Adds latency, cost; haiku is sufficient | Stick with haiku |
 | "Skip synthesis, just aggregate" | Raw results overwhelm main agent | Always synthesize |
-| "Skip oberagent, it's just search" | Still dispatching agents | Invoke oberagent |
+| "Skip oberagent, it's just search" | Still dispatching agents | Invoke oberagent for EVERY dispatch |
+| "I invoked oberagent for orchestrator" | Each dispatch needs its own oberagent | Invoke oberagent 3+ times total |
+| "Search agents are simple, skip oberagent" | Simple ≠ exempt from validation | oberagent validates ALL prompts |
+| "oberagent is overhead for parallel agents" | Validation prevents wasted parallel calls | Validate first, then dispatch |
+| "Agent returned full page content" | Constraint violation, burning context | Re-dispatch with stricter constraints |
+| "I'll let synthesis handle filtering" | Garbage in = garbage out | Each agent must filter |
+| "Orchestrator returned 8 dimensions" | Too many = slow, costly, diminishing returns | Cap at 5, pick most relevant |
 
 ---
 
 ## Integration
 
 ### With oberagent
-Invoke oberagent before dispatching the orchestrator. oberagent ensures prompt quality even for simple coordination tasks.
+**Invoke oberagent before EVERY dispatch:**
+- Once for orchestrator
+- Once for each search agent (can be same prompt template)
+- Once for synthesis agent
+
+oberagent invokes oberprompt in Step 1, then validates the prompt.
 
 ### With oberprompt
-Invoked transitively through oberagent. Ensures search agent prompts are outcome-focused.
+Invoked transitively through oberagent. Each dispatch benefits from:
+- Constraint budget validation
+- Outcome-focused prompt structure
+- Checklist completion
 
 ### With main agent
 oberweb returns a context-efficient summary. Main agent can use source URLs to dive deeper if needed.
