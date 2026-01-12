@@ -284,9 +284,9 @@ Use TodoWrite to track:
 
 ## Phase 5: Final Validation
 
-After all phases complete, run integration review:
+After all phases complete, run two final reviews:
 
-### Integration Review Agent
+### Step 1: Integration Review Agent
 
 ```
 Task(
@@ -320,6 +320,71 @@ Task(
 )
 ```
 
+### Step 2: Final Code Review Agent
+
+**After integration passes, dispatch comprehensive code review via oberagent.**
+
+```
+Task(
+  subagent_type="pr-review-toolkit:code-reviewer",
+  description="Final code review: all changes",
+  prompt="First invoke the code-foundations skill.
+
+  FINAL CODE REVIEW: Review all implementation changes from this plan.
+
+  FILES TO REVIEW:
+  [Aggregate list from all phases]
+
+  REVIEW USING:
+  1. code-foundations principles (construction quality, defensive programming)
+  2. Project CLAUDE.md guidelines (if present)
+  3. Existing codebase patterns
+
+  CHECK FOR:
+  - Code quality and readability
+  - Error handling completeness
+  - Edge cases and defensive programming
+  - Naming conventions and consistency
+  - No hardcoded values that should be configurable
+  - No security vulnerabilities (OWASP top 10)
+  - Tests cover critical paths
+
+  RETURN FORMAT:
+  VERDICT: [APPROVED | NEEDS_CHANGES]
+
+  If NEEDS_CHANGES:
+  ISSUES:
+  - [file:line] - [severity: high/medium/low] - [issue]
+
+  SUMMARY: [2-3 sentences on overall quality]"
+)
+```
+
+### Final Review Decision Table
+
+| Integration | Code Review | Action |
+|-------------|-------------|--------|
+| COMPLETE | APPROVED | Final git commit, execution complete |
+| COMPLETE | NEEDS_CHANGES | Address issues, re-review (max 1 cycle) |
+| INCOMPLETE | — | Return to relevant phase |
+| ISSUES | — | Report to user, await decision |
+
+### Final Git Commit
+
+**After both reviews pass, commit with comprehensive message:**
+
+```bash
+git add -A && git commit -m "feat([feature]): complete [plan name]
+
+[Summary of what was implemented]
+
+Phases completed: [N]
+Checkpoints passed: [M]
+Final review: APPROVED
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
+
 ---
 
 ## Execution State Machine
@@ -349,10 +414,22 @@ Task(
 │                                      │                        │
 │                                      ▼                        │
 │                           ┌──────────────────┐               │
-│                           │ Final Validation │               │
+│                           │ Integration      │               │
+│                           │ Review           │               │
+│                           └──────────────────┘               │
+│                                      │                        │
+│                                      ▼                        │
+│                           ┌──────────────────┐               │
+│                           │ Final Code Review│               │
+│                           │ (code-reviewer)  │               │
+│                           └──────────────────┘               │
+│                                      │                        │
+│                                      ▼                        │
+│                           ┌──────────────────┐               │
+│                           │ Final Commit     │               │
 │                           └──────────────────┘               │
 │                                                               │
-└─────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -452,6 +529,9 @@ Invoked transitively through oberagent. oberagent applies oberprompt principles 
 
 ### With code-foundations
 All implementation and review agents invoke code-foundations first (specified in their prompts).
+
+### With pr-review-toolkit
+Final code review uses `pr-review-toolkit:code-reviewer` for comprehensive quality assessment. Combines with code-foundations for defense-in-depth review.
 
 ### With oberdebug
 If execution reveals bugs, escalate to oberdebug workflow.
