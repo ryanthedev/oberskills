@@ -36,9 +36,15 @@ This applies to:
       ↓
 5. Final Review (catch gaps before dispatch)
       ↓
-6. Output (agent-executable planning document)
+6. Plan Quality Review (code review the plan itself)
       ↓
-7. Execution Handoff (chain to oberexec)
+7. Save Plan to File (persist for execution)
+      ↓
+8. Output (agent-executable planning document)
+      ↓
+9. Generate Execution Prompt (oberprompt bootstrap for fresh context)
+      ↓
+10. Execution Handoff (provide bootstrap prompt for fresh context)
 ```
 
 ---
@@ -347,12 +353,126 @@ For each phase, ask:
 FINAL REVIEW COMPLETE:
 - Gaps identified: [list or "none"]
 - Mitigations added: [list or "n/a"]
-- Plan status: READY FOR EXECUTION
+- Plan status: READY FOR QUALITY REVIEW
 ```
 
 ---
 
-## Phase 6: Output
+## Phase 6: Plan Quality Review
+
+**Code review the plan itself before execution.**
+
+### Why Review the Plan?
+
+Plans are code for agents. They have:
+- Edge cases that weren't considered
+- Implicit assumptions that should be explicit
+- Phases that are too vague or too specific
+- Missing context agents will need
+
+### Review Process
+
+Dispatch a review agent (via oberagent) to evaluate the plan:
+
+```
+Task(
+  subagent_type="general-purpose",
+  description="Review: implementation plan quality",
+  prompt="Review this implementation plan for completeness and executability.
+
+  PLAN:
+  [Full plan content]
+
+  REVIEW CRITERIA:
+  1. Phase objectives are actionable (not vague)
+  2. Agent prompts have enough context to succeed
+  3. Checkpoints have testable pass criteria
+  4. Dependencies are explicit (no hidden assumptions)
+  5. Risk mitigations are realistic
+  6. Nothing requires information not available at that phase
+
+  RETURN FORMAT:
+  VERDICT: [READY | NEEDS_REVISION]
+
+  If NEEDS_REVISION:
+  ISSUES:
+  - [Phase N] - [specific issue]
+
+  SUMMARY: [1-2 sentences]"
+)
+```
+
+### Review Outcomes
+
+| Verdict | Action |
+|---------|--------|
+| READY | Proceed to Save Plan |
+| NEEDS_REVISION | Revise plan, re-review (max 2 cycles) |
+
+### Output
+
+```
+PLAN QUALITY REVIEW:
+- Verdict: [READY | NEEDS_REVISION]
+- Issues found: [list or "none"]
+- Revisions made: [list or "n/a"]
+```
+
+---
+
+## Phase 7: Save Plan to File
+
+**Persist the plan for execution in this or a fresh context.**
+
+### File Location
+
+Save to a predictable location:
+
+```
+~/.local/state/oberplan/plans/{project-name}-{timestamp}.md
+```
+
+Example: `~/.local/state/oberplan/plans/thegrid-window-picker-2026-01-12.md`
+
+### File Format
+
+The saved file should contain:
+
+```markdown
+# Plan: [Title]
+
+**Created:** [timestamp]
+**Project:** [project path]
+**Skills Required:** [list of skills needed for execution]
+
+---
+
+[Full plan content from Phase 8: Output]
+
+---
+
+## Execution Instructions
+
+To execute this plan in a fresh Claude Code context:
+1. Navigate to the project directory
+2. Use the bootstrap prompt below
+
+## Bootstrap Prompt
+
+[Generated in Phase 9]
+```
+
+### Output
+
+```
+PLAN SAVED:
+- Location: [file path]
+- Ready for: [current context execution | fresh context bootstrap]
+```
+
+---
+
+## Phase 8: Output
 
 **Produce agent-executable planning document.**
 
@@ -411,38 +531,131 @@ FINAL REVIEW COMPLETE:
 
 ---
 
-## Phase 7: Execution Handoff
+## Phase 9: Generate Execution Prompt
 
-**After final review passes, chain to oberexec for execution.**
+**Use oberprompt to create a bootstrap prompt for executing the plan in a fresh context.**
 
-### Handoff Decision
+### Why a Fresh Context?
 
-| User Intent | Action |
-|-------------|--------|
-| "execute", "implement", "build it" | Invoke oberexec immediately |
-| "I'll implement later", "save the plan" | Output plan document, stop |
-| Unclear | Ask: "Ready to execute this plan?" |
+Complex plans may exceed the current context window during execution. A fresh context starts with:
+- Full context budget available
+- No accumulated conversation noise
+- Clean state for oberexec
+
+### Bootstrap Prompt Requirements
+
+The bootstrap prompt must:
+1. Load the saved plan file
+2. Invoke the required skills (oberexec, code-foundations, etc.)
+3. Provide enough context for oberexec to start immediately
+4. Be self-contained (no dependencies on prior conversation)
+
+### Generating the Prompt
+
+Invoke oberprompt to craft the bootstrap prompt:
+
+```
+Invoke oberprompt skill, then:
+
+TARGET: Bootstrap prompt for oberexec in fresh Claude Code context
+MODEL TIER: Frontier (Claude Opus 4.5)
+TASK TYPE: Agent orchestration startup
+
+OUTCOME: Single prompt that:
+1. Navigates to project directory
+2. Invokes oberexec skill
+3. Reads the saved plan file
+4. Begins execution immediately
+
+CONSTRAINTS:
+- Must be copy-pasteable into fresh Claude Code session
+- Must reference the saved plan file path
+- Should include skill invocation instructions
+- No ambiguity - oberexec should start without questions
+```
+
+### Bootstrap Prompt Template
+
+```markdown
+## oberexec Bootstrap Prompt
+
+Copy this into a fresh Claude Code session:
+
+---
+
+Navigate to: [project path]
+
+I need you to execute an approved implementation plan.
+
+First, invoke the oberexec skill.
+
+Then read the plan file at:
+[saved plan file path]
+
+Execute the plan following oberexec's workflow:
+- Dispatch implementation agents phase by phase
+- Run checkpoint reviews after each phase
+- Track progress through all phases
+- Complete final integration review
+
+The plan has [N] phases and [M] checkpoints.
+
+Required skills for agents: [skill list]
+
+Begin execution now.
+
+---
+```
+
+### Output
+
+```
+BOOTSTRAP PROMPT GENERATED:
+- Saved to: [plan file path] (appended to plan document)
+- Ready for: Copy into fresh Claude Code context
+```
+
+Present the bootstrap prompt to the user in a copyable format.
+
+---
+
+## Phase 10: Execution Handoff
+
+**Provide bootstrap prompt for fresh context execution.**
+
+Planning consumes significant context. Always hand off to a fresh session for execution.
 
 ### Handoff Process
 
 ```
-1. Confirm user wants execution
-2. Invoke oberexec skill
-3. Pass the approved plan
-4. oberexec takes over execution loop
+1. Display the bootstrap prompt in a copyable format
+2. Provide the saved plan file path
+3. Instruct user to:
+   a. Open new Claude Code session
+   b. Navigate to project directory
+   c. Paste the bootstrap prompt
+4. End current planning session
 ```
 
 ### Handoff Output
 
 ```
-PLAN APPROVED - HANDING OFF TO EXECUTION
+PLAN COMPLETE - READY FOR EXECUTION
 
-Invoking oberexec with:
-- [N] implementation phases
-- [M] checkpoints
-- Skills: [list of skills to pass to agents]
+Plan saved to: [file path]
 
-[Invoke oberexec skill]
+To execute, open a fresh Claude Code session and paste this prompt:
+─────────────────────────────────────
+[bootstrap prompt content]
+─────────────────────────────────────
+
+Instructions:
+1. Open a new Claude Code session
+2. Navigate to [project directory]
+3. Paste the bootstrap prompt above
+4. oberexec will begin plan execution
+
+Planning session complete. Go rest, then execute fresh.
 ```
 
 ---
@@ -450,13 +663,19 @@ Invoking oberexec with:
 ## Integration
 
 ### With oberexec
-After plan approval and final review, chain to `oberexec` for subagent-driven execution with checkpoints.
+After plan approval, provide bootstrap prompt for fresh context execution. oberexec handles subagent-driven execution with checkpoints.
 
 ### With oberagent
-When dispatching agents from the plan, invoke `oberagent` to validate each agent prompt.
+- Phase 6: Dispatch plan review agent via oberagent
+- Execution: oberexec uses oberagent for all dispatches (in fresh context)
 
 ### With oberprompt
-If plan involves LLM prompts, invoke `oberprompt` for prompt engineering phases.
+- Phase 9: Use oberprompt principles to craft the bootstrap prompt for fresh context execution
+- Ensures bootstrap prompt is outcome-focused, minimal constraints, high confidence
 
 ### With oberdebug
 If user request involves fixing bugs, redirect to `oberdebug` - debugging is not planning.
+
+### With code-foundations
+- Phase 6: Plan review agent invokes code-foundations for quality evaluation
+- Phases are designed with code-foundations principles (clear objectives, testable outputs)
