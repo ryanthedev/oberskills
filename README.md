@@ -1,6 +1,38 @@
 # oberskills
 
-A Claude Code plugin with advanced workflow skills.
+Advanced Claude Code skills for debugging, prompt engineering, agent dispatch, planning, and execution.
+
+## Skill Chain
+
+The skills chain together to enforce quality at every step:
+
+```
+oberplan ──→ oberexec ──→ oberagent ──→ oberprompt
+   │            │             │             │
+   │            │             │             └── Prompt engineering principles
+   │            │             │                 (constraint budget, validation)
+   │            │             │
+   │            │             └── Agent dispatch validation
+   │            │                 (Step 1: invoke oberprompt)
+   │            │
+   │            └── Phase execution with checkpoints
+   │                (identify skills → invoke oberagent)
+   │
+   └── Planning orchestration
+       (lens selection, requirements, plan structure)
+```
+
+**The chain is explicit:** oberexec identifies skills and invokes oberagent. oberagent invokes oberprompt before writing any agent prompt. Each dispatch is a fresh decision point.
+
+## Skills
+
+| Skill | Purpose | Triggers |
+|-------|---------|----------|
+| **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis | bugs, errors, "not working", test failures |
+| **oberprompt** | Research-backed prompt engineering for LLM systems | writing prompts, system messages, "prompt not working" |
+| **oberagent** | Enforces oberprompt principles before agent dispatch | Task tool, agent dispatch, subagent |
+| **oberplan** | Meta-planning with lens skills and checkpoints | "build", "create", "implement", "plan for" |
+| **oberexec** | Subagent-driven plan executor with code reviews | "execute the plan", "run the plan" |
 
 ## Installation
 
@@ -10,151 +42,66 @@ A Claude Code plugin with advanced workflow skills.
 
 # Install the plugin
 /plugin install oberskills@rtd
+
+# Update to latest
+/plugin update oberskills@rtd
 ```
 
-## Skills
+## How It Works
+
+### oberplan
+Creates structured plans with agent assignments, dependencies, and validation criteria. Loads domain-specific "lens skills" based on user intent.
+
+### oberexec
+Executes plans phase-by-phase. Before each dispatch:
+1. Identifies which skills the phase needs
+2. Invokes oberagent with the skills list
+3. Dispatches the agent
+4. Runs checkpoint validation (code review)
+5. Commits on success
+
+### oberagent
+Gates every agent dispatch. Workflow:
+1. **Invoke oberprompt** (mandatory)
+2. Define agent purpose (outcome, not actions)
+3. Select agent type
+4. Identify applicable skills
+5. Write prompt
+6. Validate with checklist
+
+### oberprompt
+Provides prompt engineering principles:
+- Model capability tiers and constraint budgets
+- Progressive disclosure (start simple)
+- Anti-patterns to avoid
+- Validation checklist
 
 ### oberdebug
+Hypothesis-driven debugging:
+1. Infer issue from symptoms
+2. Check reproduction, logs, git history
+3. Propose debug instrumentation
+4. Analyze results
+5. Loop until evidence confirms root cause
 
-Hypothesis-driven debugging with evidence-based root cause analysis.
+## Examples
 
-**Flow:** Infer issue → Check reproduction → Check logs → Check git → Propose debug instrumentation → User runs → Analyze → Loop until confirmed → Output root cause with evidence
+| Example | Demonstrates |
+|---------|--------------|
+| [oberplan-window-picker](examples/oberplan-window-picker.md) | Full skill chain: oberplan → oberexec → oberagent → oberprompt |
+| [oberagent-code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance, outcome-focused prompting |
 
-**Triggers:** bugs, errors, "not working", debugging, test failures
-
-#### Demo
+## Demo
 
 A launchd service wouldn't start after changing deploy paths. oberdebug diagnosed it by dispatching parallel agents to check logs, verify binary paths, and analyze service behavior:
-
-![Issue statement, reproduction, and parallel agent dispatch](assets/oberdebug-demo.png)
-
-![Agents investigating](assets/oberdebug-demo-2.png)
 
 ![Evidence synthesis and root cause](assets/oberdebug-demo-3.png)
 
 Root cause: The Makefile's `run` target deleted the app bundle right after `dev` deployed it. Found with evidence, not guessing.
 
----
+## Version
 
-### oberprompt
-
-Research-backed prompt engineering for LLM systems (80+ papers synthesized).
-
-**Key insight:** Prompt effectiveness varies dramatically with model capability. What works for GPT-3.5 may harm GPT-4+.
-
-**Covers:**
-- Model capability tiers and constraint budgets
-- Technique selection (CoT, few-shot, zero-shot)
-- Prompt architecture and progressive disclosure
-- Anti-patterns (Constraint Handcuffs, Position Neglect)
-- Validation checklist (mandatory before shipping)
-
-**Triggers:** writing prompts, system messages, agent instructions, "prompt not working", hallucinations
-
----
-
-### oberagent
-
-Meta-skill that enforces oberprompt principles before dispatching agents.
-
-**Flow:** Define outcome → Select agent type → Apply constraint budget → Write outcome-focused prompt → Validate with checklist
-
-**Key rules:**
-- Agent prompts should be ≤3 sentences
-- Focus on OUTCOME, not step-by-step instructions
-- Start simple, add constraints only on failure
-
-**Triggers:** Task tool, agent dispatch, subagent, parallel agents
-
----
-
-### oberplan
-
-Meta-skill that orchestrates planning by loading domain-specific lens skills, clarifying requirements, and producing agent-executable plans.
-
-**Flow:** Lens selection → Requirements clarification → Plan construction (with checkpoints) → User confirmation → Final review → Output → Execution handoff
-
-**Key features:**
-- Loads domain-specific "lens skills" based on user intent (frontend-design, code-foundations, etc.)
-- Enforces mandatory checkpoints after every implementation phase
-- Requires capability proofs before visual/rendering work
-- Produces structured plans with agent assignments, dependencies, and validation criteria
-
-**Triggers:** "build", "create", "implement", "add feature", "design", "plan for", "how should we approach"
-
-#### Demo
-
-User describes a UI behavior change for a picker window. oberplan activates, selects a lens (or determines none fits), then explores the codebase to understand the current implementation before constructing a plan:
-
-```
-❯ can we please come up with a new plan. Right now my picker is working
-  really well, but I would like a tweak. today when I type and the options
-  reduce the entire window shifts and gets smaller. If the number of items
-  changes, I would like the windows x/y position to change. I would like
-  for it to just shrink.
-
-  two ways to do this. The window size is fixed and we just hide options,
-  or to shrink the window from the bottom up and left the top position
-  pinned. That way my eyes always know where I typed my text.
-
-⏺ I'll help you plan this picker window behavior change. Let me invoke
-  the planning skill to properly scope this.
-
-⏺ Skill(oberskills:oberplan)
-  ⎿  Successfully loaded skill
-
-⏺ I'll plan this picker window behavior change. Let me start by
-  understanding the current implementation.
-
-  Phase 1: Lens Selection
-
-  LENS SELECTED: None (macOS/Swift window management - no specific lens skill)
-  RATIONALE: This is native macOS window geometry management, not general frontend
-  APPROACH: Direct codebase exploration + architectural planning
-
-  Let me explore the current picker implementation to understand how
-  window sizing works.
-
-⏺ Explore(Explore picker window sizing)
-  ⎿  Found 31 lines across 4 files...
-```
-
-oberplan then continues through requirements clarification, plan construction with checkpoints, user confirmation, and final review before handing off to oberexec for execution.
-
----
-
-### oberexec
-
-Subagent-driven plan executor that orchestrates implementation phases with checkpoints and code reviews.
-
-**Flow:** Plan validation → Phase dispatch → Checkpoint validation → Progress update → Loop until complete → Final validation
-
-**Key features:**
-- Context-saving: implementation agents return FILE NAMES ONLY
-- Code review subagent after every implementation phase
-- Max 2 revision cycles per phase before escalating to user
-- Integration review after all phases complete
-
-**Triggers:** "execute the plan", "run the plan", "implement the plan", "start execution"
-
----
-
-## Examples
-
-Real-world transcripts showing how skills work together:
-
-| Example | Demonstrates |
-|---------|--------------|
-| [oberplan-window-picker](examples/oberplan-window-picker.md) | Full oberplan workflow: lens selection, requirements clarification, plan construction, bootstrap prompt generation, and the complete skill chain (oberplan → oberexec → oberagent → oberprompt → code-foundations) |
-| [oberagent-code-review](examples/oberagent-code-review.md) | oberagent checklist validation, skill inheritance via explicit instruction, outcome-focused prompting, and structured return format |
-
----
-
-## Updating
-
-```bash
-/plugin update oberskills@rtd
-```
+Current version: **1.10.0**
 
 ## License
 
