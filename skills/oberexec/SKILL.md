@@ -1,47 +1,435 @@
 ---
 name: oberexec
-description: Execute approved plans using subagent orchestration. Use after oberplan produces a plan and user approves. Dispatches agents for each phase, enforces checkpoints with code-review subagents, and tracks progress. Triggers on "execute the plan", "run the plan", "implement the plan", "start execution", "dispatch agents for plan", or when you have an approved plan ready for implementation.
+description: Execute approved plans using subagent orchestration. Use after oberplan produces a plan and user approves. Maintains a persistent execution checklist file that tracks all actions. Dispatches agents for each phase, enforces checkpoints with code-review subagents, and tracks progress. Triggers on "execute the plan", "run the plan", "implement the plan", "start execution", "dispatch agents for plan", or when you have an approved plan ready for implementation.
 ---
 
 # Skill: oberexec
 
-Subagent-driven plan executor that orchestrates implementation phases with checkpoints and code reviews.
+Checklist-driven plan executor. Maintains a persistent execution file that IS the plan state. The skill's sole purpose is completing that checklist.
 
 ## The Iron Law
 
 ```
-NO PHASE ADVANCES WITHOUT CHECKPOINT VALIDATION
+THE CHECKLIST FILE IS THE ONLY TRUTH
 ```
 
 This applies to:
-- "Simple" phases
-- Phases that "obviously worked"
-- The 5th phase after 4 successes
-- "Quick" checkpoint skipping
+- Every action is a checklist item
+- No work happens without updating the file
+- If interrupted, resume from the file
+- The file survives context resets
 
-**Skipping checkpoints = compounding bugs = rework.**
+**No checklist = no execution. No update = work didn't happen.**
 
 ---
 
-## Required Workflow
+## Execution File
+
+### Location
 
 ```
-1. Plan Validation (verify plan structure)
-      ↓
-2. Invoke oberagent (validate prompt before EVERY dispatch)
-      ↓
-3. Phase Dispatch (execute with context-minimal subagents)
-      ↓
-4. Checkpoint Validation (code review subagent via oberagent)
-      ↓
-5. Progress Update (mark complete, advance)
-      ↓
-   Loop to Step 2 until all phases complete
-      ↓
-6. Final Validation (integration review via oberagent)
+~/.local/state/oberexec/{project}-{timestamp}.md
 ```
 
-**Every agent dispatch in oberexec goes through oberagent first.**
+Create the directory if it doesn't exist.
+
+### Format
+
+```markdown
+# Execution: [Plan Name]
+
+Source: [path to plan file]
+Started: [ISO timestamp]
+Status: IN_PROGRESS | COMPLETED | FAILED
+
+## Checklist
+
+- [ ] 1.1 [item description]
+- [ ] 1.2 [item description]
+- [x] 1.3 [item description] ✓ [brief result]
+...
+
+## Log
+
+[HH:MM:SS] [item id] [status] - [details]
+```
+
+### Checklist Syntax
+
+| Syntax | Meaning |
+|--------|---------|
+| `- [ ]` | Pending |
+| `- [~]` | In progress |
+| `- [x]` | Complete |
+| `- [!]` | Failed/blocked |
+
+---
+
+## Workflow
+
+```
+1. Generate Checklist
+   - Parse plan file
+   - Expand phases → discrete items
+   - Write execution file
+      ↓
+2. Execute Loop
+   - Read file → find first unchecked item
+   - Mark item [~] in progress
+   - Execute the item
+   - Mark item [x] complete (or [!] failed)
+   - Add log entry
+   - Write file
+   - Loop
+      ↓
+3. Complete
+   - All items [x]
+   - Update status: COMPLETED
+   - Report to user
+```
+
+**Every iteration reads and writes the file.**
+
+---
+
+## Checklist Generation
+
+### Expansion Rules
+
+Each plan phase expands to discrete action items:
+
+**Implementation Phase:**
+```markdown
+## Phase 1: Implement auth service
+- Agent: general-purpose
+- Skills: code-foundations
+- Output: Auth service with login/logout
+```
+
+Expands to:
+```markdown
+- [ ] 1.1 Identify skills for Phase 1
+- [ ] 1.2 Invoke oberagent for implementation dispatch
+- [ ] 1.3 Dispatch general-purpose agent: auth service
+- [ ] 1.4 Verify agent returned file list
+- [ ] 1.5 Invoke oberagent for review dispatch
+- [ ] 1.6 Dispatch code review agent
+- [ ] 1.7 Handle review verdict
+- [ ] 1.8 Git commit checkpoint
+```
+
+**Checkpoint:**
+```markdown
+## Checkpoint: Auth tests pass
+```
+
+Expands to:
+```markdown
+- [ ] CP1.1 Run checkpoint validation: auth tests
+- [ ] CP1.2 Handle result (pass/fail)
+```
+
+**Final Validation:**
+```markdown
+- [ ] FINAL.1 Dispatch integration review agent
+- [ ] FINAL.2 Dispatch final code review agent
+- [ ] FINAL.3 Final git commit
+```
+
+### Item Numbering
+
+| Pattern | Meaning |
+|---------|---------|
+| `1.1, 1.2, 1.3` | Phase 1 items |
+| `2.1, 2.2` | Phase 2 items |
+| `CP1.1` | Checkpoint 1 items |
+| `REV1.1` | Revision loop items |
+| `FINAL.1` | Final validation items |
+
+---
+
+## Item Types
+
+| Type | Description | Execution |
+|------|-------------|-----------|
+| `Identify skills` | Determine which skills apply to phase | Use skill identification table |
+| `Invoke oberagent` | Validate prompt before dispatch | Invoke oberagent skill with skills list |
+| `Dispatch agent` | Run subagent for implementation | Task tool with prompt from oberagent |
+| `Verify file list` | Confirm agent returned files only | Check format, no code content |
+| `Dispatch review` | Run code review agent | Task tool for checkpoint |
+| `Handle verdict` | Process PASS/NEEDS_REVISION/FAIL | Decision logic, may spawn revision items |
+| `Git commit` | Commit checkpoint | Bash git commit |
+| `Run validation` | Execute test/build/check | Bash command |
+
+---
+
+## Executing Items
+
+### Skill Identification Items
+
+Before dispatching agents, identify applicable skills:
+
+| If Phase Involves | Skill |
+|-------------------|-------|
+| Writing/modifying code | code-foundations |
+| Reviewing code | code-foundations |
+| Debugging | oberdebug |
+| Writing LLM prompts | oberprompt |
+| UI/frontend | frontend-design |
+
+Update checklist:
+```markdown
+- [x] 1.1 Identify skills for Phase 1 ✓ code-foundations
+```
+
+### Invoke oberagent Items
+
+Invoke the oberagent skill before every dispatch:
+
+```
+Invoke oberagent for Phase [N].
+Skills identified: [skill-1, skill-2]
+Phase objective: [objective from plan]
+```
+
+Update checklist:
+```markdown
+- [x] 1.2 Invoke oberagent for implementation dispatch ✓ prompt validated
+```
+
+### Dispatch Agent Items
+
+After oberagent validation, dispatch the agent:
+
+```
+Task(
+  subagent_type="general-purpose",
+  description="Phase [N]: [summary]",
+  prompt="[Prompt from oberagent]
+
+  CONSTRAINTS:
+  - Return FILE NAMES ONLY (no code content)
+  - Format: FILES MODIFIED: [...], FILES CREATED: [...], SUMMARY: [1-2 sentences]"
+)
+```
+
+Update checklist:
+```markdown
+- [x] 1.3 Dispatch general-purpose agent: auth service ✓ 3 files
+```
+
+Add to log:
+```
+[10:30:15] 1.3 COMPLETE - FILES CREATED: src/auth/service.ts, src/auth/types.ts
+```
+
+### Verify File List Items
+
+Confirm agent returned file names only, not code content:
+
+| Agent Returned | Action |
+|----------------|--------|
+| File names only | Mark complete, proceed |
+| Code content | Log warning, extract file names, proceed |
+| Error/failure | Mark failed, escalate |
+
+### Dispatch Review Items
+
+Invoke oberagent, then dispatch code review:
+
+```
+Task(
+  subagent_type="general-purpose",
+  description="Review: Phase [N]",
+  prompt="[Review prompt from oberagent]
+
+  FILES TO REVIEW: [list from implementation agent]
+
+  RETURN FORMAT:
+  VERDICT: [PASS | NEEDS_REVISION | FAIL]
+  ISSUES: [if any]
+  SUMMARY: [1-2 sentences]"
+)
+```
+
+### Handle Verdict Items
+
+| Verdict | Action |
+|---------|--------|
+| PASS | Mark complete, proceed to git commit |
+| NEEDS_REVISION | Insert revision items, execute them |
+| FAIL | Mark failed, escalate to user |
+
+**On NEEDS_REVISION**, insert new items:
+```markdown
+- [x] 1.6 Dispatch code review agent ✓ NEEDS_REVISION
+- [ ] REV1.1 Dispatch revision agent with issues
+- [ ] REV1.2 Dispatch code review agent (attempt 2)
+- [ ] REV1.3 Handle review verdict
+- [ ] 1.7 Git commit checkpoint  <- resume here after revision
+```
+
+**Max 2 revision cycles.** After 2 failures, mark [!] and escalate.
+
+### Git Commit Items
+
+```bash
+git add -A && git commit -m "feat([feature]): Phase [N] - [name]
+
+[1-2 sentence summary]
+
+Checkpoint: [name] PASSED
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
+
+Update checklist:
+```markdown
+- [x] 1.8 Git commit checkpoint ✓ abc1234
+```
+
+---
+
+## Updating the File
+
+### After Every Item
+
+1. Read current file
+2. Update item status: `[ ]` → `[x]` (or `[!]`)
+3. Add result annotation: `✓ [brief result]`
+4. Add log entry
+5. Write file
+
+### Log Entry Format
+
+```
+[HH:MM:SS] [item-id] [STATUS] - [details]
+```
+
+Examples:
+```
+[10:30:15] 1.3 COMPLETE - FILES: src/auth/service.ts, src/auth/types.ts
+[10:31:02] 1.6 COMPLETE - VERDICT: PASS
+[10:31:45] 1.8 COMPLETE - COMMIT: abc1234
+[10:32:00] 2.1 FAILED - Agent timeout, escalating
+```
+
+### Inserting Items
+
+When revision is needed, insert items after current position:
+
+```markdown
+- [x] 1.6 Dispatch code review ✓ NEEDS_REVISION
+- [ ] REV1.1 Dispatch revision agent    <- inserted
+- [ ] REV1.2 Re-review                  <- inserted
+- [ ] 1.7 Git commit checkpoint         <- original next item
+```
+
+---
+
+## Resumption
+
+If execution is interrupted (context reset, error, user pause):
+
+### Resume Protocol
+
+1. Read execution file
+2. Find first item that is `[ ]` or `[~]`
+3. If `[~]` (was in progress): verify state, re-execute if needed
+4. Continue from that item
+
+### Resumption Check
+
+```
+Read: ~/.local/state/oberexec/{project}-*.md
+If exists and Status: IN_PROGRESS:
+  "Found interrupted execution. Resume from item [X.Y]?"
+```
+
+### State Verification
+
+For `[~]` items, verify before re-executing:
+
+| Item Type | Verification |
+|-----------|--------------|
+| Dispatch agent | Check if files exist |
+| Git commit | Check git log |
+| Review | Re-run review |
+
+---
+
+## Final Validation
+
+After all phase items complete:
+
+```markdown
+- [ ] FINAL.1 Invoke oberagent for integration review
+- [ ] FINAL.2 Dispatch integration review agent
+- [ ] FINAL.3 Invoke oberagent for final code review
+- [ ] FINAL.4 Dispatch pr-review-toolkit:code-reviewer
+- [ ] FINAL.5 Handle final verdict
+- [ ] FINAL.6 Final git commit
+```
+
+### Integration Review
+
+```
+Task(
+  subagent_type="general-purpose",
+  description="Final: integration review",
+  prompt="First invoke [all skills used].
+
+  INTEGRATION REVIEW for [plan objective].
+
+  ALL FILES MODIFIED: [aggregate list]
+
+  CHECK:
+  1. All deliverables present
+  2. Components integrate correctly
+  3. Build passes
+  4. Tests pass
+
+  RETURN: VERDICT: [COMPLETE | INCOMPLETE | ISSUES]"
+)
+```
+
+### Final Code Review
+
+```
+Task(
+  subagent_type="pr-review-toolkit:code-reviewer",
+  description="Final: code review",
+  prompt="First invoke code-foundations.
+
+  FINAL CODE REVIEW for all changes.
+
+  FILES: [aggregate list]
+
+  RETURN: VERDICT: [APPROVED | NEEDS_CHANGES]"
+)
+```
+
+### Completion
+
+When all items `[x]`:
+
+1. Update file status: `Status: COMPLETED`
+2. Add final log entry: `[HH:MM:SS] EXECUTION COMPLETE`
+3. Report to user
+
+---
+
+## Red Flags - STOP
+
+| If You're Thinking | Reality | Action |
+|--------------------|---------|--------|
+| "Skip updating the file" | File IS the truth | Update after every item |
+| "I'll batch updates" | Interruption loses state | Update immediately |
+| "This item is obvious, skip it" | Every action is an item | Execute and mark |
+| "File is overhead" | File enables resumption | Embrace it |
+| "I remember where I was" | Context resets happen | Read the file |
+| "Mark complete before doing" | That's lying | Do then mark |
+| "Revision loop, just keep trying" | Max 2 cycles | Escalate after 2 |
 
 ---
 
@@ -49,18 +437,10 @@ This applies to:
 
 **All implementation subagents return FILE NAMES ONLY.**
 
-This is critical for:
-- Preserving main agent context
-- Enabling long plan execution
-- Keeping reviews focused
-
-### Return Format for Implementation Agents
-
 ```
 FILES MODIFIED:
 - src/auth/login.ts
 - src/auth/middleware.ts
-- tests/auth/login.test.ts
 
 FILES CREATED:
 - src/auth/oauth.ts
@@ -72,526 +452,102 @@ SUMMARY: [1-2 sentences max]
 - Full file contents
 - Code snippets
 - Detailed explanations
-- Line-by-line changes
 
-The checkpoint review agent will examine the actual files.
-
----
-
-## Phase 1: Plan Validation
-
-Before executing, verify the plan has required structure:
-
-### Validation Checklist
-
-| Check | Required |
-|-------|----------|
-| Each phase has agent type specified | YES |
-| Each phase has clear objective | YES |
-| Each phase has expected outputs | YES |
-| Checkpoints exist after impl phases | YES |
-| Dependencies form valid order | YES |
-
-### If Plan Missing Structure
-
-```
-PLAN VALIDATION FAILED:
-- Missing: [list gaps]
-- Action: Return to oberplan or ask user for clarification
-```
-
-**Do NOT proceed with incomplete plans.**
-
----
-
-## Phase 2: Phase Dispatch
-
-### Before Every Dispatch: Identify Skills for oberagent
-
-**Subagents don't inherit skill awareness.** Before invoking oberagent, you must identify which skills apply to the phase so oberagent can include them in the subagent prompt.
-
-#### Skill Identification Process
-
-**Even if the plan specifies skills, verify and augment.** Plans may be incomplete, outdated, or missing skills that become relevant during execution. Treat plan-specified skills as a starting point, not the final answer.
-
-For each phase, ask: **"What type of work is this phase doing?"**
-
-| If Phase Involves... | Skill to Load | Why |
-|---------------------|---------------|-----|
-| Writing/modifying code | code-foundations | Construction quality, defensive programming |
-| Reviewing code or plans | code-foundations | Design principles, review standards |
-| Debugging or investigating failures | oberdebug | Hypothesis-driven investigation |
-| Writing prompts for LLMs | oberprompt | Prompt engineering principles |
-| Planning implementation | oberplan | Meta-planning orchestration |
-| Building UI/frontend | frontend-design (if available) | Design patterns, accessibility |
-| Working with specific formats | Relevant format skill (pdf, docx, etc.) | Format-specific workflows |
-
-**Heuristics when uncertain:**
-- If writing ANY code → include code-foundations
-- If the phase could fail and need debugging → consider oberdebug
-- If multiple skills seem relevant → include all of them (cheap to invoke, expensive to miss)
-- If pure exploration/search → no skills needed
-
-#### Pass Skills to oberagent
-
-When invoking oberagent, specify which skills to include:
-
-```
-Invoke oberagent for Phase [N].
-Skills identified for this phase: [skill-1, skill-2]
-Phase objective: [objective from plan]
-```
-
-oberagent will incorporate these into the subagent prompt.
-
-### Invoke oberagent
-
-**After identifying skills, invoke the oberagent skill.** This ensures:
-- Prompt follows oberprompt principles (outcome-focused, minimal constraints)
-- Agent type matches the purpose
-- Identified skills are passed to the subagent
-- Validation checklist is completed
-
-```
-1. Identify applicable skills (above)
-2. Invoke oberagent skill with skills list
-3. oberagent invokes oberprompt first, then: define purpose → select type → write prompt → validate
-4. Only then dispatch the Task
-```
-
-**The chain is: oberexec → oberagent → oberprompt → agent prompt.**
-
-### Dispatch Template
-
-For each implementation phase, dispatch using this pattern:
-
-```
-Task(
-  subagent_type="general-purpose",
-  description="[Phase N]: [3-word summary]",
-  prompt="First invoke [identified skills, comma-separated].
-
-  OBJECTIVE: [Phase objective from plan]
-
-  SCOPE: [Files/directories to work in]
-
-  CONSTRAINTS:
-  - Return FILE NAMES ONLY (no code content)
-  - Format: FILES MODIFIED: [...], FILES CREATED: [...], SUMMARY: [1-2 sentences]
-
-  [Additional context from plan if needed]"
-)
-```
-
-**Note:** The template above is the OUTPUT of following oberagent. Don't skip oberagent and jump to the template.
-
-### Agent Type Selection
-
-| Phase Type | Agent | Typical Skills |
-|------------|-------|----------------|
-| Code implementation | general-purpose | code-foundations |
-| Refactoring | general-purpose | code-foundations |
-| Test writing | general-purpose | code-foundations |
-| Debugging | general-purpose | oberdebug, code-foundations |
-| UI/Frontend work | general-purpose | frontend-design, code-foundations |
-| Research/exploration | Explore | (none needed) |
-| Git operations | Bash | (none needed) |
-| Build/lint | Bash | (none needed) |
-
-**These are starting points.** Use the skill identification process above to determine actual skills per phase.
-
-### Parallel vs Sequential
-
-| Situation | Action |
-|-----------|--------|
-| Phases are independent | Dispatch in parallel (single message, multiple Task calls) |
-| Phase B depends on Phase A output | Sequential - wait for A to complete |
-| Checkpoint required | Always sequential - wait for validation |
-
----
-
-## Phase 3: Checkpoint Validation
-
-**After every implementation phase, dispatch a code review subagent.**
-
-### Code Review Agent Template
-
-**Identify skills for review:** Reviews typically need `code-foundations`. If the phase involved UI work, also include `frontend-design`. If debugging was involved, include `oberdebug`.
-
-```
-Task(
-  subagent_type="general-purpose",
-  description="Review: [Phase N] implementation",
-  prompt="First invoke [identified review skills].
-
-  REVIEW TASK: Validate the implementation from Phase [N].
-
-  FILES TO REVIEW:
-  [List files returned by implementation agent]
-
-  CHECK FOR:
-  1. Implementation matches phase objective: [objective]
-  2. Code follows existing patterns in codebase
-  3. No obvious bugs, edge cases missed, or security issues
-  4. Tests are adequate (if test files included)
-
-  RETURN FORMAT:
-  VERDICT: [PASS | FAIL | NEEDS_REVISION]
-
-  If FAIL/NEEDS_REVISION:
-  ISSUES:
-  - [file.ts:line] - [issue description]
-
-  SUMMARY: [1-2 sentences]"
-)
-```
-
-### Checkpoint Decision Table
-
-| Review Verdict | Action |
-|----------------|--------|
-| PASS | Git commit, mark phase complete, advance to next |
-| NEEDS_REVISION | Re-dispatch implementation agent with issues |
-| FAIL | Stop execution, report to user |
-
-### Git Commit on Checkpoint Pass
-
-**When a checkpoint passes, commit the work before advancing.**
-
-```bash
-git add -A && git commit -m "feat([feature]): complete Phase [N] - [phase name]
-
-[1-2 sentence summary of what was implemented]
-
-Checkpoint: [checkpoint name] PASSED
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-```
-
-**Why commit at checkpoints:**
-- Work is validated and known-good
-- Creates restore points if later phases fail
-- Enables partial rollback without losing progress
-- Documents implementation in git history
-
-**Commit message format:**
-- `feat([feature]):` for new functionality
-- `fix([feature]):` for bug fixes during revision
-- Include phase number and name
-- Reference checkpoint that passed
-
-### Revision Dispatch
-
-If checkpoint returns NEEDS_REVISION:
-
-**Re-use the same skills identified for the original phase.** Revisions need the same domain knowledge.
-
-```
-Task(
-  subagent_type="general-purpose",
-  description="Fix: [Phase N] revisions",
-  prompt="First invoke [same skills as original phase].
-
-  REVISION TASK: Address review feedback for Phase [N].
-
-  ISSUES TO FIX:
-  [List from review agent]
-
-  CONSTRAINTS:
-  - Return FILE NAMES ONLY
-  - Format: FILES MODIFIED: [...], SUMMARY: [1-2 sentences]"
-)
-```
-
-Then re-run checkpoint validation. **Max 2 revision cycles per phase.** If still failing after 2 revisions, escalate to user.
-
----
-
-## Phase 4: Progress Tracking
-
-### Track execution state
-
-```
-EXECUTION PROGRESS:
-- [x] Phase 1: [name] - COMPLETE
-- [x] Checkpoint 1 - PASS
-- [ ] Phase 2: [name] - IN_PROGRESS
-- [ ] Checkpoint 2 - PENDING
-- [ ] Phase 3: [name] - PENDING
-...
-```
-
-### Update after each step
-
-Use TodoWrite to track:
-- Current phase
-- Checkpoint status
-- Any issues encountered
-- Files modified so far
-
----
-
-## Phase 5: Final Validation
-
-After all phases complete, run two final reviews:
-
-### Step 1: Integration Review Agent
-
-**Aggregate all skills used across phases.** The integration review should have access to all domain knowledge used during implementation.
-
-```
-Task(
-  subagent_type="general-purpose",
-  description="Final review: plan integration",
-  prompt="First invoke [all skills used across plan phases].
-
-  INTEGRATION REVIEW: Validate complete implementation.
-
-  ALL FILES MODIFIED:
-  [Aggregate list from all phases]
-
-  ORIGINAL OBJECTIVE:
-  [Plan objective]
-
-  CHECK FOR:
-  1. All plan deliverables are present
-  2. Components integrate correctly
-  3. No regressions in existing functionality
-  4. Build passes (if applicable)
-  5. Tests pass (if applicable)
-
-  RETURN FORMAT:
-  VERDICT: [COMPLETE | INCOMPLETE | ISSUES]
-
-  If INCOMPLETE/ISSUES:
-  GAPS:
-  - [description]
-
-  SUMMARY: [2-3 sentences]"
-)
-```
-
-### Step 2: Final Code Review Agent
-
-**After integration passes, dispatch comprehensive code review via oberagent.**
-
-**Always include code-foundations for final review.** Add other skills based on what the plan involved (frontend-design for UI work, etc.).
-
-```
-Task(
-  subagent_type="pr-review-toolkit:code-reviewer",
-  description="Final code review: all changes",
-  prompt="First invoke [code-foundations + other relevant skills].
-
-  FINAL CODE REVIEW: Review all implementation changes from this plan.
-
-  FILES TO REVIEW:
-  [Aggregate list from all phases]
-
-  REVIEW USING:
-  1. code-foundations principles (construction quality, defensive programming)
-  2. Project CLAUDE.md guidelines (if present)
-  3. Existing codebase patterns
-
-  CHECK FOR:
-  - Code quality and readability
-  - Error handling completeness
-  - Edge cases and defensive programming
-  - Naming conventions and consistency
-  - No hardcoded values that should be configurable
-  - No security vulnerabilities (OWASP top 10)
-  - Tests cover critical paths
-
-  RETURN FORMAT:
-  VERDICT: [APPROVED | NEEDS_CHANGES]
-
-  If NEEDS_CHANGES:
-  ISSUES:
-  - [file:line] - [severity: high/medium/low] - [issue]
-
-  SUMMARY: [2-3 sentences on overall quality]"
-)
-```
-
-### Final Review Decision Table
-
-| Integration | Code Review | Action |
-|-------------|-------------|--------|
-| COMPLETE | APPROVED | Final git commit, execution complete |
-| COMPLETE | NEEDS_CHANGES | Address issues, re-review (max 1 cycle) |
-| INCOMPLETE | — | Return to relevant phase |
-| ISSUES | — | Report to user, await decision |
-
-### Final Git Commit
-
-**After both reviews pass, commit with comprehensive message:**
-
-```bash
-git add -A && git commit -m "feat([feature]): complete [plan name]
-
-[Summary of what was implemented]
-
-Phases completed: [N]
-Checkpoints passed: [M]
-Final review: APPROVED
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-```
-
----
-
-## Execution State Machine
-
-```
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│  ┌──────────┐    ┌──────────┐    ┌────────────┐              │
-│  │ Dispatch │───▶│ Execute  │───▶│ Checkpoint │              │
-│  │  Phase   │    │  Agent   │    │   Review   │              │
-│  └──────────┘    └──────────┘    └────────────┘              │
-│       ▲                               │                       │
-│       │                               ▼                       │
-│       │         ┌─────────┐    ┌────────────┐                │
-│       │         │ Revision│◀───│  PASS?     │                │
-│       │         │  Agent  │ NO └────────────┘                │
-│       │         └─────────┘          │ YES                   │
-│       │              │               ▼                        │
-│       │              │         ┌────────────┐                │
-│       │              │         │ Git Commit │ ◀── checkpoint │
-│       │              │         └────────────┘     restore    │
-│       │              │               │            point      │
-│       │              ▼               ▼                        │
-│       └─────────────────────▶ ┌────────────┐                 │
-│                               │ Next Phase │                 │
-│                               └────────────┘                 │
-│                                      │                        │
-│                                      ▼                        │
-│                           ┌──────────────────┐               │
-│                           │ Integration      │               │
-│                           │ Review           │               │
-│                           └──────────────────┘               │
-│                                      │                        │
-│                                      ▼                        │
-│                           ┌──────────────────┐               │
-│                           │ Final Code Review│               │
-│                           │ (code-reviewer)  │               │
-│                           └──────────────────┘               │
-│                                      │                        │
-│                                      ▼                        │
-│                           ┌──────────────────┐               │
-│                           │ Final Commit     │               │
-│                           └──────────────────┘               │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Red Flags - STOP
-
-| If You're Thinking | Reality | Action |
-|--------------------|---------|--------|
-| "Skip checkpoint, phase was simple" | Simple phases still have bugs | Run the checkpoint |
-| "Simple phase, no skills needed" | If it writes code, it needs code-foundations | Follow the heuristics |
-| "Review will just slow us down" | Debugging will slow you more | Run the checkpoint |
-| "I'll review all files at the end" | Late discovery = expensive fixes | Review after each phase |
-| "Agent returned full code, I'll use it" | You're burning context | Re-dispatch with constraints |
-| "Failed checkpoint twice, keep trying" | Escalate to user | Stop after 2 revision cycles |
-| "Phase 3 doesn't need code-foundations" | All impl phases need it | Pass the skill |
-| "I know oberagent, I'll skip it" | You'll miss the checklist | Invoke oberagent every time |
-| "oberagent doesn't need oberprompt" | oberagent requires oberprompt in Step 1 | Let oberagent invoke oberprompt |
-| "Plan already specifies skills" | Plans may be incomplete or outdated | Verify and augment plan skills |
-| "I'll just use code-foundations" | Different phases need different skills | Check the skill table each time |
+The review agent examines actual files.
 
 ---
 
 ## Example Execution
 
-### Input: Plan from oberplan
+### Input: Plan with 2 phases
+
+### Generated Checklist
 
 ```markdown
-## Phase 1: Implement auth service
-- Agent: general-purpose
-- Skills: code-foundations
-- Output: Auth service with login/logout
+# Execution: Auth Feature
 
-## Checkpoint: Auth tests pass
+Source: ~/.local/state/oberplan/plans/auth-20240115.md
+Started: 2024-01-15T10:30:00Z
+Status: IN_PROGRESS
 
-## Phase 2: Add auth middleware
-- Agent: general-purpose
-- Skills: code-foundations
-- Output: Middleware protecting routes
+## Checklist
+
+- [ ] 1.1 Identify skills for Phase 1
+- [ ] 1.2 Invoke oberagent for implementation
+- [ ] 1.3 Dispatch agent: auth service
+- [ ] 1.4 Verify file list
+- [ ] 1.5 Invoke oberagent for review
+- [ ] 1.6 Dispatch code review
+- [ ] 1.7 Handle verdict
+- [ ] 1.8 Git commit checkpoint
+- [ ] 2.1 Identify skills for Phase 2
+- [ ] 2.2 Invoke oberagent for implementation
+- [ ] 2.3 Dispatch agent: auth middleware
+- [ ] 2.4 Verify file list
+- [ ] 2.5 Invoke oberagent for review
+- [ ] 2.6 Dispatch code review
+- [ ] 2.7 Handle verdict
+- [ ] 2.8 Git commit checkpoint
+- [ ] FINAL.1 Invoke oberagent for integration
+- [ ] FINAL.2 Dispatch integration review
+- [ ] FINAL.3 Invoke oberagent for code review
+- [ ] FINAL.4 Dispatch final code review
+- [ ] FINAL.5 Handle final verdict
+- [ ] FINAL.6 Final git commit
+
+## Log
+
+[10:30:00] STARTED
 ```
 
-### Execution Flow
+### After Phase 1 Complete
 
-**0. Identify Skills for Phase 1:**
-Phase 1 involves writing code → `code-foundations`
+```markdown
+## Checklist
 
-**1. Dispatch Phase 1:**
+- [x] 1.1 Identify skills for Phase 1 ✓ code-foundations
+- [x] 1.2 Invoke oberagent for implementation ✓ validated
+- [x] 1.3 Dispatch agent: auth service ✓ 3 files
+- [x] 1.4 Verify file list ✓ ok
+- [x] 1.5 Invoke oberagent for review ✓ validated
+- [x] 1.6 Dispatch code review ✓ PASS
+- [x] 1.7 Handle verdict ✓ proceed
+- [x] 1.8 Git commit checkpoint ✓ abc1234
+- [~] 2.1 Identify skills for Phase 2
+...
+
+## Log
+
+[10:30:00] STARTED
+[10:30:05] 1.1 COMPLETE - skills: code-foundations
+[10:30:10] 1.2 COMPLETE - prompt validated
+[10:30:45] 1.3 COMPLETE - FILES: src/auth/service.ts, types.ts, index.ts
+[10:30:50] 1.4 COMPLETE - verified 3 files
+[10:31:00] 1.5 COMPLETE - prompt validated
+[10:31:30] 1.6 COMPLETE - VERDICT: PASS
+[10:31:32] 1.7 COMPLETE - proceeding
+[10:31:40] 1.8 COMPLETE - commit abc1234
+[10:31:45] 2.1 STARTED
 ```
-Task(general-purpose, "Phase 1: auth service",
-  "First invoke code-foundations.
-   Implement auth service with login/logout in src/auth/.
-   Return FILE NAMES ONLY.")
-```
-
-**2. Phase 1 Returns:**
-```
-FILES CREATED: src/auth/service.ts, src/auth/types.ts
-FILES MODIFIED: src/auth/index.ts
-SUMMARY: Implemented AuthService with login/logout methods.
-```
-
-**3. Checkpoint Review (same skill):**
-```
-Task(general-purpose, "Review: Phase 1",
-  "First invoke code-foundations.
-   Review auth implementation in:
-   - src/auth/service.ts
-   - src/auth/types.ts
-   - src/auth/index.ts
-   Check for: patterns, bugs, edge cases.
-   Return: VERDICT, ISSUES if any, SUMMARY.")
-```
-
-**4. Review Returns:**
-```
-VERDICT: PASS
-SUMMARY: Implementation follows codebase patterns, handles edge cases.
-```
-
-**5. Git Commit (checkpoint passed):**
-```bash
-git add -A && git commit -m "feat(auth): complete Phase 1 - auth service
-
-Implemented AuthService with login/logout methods.
-
-Checkpoint: Auth tests pass - PASSED
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-```
-
-**6. Advance to Phase 2...**
 
 ---
 
 ## Integration
 
 ### With oberplan
-Receives approved plans for execution.
+Receives plan file path. Generates checklist from plan content.
 
 ### With oberagent
-**Explicitly invoked before EVERY agent dispatch.** oberagent validates prompt structure, identifies skills, and completes the agent prompt checklist. This is not optional - it's part of the workflow.
+Invoked before EVERY agent dispatch (checklist items 1.2, 1.5, etc.).
 
 ### With oberprompt
-**Invoked by oberagent in Step 1.** oberagent requires oberprompt invocation before writing any agent prompt. This ensures constraint budget, progressive disclosure, and validation checklist are applied to every dispatch.
+Invoked by oberagent. Chain: oberexec → oberagent → oberprompt → dispatch.
 
 ### With code-foundations
-All implementation and review agents invoke code-foundations first (specified in their prompts).
+All implementation and review agents invoke code-foundations.
 
 ### With pr-review-toolkit
-Final code review uses `pr-review-toolkit:code-reviewer` for comprehensive quality assessment. Combines with code-foundations for defense-in-depth review.
+Final code review uses `pr-review-toolkit:code-reviewer`.
 
 ### With oberdebug
 If execution reveals bugs, escalate to oberdebug workflow.
