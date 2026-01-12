@@ -139,6 +139,17 @@ Subagent-driven plan executor that orchestrates implementation phases with check
 
 ---
 
+## Examples
+
+Real-world transcripts showing how skills work together:
+
+| Example | Demonstrates |
+|---------|--------------|
+| [oberplan-window-picker](examples/oberplan-window-picker.md) | Full oberplan workflow: lens selection, requirements clarification, plan construction, bootstrap prompt generation, and the complete skill chain (oberplan → oberexec → oberagent → oberprompt → code-foundations) |
+| [oberagent-code-review](examples/oberagent-code-review.md) | oberagent checklist validation, skill inheritance via explicit instruction, outcome-focused prompting, and structured return format |
+
+---
+
 ## Updating
 
 ```bash
