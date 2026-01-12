@@ -110,7 +110,7 @@ Root cause: The Makefile's `run` target deleted the app bundle right after `dev`
 
 ## Version
 
-Current version: **1.10.0**
+Current version: **1.11.0**
 
 ## License
 
