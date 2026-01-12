@@ -584,6 +584,64 @@ what we're working with.
 
 oberplan adapts its approach based on whether you're building new or enhancing existing code.
 
+### Final Plan Output
+
+After requirements clarification and plan construction:
+
+```
+PLAN COMPLETE - READY FOR EXECUTION
+
+Plan saved to: ~/.local/state/oberplan/plans/thegrid-tmux-picker-2026-01-12.md
+
+---
+Summary
+┌───────┬──────────────────────────────────────────────────┐
+│ Phase │                   Description                    │
+├───────┼──────────────────────────────────────────────────┤
+│ 1     │ Tmux client discovery (tmux list-clients parser) │
+├───────┼──────────────────────────────────────────────────┤
+│ 2     │ Process tree lookup (pgrep -P wrapper)           │
+├───────┼──────────────────────────────────────────────────┤
+│ 3     │ File-based cache layer                           │
+├───────┼──────────────────────────────────────────────────┤
+│ 4     │ Terminal bundle ID detection                     │
+├───────┼──────────────────────────────────────────────────┤
+│ 5     │ Integration into windowsToPickerItems            │
+├───────┼──────────────────────────────────────────────────┤
+│ 6     │ Edge case handling                               │
+└───────┴──────────────────────────────────────────────────┘
+6 phases, 5 checkpoints
+
+---
+Bootstrap Prompt
+
+To execute in a fresh session, paste this:
+
+Navigate to: /Users/r/repos/theGrid
+
+I need you to execute an approved implementation plan for adding tmux
+session names to the window picker.
+
+First, read the plan file at:
+~/.local/state/oberplan/plans/thegrid-tmux-picker-2026-01-12.md
+
+Execute the plan following this workflow:
+- Implement phases sequentially (1 through 6)
+- Run checkpoint validations after each phase
+- Create the new files in grid-cli/internal/tmux/ and grid-cli/internal/process/
+- Modify grid-cli/cmd/grid/main.go for integration
+- Write minimal unit tests for phases 1-3
+- Manual test the final integration with `thegrid pick window`
+
+Begin with Phase 1: Add Tmux Client Discovery.
+```
+
+**Key:** The enhancement plan:
+- Breaks work into 6 focused phases
+- Each phase is a testable unit
+- 5 checkpoints ensure quality gates
+- Bootstrap prompt is specific to the enhancement context
+
 ---
 
 ## When to Use This Pattern
