@@ -33,6 +33,7 @@ oberplan ──→ oberexec ──→ oberagent ──→ oberprompt
 | **oberagent** | Enforces oberprompt principles before agent dispatch | Task tool, agent dispatch, subagent |
 | **oberplan** | Meta-planning with lens skills and checkpoints | "build", "create", "implement", "plan for" |
 | **oberexec** | Subagent-driven plan executor with code reviews | "execute the plan", "run the plan" |
+| **oberweb** | Multi-dimensional web search with parallel subagents | "research this", "comprehensive search", web research |
 
 ## Installation
 
@@ -75,6 +76,14 @@ Provides prompt engineering principles:
 - Progressive disclosure (start simple)
 - Anti-patterns to avoid
 - Validation checklist
+
+### oberweb
+Multi-dimensional web search:
+1. Analyzes query to identify search dimensions (docs, tutorials, discussions, etc.)
+2. Dispatches parallel haiku agents for each dimension
+3. Synthesizes results into concise summary
+4. Returns relevant findings + source URLs
+5. Preserves main agent context
 
 ### oberdebug
 Hypothesis-driven debugging:
