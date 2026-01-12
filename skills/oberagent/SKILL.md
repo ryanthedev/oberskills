@@ -26,22 +26,42 @@ This applies to:
 ## Required Workflow
 
 ```
-1. Define Agent Purpose (what outcome, not what actions)
+1. Invoke oberprompt skill (MANDATORY - loads prompt engineering guidance)
       ↓
-2. Select Agent Type (match to purpose)
+2. Define Agent Purpose (what outcome, not what actions)
       ↓
-3. Identify Applicable Skills (subagents don't inherit skill awareness)
+3. Select Agent Type (match to purpose)
       ↓
-4. Apply Oberprompt Principles (constraint budget, progressive disclosure)
+4. Identify Applicable Skills (subagents don't inherit skill awareness)
       ↓
-5. Write Prompt (following template, include skill instructions)
+5. Write Prompt (following oberprompt template + skill instructions)
       ↓
 6. Validate (checklist)
 ```
 
+**Step 1 is non-negotiable.** The oberprompt skill provides the constraint budget, progressive disclosure patterns, and validation checklist that make agent prompts effective. Without it, you're guessing.
+
 ---
 
-## Step 1: Define Agent Purpose
+## Step 1: Invoke oberprompt
+
+**Before anything else, invoke the oberprompt skill.**
+
+```
+Invoke skill: oberprompt
+```
+
+This loads:
+- Constraint budget guidelines for your model tier
+- Progressive disclosure patterns
+- Validation checklist
+- Anti-patterns to avoid
+
+**Do NOT skip this step.** Even if you "know" oberprompt principles or invoked it earlier in the conversation, invoke it again. Each agent dispatch is a fresh decision point requiring the full checklist.
+
+---
+
+## Step 2: Define Agent Purpose
 
 Before writing ANY prompt, answer:
 
@@ -55,7 +75,7 @@ Before writing ANY prompt, answer:
 
 ---
 
-## Step 2: Select Agent Type
+## Step 3: Select Agent Type
 
 | Agent Type | Use When | Don't Use When |
 |------------|----------|----------------|
@@ -68,7 +88,7 @@ Before writing ANY prompt, answer:
 
 ---
 
-## Step 3: Identify Applicable Skills
+## Step 4: Identify Applicable Skills
 
 **Subagents don't inherit skill awareness.** They start fresh without knowing which skills you have access to. You must explicitly pass relevant skills.
 
@@ -112,46 +132,17 @@ implementation plan and identify any issues with the design.
 
 ---
 
-## Step 4: Apply Oberprompt Principles
-
-### Constraint Budget for Agent Prompts
-
-| Prompt Length | Assessment |
-|---------------|------------|
-| 1-3 sentences | Appropriate for focused tasks |
-| 4-7 sentences | Review: all necessary? |
-| 8+ sentences | Likely over-constrained. Simplify. |
-
-### Progressive Disclosure for Agents
-
-Start simple. Add detail ONLY when agents fail.
-
-| Level | When to Use | Example |
-|-------|-------------|---------|
-| 1. Outcome only | Always start here | "Find where user authentication is implemented" |
-| 2. + Scope hint | Agent searches too broadly | "...focus on src/auth directory" |
-| 3. + Format request | Results hard to use | "...return file paths with brief descriptions" |
-| 4. + Constraints | Specific failures | "...exclude test files" |
-
-**Do NOT start at level 4.**
-
-### What NOT to Include
-
-| Don't Include | Why |
-|---------------|-----|
-| Step-by-step instructions | Agents know how to search/explore |
-| Tool usage guidance | Agents have their own tool knowledge |
-| Exhaustive constraints | Causes over-literal behavior |
-| Implementation details | You're delegating the HOW |
-
----
-
 ## Step 5: Write the Prompt
+
+**Use oberprompt guidance.** Since you invoked oberprompt in Step 1, apply:
+- Constraint budget for your model tier
+- Progressive disclosure (start simple, add constraints only on failure)
+- Outcome-focused framing (what you need, not how to get it)
 
 ### Template
 
 ```
-[SKILLS]: "First invoke [skill-name]" (if applicable - see Step 3)
+[SKILLS]: "First invoke [skill-name]" (if applicable - see Step 4)
 
 [OUTCOME]: What you need to know/have when agent completes
 
@@ -196,12 +187,15 @@ inconsistent error messages and need to understand the current pattern.
 
 | # | Check | Done? |
 |---|-------|-------|
+| 0 | oberprompt skill invoked (Step 1 completed) | [ ] |
 | 1 | Purpose is an OUTCOME, not a list of actions | [ ] |
 | 2 | Agent type matches the purpose | [ ] |
 | 3 | Relevant skills identified and passed to agent | [ ] |
 | 4 | Prompt is ≤3 sentences (or justified if longer) | [ ] |
 | 5 | No step-by-step instructions telling agent HOW | [ ] |
 | 6 | Context included ONLY if agent truly lacks it | [ ] |
+
+**Check 0 is the gatekeeper.** If you didn't invoke oberprompt, checks 1-6 are based on guesswork.
 
 ---
 
@@ -229,6 +223,8 @@ Agent 3: [Outcome C - independent]
 
 | If You're Thinking | Reality | Action |
 |--------------------|---------|--------|
+| "I know oberprompt, skip Step 1" | You'll miss the checklist and constraint budget | Invoke oberprompt every time |
+| "I already invoked oberprompt earlier" | Each dispatch is a fresh decision point | Invoke oberprompt for EACH agent |
 | "I'll just tell it exactly what to do" | You're micromanaging. State the outcome. | Rewrite as outcome |
 | "I need to explain the tools" | Agents know their tools | Remove tool guidance |
 | "More detail = better results" | Often the opposite | Start with 1-2 sentences |
@@ -255,11 +251,12 @@ When an agent returns poor results:
 
 ## Integration with oberprompt
 
-This skill applies oberprompt's core principles to agent prompts:
+**oberprompt is invoked at the start of every oberagent workflow (Step 1).**
 
-- **Prompting Inversion**: Agents are capable. Don't over-constrain.
-- **Progressive Disclosure**: Start simple, add complexity only on failure.
-- **Constraint Budget**: Agent prompts should be SHORT.
-- **Outcome Focus**: Describe WHAT you need, not HOW to get it.
+This ensures you have access to:
+- Full constraint budget guidelines for your model tier
+- Complete progressive disclosure patterns
+- Validation checklist
+- Anti-patterns and red flags
 
-For full prompt engineering guidance, invoke the `oberprompt` skill.
+oberagent orchestrates the workflow; oberprompt provides the prompt engineering substance.

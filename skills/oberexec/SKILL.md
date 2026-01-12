@@ -106,19 +106,60 @@ PLAN VALIDATION FAILED:
 
 ## Phase 2: Phase Dispatch
 
-### Before Every Dispatch: Invoke oberagent
+### Before Every Dispatch: Identify Skills for oberagent
 
-**Before writing any Task call, invoke the oberagent skill.** This ensures:
+**Subagents don't inherit skill awareness.** Before invoking oberagent, you must identify which skills apply to the phase so oberagent can include them in the subagent prompt.
+
+#### Skill Identification Process
+
+**Even if the plan specifies skills, verify and augment.** Plans may be incomplete, outdated, or missing skills that become relevant during execution. Treat plan-specified skills as a starting point, not the final answer.
+
+For each phase, ask: **"What type of work is this phase doing?"**
+
+| If Phase Involves... | Skill to Load | Why |
+|---------------------|---------------|-----|
+| Writing/modifying code | code-foundations | Construction quality, defensive programming |
+| Reviewing code or plans | code-foundations | Design principles, review standards |
+| Debugging or investigating failures | oberdebug | Hypothesis-driven investigation |
+| Writing prompts for LLMs | oberprompt | Prompt engineering principles |
+| Planning implementation | oberplan | Meta-planning orchestration |
+| Building UI/frontend | frontend-design (if available) | Design patterns, accessibility |
+| Working with specific formats | Relevant format skill (pdf, docx, etc.) | Format-specific workflows |
+
+**Heuristics when uncertain:**
+- If writing ANY code → include code-foundations
+- If the phase could fail and need debugging → consider oberdebug
+- If multiple skills seem relevant → include all of them (cheap to invoke, expensive to miss)
+- If pure exploration/search → no skills needed
+
+#### Pass Skills to oberagent
+
+When invoking oberagent, specify which skills to include:
+
+```
+Invoke oberagent for Phase [N].
+Skills identified for this phase: [skill-1, skill-2]
+Phase objective: [objective from plan]
+```
+
+oberagent will incorporate these into the subagent prompt.
+
+### Invoke oberagent
+
+**After identifying skills, invoke the oberagent skill.** This ensures:
 - Prompt follows oberprompt principles (outcome-focused, minimal constraints)
 - Agent type matches the purpose
-- Relevant skills are passed to the subagent
+- Identified skills are passed to the subagent
 - Validation checklist is completed
 
 ```
-1. Invoke oberagent skill
-2. Follow oberagent workflow (define purpose → select type → identify skills → write prompt → validate)
-3. Only then dispatch the Task
+1. Identify applicable skills (above)
+2. Invoke oberagent skill with skills list
+3. oberagent invokes oberprompt first, then: define purpose → select type → write prompt → validate
+4. Only then dispatch the Task
 ```
+
+**The chain is: oberexec → oberagent → oberprompt → agent prompt.**
 
 ### Dispatch Template
 
@@ -128,7 +169,7 @@ For each implementation phase, dispatch using this pattern:
 Task(
   subagent_type="general-purpose",
   description="[Phase N]: [3-word summary]",
-  prompt="First invoke the code-foundations skill.
+  prompt="First invoke [identified skills, comma-separated].
 
   OBJECTIVE: [Phase objective from plan]
 
@@ -146,14 +187,18 @@ Task(
 
 ### Agent Type Selection
 
-| Phase Type | Agent | Skills to Pass |
+| Phase Type | Agent | Typical Skills |
 |------------|-------|----------------|
 | Code implementation | general-purpose | code-foundations |
 | Refactoring | general-purpose | code-foundations |
 | Test writing | general-purpose | code-foundations |
+| Debugging | general-purpose | oberdebug, code-foundations |
+| UI/Frontend work | general-purpose | frontend-design, code-foundations |
 | Research/exploration | Explore | (none needed) |
 | Git operations | Bash | (none needed) |
 | Build/lint | Bash | (none needed) |
+
+**These are starting points.** Use the skill identification process above to determine actual skills per phase.
 
 ### Parallel vs Sequential
 
@@ -171,11 +216,13 @@ Task(
 
 ### Code Review Agent Template
 
+**Identify skills for review:** Reviews typically need `code-foundations`. If the phase involved UI work, also include `frontend-design`. If debugging was involved, include `oberdebug`.
+
 ```
 Task(
   subagent_type="general-purpose",
   description="Review: [Phase N] implementation",
-  prompt="First invoke the code-foundations skill.
+  prompt="First invoke [identified review skills].
 
   REVIEW TASK: Validate the implementation from Phase [N].
 
@@ -237,11 +284,13 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 If checkpoint returns NEEDS_REVISION:
 
+**Re-use the same skills identified for the original phase.** Revisions need the same domain knowledge.
+
 ```
 Task(
   subagent_type="general-purpose",
   description="Fix: [Phase N] revisions",
-  prompt="First invoke the code-foundations skill.
+  prompt="First invoke [same skills as original phase].
 
   REVISION TASK: Address review feedback for Phase [N].
 
@@ -288,11 +337,13 @@ After all phases complete, run two final reviews:
 
 ### Step 1: Integration Review Agent
 
+**Aggregate all skills used across phases.** The integration review should have access to all domain knowledge used during implementation.
+
 ```
 Task(
   subagent_type="general-purpose",
   description="Final review: plan integration",
-  prompt="First invoke the code-foundations skill.
+  prompt="First invoke [all skills used across plan phases].
 
   INTEGRATION REVIEW: Validate complete implementation.
 
@@ -324,11 +375,13 @@ Task(
 
 **After integration passes, dispatch comprehensive code review via oberagent.**
 
+**Always include code-foundations for final review.** Add other skills based on what the plan involved (frontend-design for UI work, etc.).
+
 ```
 Task(
   subagent_type="pr-review-toolkit:code-reviewer",
   description="Final code review: all changes",
-  prompt="First invoke the code-foundations skill.
+  prompt="First invoke [code-foundations + other relevant skills].
 
   FINAL CODE REVIEW: Review all implementation changes from this plan.
 
@@ -439,12 +492,16 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 | If You're Thinking | Reality | Action |
 |--------------------|---------|--------|
 | "Skip checkpoint, phase was simple" | Simple phases still have bugs | Run the checkpoint |
+| "Simple phase, no skills needed" | If it writes code, it needs code-foundations | Follow the heuristics |
 | "Review will just slow us down" | Debugging will slow you more | Run the checkpoint |
 | "I'll review all files at the end" | Late discovery = expensive fixes | Review after each phase |
 | "Agent returned full code, I'll use it" | You're burning context | Re-dispatch with constraints |
 | "Failed checkpoint twice, keep trying" | Escalate to user | Stop after 2 revision cycles |
 | "Phase 3 doesn't need code-foundations" | All impl phases need it | Pass the skill |
 | "I know oberagent, I'll skip it" | You'll miss the checklist | Invoke oberagent every time |
+| "oberagent doesn't need oberprompt" | oberagent requires oberprompt in Step 1 | Let oberagent invoke oberprompt |
+| "Plan already specifies skills" | Plans may be incomplete or outdated | Verify and augment plan skills |
+| "I'll just use code-foundations" | Different phases need different skills | Check the skill table each time |
 
 ---
 
@@ -468,10 +525,13 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ### Execution Flow
 
+**0. Identify Skills for Phase 1:**
+Phase 1 involves writing code → `code-foundations`
+
 **1. Dispatch Phase 1:**
 ```
 Task(general-purpose, "Phase 1: auth service",
-  "First invoke code-foundations skill.
+  "First invoke code-foundations.
    Implement auth service with login/logout in src/auth/.
    Return FILE NAMES ONLY.")
 ```
@@ -483,10 +543,10 @@ FILES MODIFIED: src/auth/index.ts
 SUMMARY: Implemented AuthService with login/logout methods.
 ```
 
-**3. Checkpoint Review:**
+**3. Checkpoint Review (same skill):**
 ```
 Task(general-purpose, "Review: Phase 1",
-  "First invoke code-foundations skill.
+  "First invoke code-foundations.
    Review auth implementation in:
    - src/auth/service.ts
    - src/auth/types.ts
@@ -522,10 +582,10 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 Receives approved plans for execution.
 
 ### With oberagent
-**Explicitly invoked before EVERY agent dispatch.** oberagent validates prompt structure, ensures oberprompt principles are followed, and completes the agent prompt checklist. This is not optional - it's part of the workflow.
+**Explicitly invoked before EVERY agent dispatch.** oberagent validates prompt structure, identifies skills, and completes the agent prompt checklist. This is not optional - it's part of the workflow.
 
 ### With oberprompt
-Invoked transitively through oberagent. oberagent applies oberprompt principles (outcome-focused, constraint budget, progressive disclosure) to each agent prompt.
+**Invoked by oberagent in Step 1.** oberagent requires oberprompt invocation before writing any agent prompt. This ensures constraint budget, progressive disclosure, and validation checklist are applied to every dispatch.
 
 ### With code-foundations
 All implementation and review agents invoke code-foundations first (specified in their prompts).
