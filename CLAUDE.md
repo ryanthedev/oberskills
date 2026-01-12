@@ -14,7 +14,8 @@ oberskills/
 │   └── plugin.json      # Plugin manifest (name, version, description)
 ├── assets/              # Demo screenshots and images
 ├── examples/            # Real-world usage examples
-│   └── oberplan-multi-line-picker.md
+│   ├── oberplan-multi-line-picker.md
+│   └── oberweb-ghostty-floating-terminal.md
 ├── research/            # Research papers and best practices
 │   └── anthropic-best-practices.md
 └── skills/
@@ -26,9 +27,11 @@ oberskills/
     │   └── SKILL.md
     ├── oberplan/        # Meta-planning orchestration
     │   └── SKILL.md
-    └── oberprompt/      # Prompt engineering
-        ├── SKILL.md
-        └── optimization-reference.md
+    ├── oberprompt/      # Prompt engineering
+    │   ├── SKILL.md
+    │   └── optimization-reference.md
+    └── oberweb/         # Multi-dimensional web search
+        └── SKILL.md
 ```
 
 ## Skill File Format
@@ -65,7 +68,8 @@ Install via the RTD marketplace:
 | **oberprompt** | Research-backed prompt engineering for LLM systems |
 | **oberagent** | Enforces oberprompt principles before any agent dispatch |
 | **oberplan** | Meta-planning orchestration with lens skills and final review |
-| **oberexec** | Subagent-driven plan executor with checkpoints and code reviews |
+| **oberexec** | Checklist-driven plan executor with persistent execution file |
+| **oberweb** | Multi-dimensional web search with parallel haiku subagents |
 
 ## Examples
 
@@ -74,3 +78,4 @@ The `examples/` folder contains real-world transcripts showing how skills work t
 | Example | Demonstrates |
 |---------|--------------|
 | [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) | oberplan + code-foundations + oberagent orchestrating a feature with review checkpoints |
+| [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | oberweb + oberagent parallel search for troubleshooting research |
