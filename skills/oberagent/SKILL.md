@@ -82,11 +82,11 @@ Before writing ANY prompt, answer:
 
 | If Agent Will Do... | Consider These Skills |
 |---------------------|----------------------|
-| Write/modify code | code-foundations, strategic-coding |
-| Review code/plans | code-foundations, reviewing-module-design |
-| Debug issues | oberdebug, systematic-debugging |
-| Design interfaces | designing-deep-modules |
-| Build features | brainstorming, feature-dev |
+| Write/modify code | code-foundations (or relevant coding skill) |
+| Review code/plans | code-foundations (or relevant review skill) |
+| Debug issues | oberdebug |
+| Design interfaces | (relevant design skill) |
+| Build features | oberplan |
 | Write prompts | oberprompt |
 
 ### Example

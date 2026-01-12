@@ -265,6 +265,69 @@ optimized = optimizer.compile(
 3. **Layered constraints** - Multiple independent safety checks
 4. **Output validation** - Post-generation filtering
 
+## Multimodal Prompting
+
+### Vision Models
+
+| Element | Guidance |
+|---------|----------|
+| **Spatial references** | Use clock positions ("top-right") or coordinate grids |
+| **Region focus** | "Focus on the area highlighted in red" with bounding box |
+| **Multi-image** | Number explicitly: "In Image 1... In Image 2..." |
+| **OCR tasks** | Request structured extraction: "Extract text as JSON" |
+
+**Visual CoT:** Ask model to "describe what you see before answering" rather than "think step by step".
+
+**Few-shot for vision:** Image tokens are expensive. Use 1-2 representative images, not 5.
+
+---
+
+## Domain-Specific Guidance
+
+### Safety-Critical (Medical, Financial, Legal)
+
+- Use EMPOWER framework: domain terminology attention + multi-dimensional assessment
+- **Mandatory:** Post-hoc calibration frameworks
+- Raw confidence scores are generally unreliable without calibration
+- Reported: 24.7% reduction in factual errors with proper optimization (single study)
+
+### Enterprise Support
+
+- MODP framework: balance task-specific + LLM intrinsic behavior
+- LLM-specific formatting (INST tags, XML) significantly improves accuracy
+- Reported: 8% improvement in Dell NBA tool with 10,000+ agents (single study)
+
+### Code Generation
+
+- Meta-Prompting: Generator (explore) + Auditor (verify) + Optimizer (refine)
+- Test-driven: generate tests first, then implementation
+- Include language/framework version in system prompt
+
+---
+
+## Evidence Summary
+
+| Finding | Magnitude | Source | Confidence |
+|---------|-----------|--------|------------|
+| CoT accuracy improvement | +15-40% typical | Multiple papers | Well-established |
+| Persuasion compliance increase | 33%→72% | Meincke et al. 2025, N=28,000 | Single large study |
+| Structured prompting ceiling | ~4% average | DSPy+HELM | Single study |
+| State-Update token reduction | ~59% | 2509.17766 | Single study |
+| Fixed prompts underestimate | 3/7 benchmarks flipped | HELM study | Single study |
+
+---
+
+## References
+
+- Prompting Inversion: 2510.22251 (constraint harm on strong models)
+- Sensitivity: 2502.16923 (unpredictable prompt sensitivity)
+- Optimization: 2502.18746 (APO framework)
+- Calibration: 2506.00072 (confidence trade-offs)
+- Multi-turn: 2509.17766 (state-update strategy)
+- Compression: 2505.00019 (PCToolkit analysis)
+
+---
+
 ## Research Paper Quick Reference
 
 | Paper ID | Topic | Key Finding |

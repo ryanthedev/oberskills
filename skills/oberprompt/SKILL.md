@@ -169,33 +169,29 @@ When someone says "just add more constraints":
 
 ### Decision Flowchart
 
-```dot
-digraph technique_selection {
-    rankdir=TB;
-
-    START [label="Select prompting\ntechnique" shape=doublecircle];
-    model [label="Model tier?\n(see table above)" shape=diamond];
-    reasoning [label="Requires multi-step\nreasoning?" shape=diamond];
-    examples [label="Have GOOD examples?\n(verified correct,\n2+ patterns, edge cases)" shape=diamond];
-    calibration [label="Need calibrated confidence?\n(routing, rejection,\nrisk assessment)" shape=diamond];
-
-    cot [label="Chain-of-Thought\n(+15-40% accuracy typical)" shape=box style=filled fillcolor=lightblue];
-    fewshot [label="Few-Shot\n(2-5 examples)" shape=box style=filled fillcolor=lightgreen];
-    fewshot_cot [label="Few-Shot + CoT\n(best calibration)" shape=box style=filled fillcolor=lightyellow];
-    zeroshot [label="Zero-Shot\n(baseline)" shape=box style=filled fillcolor=lightgray];
-    zeroshot_cot [label="Zero-Shot CoT\n(cost-effective)" shape=box style=filled fillcolor=lightcyan];
-
-    START -> model;
-    model -> reasoning [label="any tier"];
-    reasoning -> examples [label="yes"];
-    reasoning -> zeroshot [label="no"];
-    examples -> calibration [label="yes\n(good examples)"];
-    examples -> zeroshot_cot [label="no examples\navailable"];
-    calibration -> fewshot_cot [label="yes"];
-    calibration -> cot [label="no"];
-    zeroshot -> fewshot [label="have examples?\nadd for format\nconsistency"];
-    zeroshot -> zeroshot_cot [label="no examples,\nadd 'think\nstep by step'"];
-}
+```
+START: Select prompting technique
+       ↓
+┌──────────────────┐
+│ Requires multi-  │──NO──→ Zero-Shot (baseline)
+│ step reasoning?  │              ↓
+└────────┬─────────┘        Have examples?
+         │ YES                   ↓ YES
+         ↓                  Few-Shot (2-5 examples)
+┌──────────────────┐
+│ Have GOOD        │──NO──→ Zero-Shot CoT
+│ examples?        │        "think step by step"
+└────────┬─────────┘
+         │ YES
+         ↓
+┌──────────────────┐
+│ Need calibrated  │──NO──→ Chain-of-Thought
+│ confidence?      │        (+15-40% accuracy)
+└────────┬─────────┘
+         │ YES
+         ↓
+    Few-Shot + CoT
+    (best calibration)
 ```
 
 ### "Good Examples" Criteria
@@ -354,18 +350,7 @@ The context window is shared. For EACH instruction, ask:
 
 ## Multimodal Prompting
 
-### Vision Models
-
-| Element | Guidance |
-|---------|----------|
-| **Spatial references** | Use clock positions ("top-right") or coordinate grids |
-| **Region focus** | "Focus on the area highlighted in red" with bounding box |
-| **Multi-image** | Number explicitly: "In Image 1... In Image 2..." |
-| **OCR tasks** | Request structured extraction: "Extract text as JSON" |
-
-**Visual CoT:** Ask model to "describe what you see before answering" rather than "think step by step".
-
-**Few-shot for vision:** Image tokens are expensive. Use 1-2 representative images, not 5.
+See [optimization-reference.md](./optimization-reference.md#multimodal-prompting) for vision model guidance.
 
 ---
 
@@ -416,13 +401,7 @@ See [optimization-reference.md](./optimization-reference.md) for details.
 
 ### Compression Strategy
 
-| Context Length | Strategy |
-|----------------|----------|
-| <4k tokens | Compression typically unnecessary |
-| 4k-16k tokens | Test with/without LLMLingua |
-| >16k tokens | LongLLMLingua often improves performance |
-
-**Warning:** Compression tends to increase hallucination risk. Monitor outputs.
+See [optimization-reference.md](./optimization-reference.md#compression-techniques) for compression guidance.
 
 ---
 
@@ -484,56 +463,6 @@ See [optimization-reference.md](./optimization-reference.md) for details.
 
 ---
 
-## Domain-Specific Guidance
+## Domain-Specific & Reference
 
-### Safety-Critical (Medical, Financial, Legal)
-
-- Use EMPOWER framework: domain terminology attention + multi-dimensional assessment
-- **Mandatory:** Post-hoc calibration frameworks
-- Raw confidence scores are generally unreliable without calibration
-- Reported: 24.7% reduction in factual errors with proper optimization (single study)
-
-### Enterprise Support
-
-- MODP framework: balance task-specific + LLM intrinsic behavior
-- LLM-specific formatting (INST tags, XML) significantly improves accuracy
-- Reported: 8% improvement in Dell NBA tool with 10,000+ agents (single study)
-
-### Code Generation
-
-- Meta-Prompting: Generator (explore) + Auditor (verify) + Optimizer (refine)
-- Test-driven: generate tests first, then implementation
-- Include language/framework version in system prompt
-
----
-
-## Limitations
-
-- Most findings from English-language tasks; cross-lingual transfer uncertain
-- Effect sizes may not replicate across model families
-- Many studies used benchmark tasks; real-world performance may differ
-- This guidance current as of early 2025; best practices evolve rapidly
-- Numbers cited are typically single-study results without confidence intervals
-
----
-
-## Evidence Summary
-
-| Finding | Magnitude | Source | Confidence |
-|---------|-----------|--------|------------|
-| CoT accuracy improvement | +15-40% typical | Multiple papers | Well-established |
-| Persuasion compliance increase | 33%→72% | Meincke et al. 2025, N=28,000 | Single large study |
-| Structured prompting ceiling | ~4% average | DSPy+HELM | Single study |
-| State-Update token reduction | ~59% | 2509.17766 | Single study |
-| Fixed prompts underestimate | 3/7 benchmarks flipped | HELM study | Single study |
-
----
-
-## References
-
-- Prompting Inversion: 2510.22251 (constraint harm on strong models)
-- Sensitivity: 2502.16923 (unpredictable prompt sensitivity)
-- Optimization: 2502.18746 (APO framework)
-- Calibration: 2506.00072 (confidence trade-offs)
-- Multi-turn: 2509.17766 (state-update strategy)
-- Compression: 2505.00019 (PCToolkit analysis)
+See [optimization-reference.md](./optimization-reference.md) for domain-specific guidance, evidence summary, and research references.

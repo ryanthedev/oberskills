@@ -89,7 +89,7 @@ Task(
 
 ## Instrumentation Loop
 
-### Step 5: Propose Debug Logs
+### Step 4: Propose Debug Logs
 
 Based on hypothesis, propose instrumentation:
 
@@ -109,24 +109,24 @@ Based on hypothesis, propose instrumentation:
 **Include expected outcome:**
 > "If hypothesis is correct, you should see X. If wrong, you'll see Y instead."
 
-### Step 6: User Executes
+### Step 5: User Executes
 
 User options:
 - Adds the proposed debug logs
 - Runs the reproduction steps
 - Reports back: pastes output OR says "check logs at [path]"
 
-### Step 7: Analyze Evidence
+### Step 6: Analyze Evidence
 
 | Result | Action |
 |--------|--------|
-| Confirmed | Exit loop → Step 8 |
-| Refuted | Refine hypothesis → Back to Step 5 |
-| Inconclusive | Add more instrumentation → Back to Step 5 |
+| Confirmed | Exit loop → Step 7 |
+| Refuted | Refine hypothesis → Back to Step 4 |
+| Inconclusive | Add more instrumentation → Back to Step 4 |
 
 ## Exit
 
-### Step 8: Output Confirmed Root Cause
+### Step 7: Output Confirmed Root Cause
 
 When loop exits with confirmation, provide:
 

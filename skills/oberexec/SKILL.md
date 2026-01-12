@@ -203,9 +203,35 @@ Task(
 
 | Review Verdict | Action |
 |----------------|--------|
-| PASS | Mark phase complete, advance to next |
+| PASS | Git commit, mark phase complete, advance to next |
 | NEEDS_REVISION | Re-dispatch implementation agent with issues |
 | FAIL | Stop execution, report to user |
+
+### Git Commit on Checkpoint Pass
+
+**When a checkpoint passes, commit the work before advancing.**
+
+```bash
+git add -A && git commit -m "feat([feature]): complete Phase [N] - [phase name]
+
+[1-2 sentence summary of what was implemented]
+
+Checkpoint: [checkpoint name] PASSED
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
+
+**Why commit at checkpoints:**
+- Work is validated and known-good
+- Creates restore points if later phases fail
+- Enables partial rollback without losing progress
+- Documents implementation in git history
+
+**Commit message format:**
+- `feat([feature]):` for new functionality
+- `fix([feature]):` for bug fixes during revision
+- Include phase number and name
+- Reference checkpoint that passed
 
 ### Revision Dispatch
 
@@ -299,28 +325,33 @@ Task(
 ## Execution State Machine
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  ┌──────────┐    ┌──────────┐    ┌────────────┐        │
-│  │ Dispatch │───▶│ Execute  │───▶│ Checkpoint │        │
-│  │  Phase   │    │  Agent   │    │   Review   │        │
-│  └──────────┘    └──────────┘    └────────────┘        │
-│       ▲                               │                 │
-│       │                               ▼                 │
-│       │         ┌─────────┐    ┌────────────┐          │
-│       │         │ Revision│◀───│  PASS?     │          │
-│       │         │  Agent  │ NO └────────────┘          │
-│       │         └─────────┘          │ YES             │
-│       │              │               ▼                  │
-│       │              ▼         ┌────────────┐          │
-│       └──────────────┴────────▶│ Next Phase │          │
-│                                └────────────┘          │
-│                                      │                  │
-│                                      ▼                  │
-│                           ┌──────────────────┐         │
-│                           │ Final Validation │         │
-│                           └──────────────────┘         │
-│                                                         │
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│  ┌──────────┐    ┌──────────┐    ┌────────────┐              │
+│  │ Dispatch │───▶│ Execute  │───▶│ Checkpoint │              │
+│  │  Phase   │    │  Agent   │    │   Review   │              │
+│  └──────────┘    └──────────┘    └────────────┘              │
+│       ▲                               │                       │
+│       │                               ▼                       │
+│       │         ┌─────────┐    ┌────────────┐                │
+│       │         │ Revision│◀───│  PASS?     │                │
+│       │         │  Agent  │ NO └────────────┘                │
+│       │         └─────────┘          │ YES                   │
+│       │              │               ▼                        │
+│       │              │         ┌────────────┐                │
+│       │              │         │ Git Commit │ ◀── checkpoint │
+│       │              │         └────────────┘     restore    │
+│       │              │               │            point      │
+│       │              ▼               ▼                        │
+│       └─────────────────────▶ ┌────────────┐                 │
+│                               │ Next Phase │                 │
+│                               └────────────┘                 │
+│                                      │                        │
+│                                      ▼                        │
+│                           ┌──────────────────┐               │
+│                           │ Final Validation │               │
+│                           └──────────────────┘               │
+│                                                               │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -393,7 +424,18 @@ VERDICT: PASS
 SUMMARY: Implementation follows codebase patterns, handles edge cases.
 ```
 
-**5. Advance to Phase 2...**
+**5. Git Commit (checkpoint passed):**
+```bash
+git add -A && git commit -m "feat(auth): complete Phase 1 - auth service
+
+Implemented AuthService with login/logout methods.
+
+Checkpoint: Auth tests pass - PASSED
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
+
+**6. Advance to Phase 2...**
 
 ---
 

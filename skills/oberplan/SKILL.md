@@ -134,119 +134,9 @@ Every plan MUST include:
 | **Checkpoints** | Quality gates between phases | YES |
 | **Risks/Assumptions** | What could go wrong, what we're assuming | YES |
 
----
+### Checkpoints
 
-### Mandatory Checkpoints
-
-**Every plan MUST include quality gates.** Don't just chain implementation phases - insert checkpoints to catch issues early.
-
-#### Checkpoint Types
-
-| Type | Purpose | When to Use |
-|------|---------|-------------|
-| **Code Review** | Verify implementation quality, patterns, edge cases | After any phase that writes/modifies code |
-| **Test Validation** | Confirm functionality works as expected | After implementation, before integration |
-| **Integration Check** | Verify components work together | When phases connect or share state |
-| **Build/Lint Gate** | Catch syntax errors, type issues, style violations | After any code changes |
-| **Capability Proof** | Prove you CAN do something before building on it | Before any visual/rendering/hardware work |
-
-#### Capability Proofs (Visual & Rendering)
-
-**If the plan involves rendering, displaying, or visual output - PROVE IT WORKS FIRST.**
-
-Don't assume APIs, libraries, or rendering pipelines work. Build a minimal proof before investing in the full implementation.
-
-| If Building... | Capability Proof Required |
-|----------------|---------------------------|
-| Desktop app with UI | Render a basic window with test content |
-| Charts/graphs | Render one hardcoded chart, verify it displays |
-| PDF/document generation | Generate minimal PDF, open and verify |
-| Image processing | Load one image, apply one transform, save and verify |
-| Canvas/WebGL | Render a colored rectangle, confirm it appears |
-| Native graphics APIs | Call the API, render primitive, screenshot proof |
-| Electron/Tauri app | Window opens, IPC works, basic render confirmed |
-| Print output | Generate and preview one test page |
-
-**Capability Proof Template:**
-
-```markdown
-## Checkpoint: [Component] Capability Proof
-
-**Type:** Capability Proof
-
-**Proves:** [The specific rendering/visual capability works]
-
-**Minimal Test:**
-1. [Simplest possible code to exercise the capability]
-2. [How to run it]
-3. [What output proves success - screenshot, file, etc.]
-
-**Pass Criteria:**
-- [ ] Output is visible/verifiable (not just "no errors")
-- [ ] API/library behaves as documented
-- [ ] Performance is acceptable for use case
-
-**If Fails:** Stop. Research alternatives before proceeding.
-```
-
-**Why This Matters:**
-
-| Skipping Proof | What Happens |
-|----------------|--------------|
-| "The docs say it works" | Docs lie. Environment differs. Versions conflict. |
-| "I've used this before" | Different OS, different deps, different context. |
-| "We'll fix rendering later" | You build 10 phases on broken foundation. |
-
-#### Checkpoint Placement Rules
-
-| After This... | Insert This Checkpoint |
-|---------------|------------------------|
-| Implementation phase | Test + Code Review |
-| Multiple implementation phases | Integration Check |
-| Refactoring phase | Test (ensure no regression) |
-| API/interface changes | Integration Check + Test |
-| Final implementation phase | Full validation (all types) |
-
-| Before This... | Insert This Checkpoint |
-|----------------|------------------------|
-| Any visual/rendering work | Capability Proof |
-| Using new library/API | Capability Proof |
-| Hardware/device integration | Capability Proof |
-| External service integration | Capability Proof (API responds) |
-
-#### Checkpoint Template
-
-```markdown
-## Checkpoint: [Name]
-
-**Type:** [Code Review | Test Validation | Integration Check | Build Gate]
-
-**Verifies:** [What this checkpoint confirms]
-
-**Pass Criteria:**
-- [ ] [Specific, testable criterion]
-- [ ] [Specific, testable criterion]
-
-**If Fails:** [What to do - usually "return to Phase N"]
-```
-
-#### Example Checkpoint Sequence
-
-```
-Phase 1: Implement auth service
-    ↓
-Checkpoint: Auth unit tests pass
-    ↓
-Phase 2: Implement auth middleware
-    ↓
-Checkpoint: Code review + integration test
-    ↓
-Phase 3: Update API routes
-    ↓
-Checkpoint: Full auth flow validation
-```
-
----
+See [checkpoint-templates.md](references/checkpoint-templates.md) for checkpoint types, capability proofs, placement rules, and templates.
 
 ### Interactive Mode
 
@@ -264,32 +154,7 @@ For each phase:
 
 ### Phase Template
 
-```markdown
-## Phase N: [Name]
-
-**Objective:** [What this phase accomplishes]
-
-**Agent:** [agent-type] with [relevant skills]
-
-**Inputs:** [What this phase needs to start]
-
-**Outputs:** [Concrete deliverables]
-
-**Validation:** [How to verify success]
-
-**Dependencies:** [What must complete first]
-```
-
-### Checkpoint Red Flags
-
-| If You're Thinking | Reality | Action |
-|--------------------|---------|--------|
-| "We'll test at the end" | Bugs compound; late discovery = expensive fixes | Add checkpoint after each impl phase |
-| "This phase is too small for review" | Small phases still introduce bugs | At minimum: build/lint gate |
-| "Tests slow us down" | Debugging without tests is slower | Tests are non-negotiable |
-| "Code review is overkill" | Fresh eyes catch what you missed | Review after significant changes |
-| "The rendering library definitely works" | Prove it. In THIS environment. | Capability proof before building on it |
-| "I'll verify the UI later" | You'll build 5 phases on broken rendering | Prove visual output works FIRST |
+See [phase-templates.md](references/phase-templates.md) for phase and document templates.
 
 ---
 
@@ -362,13 +227,7 @@ FINAL REVIEW COMPLETE:
 
 **Code review the plan itself before execution.**
 
-### Why Review the Plan?
-
-Plans are code for agents. They have:
-- Edge cases that weren't considered
-- Implicit assumptions that should be explicit
-- Phases that are too vague or too specific
-- Missing context agents will need
+Plans are code for agents. They have edge cases, implicit assumptions, and phases that may be too vague.
 
 ### Review Process
 
@@ -402,21 +261,10 @@ Task(
 )
 ```
 
-### Review Outcomes
-
 | Verdict | Action |
 |---------|--------|
 | READY | Proceed to Save Plan |
 | NEEDS_REVISION | Revise plan, re-review (max 2 cycles) |
-
-### Output
-
-```
-PLAN QUALITY REVIEW:
-- Verdict: [READY | NEEDS_REVISION]
-- Issues found: [list or "none"]
-- Revisions made: [list or "n/a"]
-```
 
 ---
 
@@ -426,49 +274,13 @@ PLAN QUALITY REVIEW:
 
 ### File Location
 
-Save to a predictable location:
-
 ```
 ~/.local/state/oberplan/plans/{project-name}-{timestamp}.md
 ```
 
-Example: `~/.local/state/oberplan/plans/thegrid-window-picker-2026-01-12.md`
-
 ### File Format
 
-The saved file should contain:
-
-```markdown
-# Plan: [Title]
-
-**Created:** [timestamp]
-**Project:** [project path]
-**Skills Required:** [list of skills needed for execution]
-
----
-
-[Full plan content from Phase 8: Output]
-
----
-
-## Execution Instructions
-
-To execute this plan in a fresh Claude Code context:
-1. Navigate to the project directory
-2. Use the bootstrap prompt below
-
-## Bootstrap Prompt
-
-[Generated in Phase 9]
-```
-
-### Output
-
-```
-PLAN SAVED:
-- Location: [file path]
-- Ready for: [current context execution | fresh context bootstrap]
-```
+Include: Plan content, execution instructions, and bootstrap prompt.
 
 ---
 
@@ -476,43 +288,13 @@ PLAN SAVED:
 
 **Produce agent-executable planning document.**
 
-### Document Format
+See [phase-templates.md](references/phase-templates.md) for the document format.
 
-```markdown
-# Plan: [Title]
+---
 
-## Objective
-[Single sentence]
+## Phases 9-10: Bootstrap & Handoff
 
-## Phases
-
-### Phase 1: [Name]
-- **Agent:** [type] | **Skills:** [list]
-- **Prompt:** [exact prompt for agent dispatch]
-- **Inputs:** [what agent receives]
-- **Outputs:** [what agent produces]
-- **Validation:** [how to verify]
-
-### Checkpoint: [Name]
-- **Type:** [Code Review | Test Validation | Integration Check | Build Gate]
-- **Pass Criteria:**
-  - [ ] [Criterion 1]
-  - [ ] [Criterion 2]
-- **If Fails:** Return to Phase 1
-
-### Phase 2: [Name]
-[...]
-
-## Execution Order
-[Dependency graph showing phases AND checkpoints]
-
-## Risk Register
-| Risk | Likelihood | Mitigation |
-|------|------------|------------|
-
-## Assumptions
-- [List of assumptions]
-```
+See [bootstrap-guide.md](references/bootstrap-guide.md) for execution prompt generation and handoff procedures.
 
 ---
 
@@ -528,135 +310,6 @@ PLAN SAVED:
 | "No lens skill matches" | Proceed without over-specializing | Generic planning is valid |
 | "We can test everything at the end" | Late bugs are 10x more expensive | Checkpoint after every impl phase |
 | "Checkpoints add overhead" | Debugging without checkpoints adds more | Quality gates are mandatory |
-
----
-
-## Phase 9: Generate Execution Prompt
-
-**Use oberprompt to create a bootstrap prompt for executing the plan in a fresh context.**
-
-### Why a Fresh Context?
-
-Complex plans may exceed the current context window during execution. A fresh context starts with:
-- Full context budget available
-- No accumulated conversation noise
-- Clean state for oberexec
-
-### Bootstrap Prompt Requirements
-
-The bootstrap prompt must:
-1. Load the saved plan file
-2. Invoke the required skills (oberexec, code-foundations, etc.)
-3. Provide enough context for oberexec to start immediately
-4. Be self-contained (no dependencies on prior conversation)
-
-### Generating the Prompt
-
-Invoke oberprompt to craft the bootstrap prompt:
-
-```
-Invoke oberprompt skill, then:
-
-TARGET: Bootstrap prompt for oberexec in fresh Claude Code context
-MODEL TIER: Frontier (Claude Opus 4.5)
-TASK TYPE: Agent orchestration startup
-
-OUTCOME: Single prompt that:
-1. Navigates to project directory
-2. Invokes oberexec skill
-3. Reads the saved plan file
-4. Begins execution immediately
-
-CONSTRAINTS:
-- Must be copy-pasteable into fresh Claude Code session
-- Must reference the saved plan file path
-- Should include skill invocation instructions
-- No ambiguity - oberexec should start without questions
-```
-
-### Bootstrap Prompt Template
-
-```markdown
-## oberexec Bootstrap Prompt
-
-Copy this into a fresh Claude Code session:
-
----
-
-Navigate to: [project path]
-
-I need you to execute an approved implementation plan.
-
-First, invoke the oberexec skill.
-
-Then read the plan file at:
-[saved plan file path]
-
-Execute the plan following oberexec's workflow:
-- Dispatch implementation agents phase by phase
-- Run checkpoint reviews after each phase
-- Track progress through all phases
-- Complete final integration review
-
-The plan has [N] phases and [M] checkpoints.
-
-Required skills for agents: [skill list]
-
-Begin execution now.
-
----
-```
-
-### Output
-
-```
-BOOTSTRAP PROMPT GENERATED:
-- Saved to: [plan file path] (appended to plan document)
-- Ready for: Copy into fresh Claude Code context
-```
-
-Present the bootstrap prompt to the user in a copyable format.
-
----
-
-## Phase 10: Execution Handoff
-
-**Provide bootstrap prompt for fresh context execution.**
-
-Planning consumes significant context. Always hand off to a fresh session for execution.
-
-### Handoff Process
-
-```
-1. Display the bootstrap prompt in a copyable format
-2. Provide the saved plan file path
-3. Instruct user to:
-   a. Open new Claude Code session
-   b. Navigate to project directory
-   c. Paste the bootstrap prompt
-4. End current planning session
-```
-
-### Handoff Output
-
-```
-PLAN COMPLETE - READY FOR EXECUTION
-
-Plan saved to: [file path]
-
-To execute, open a fresh Claude Code session and paste this prompt:
-─────────────────────────────────────
-[bootstrap prompt content]
-─────────────────────────────────────
-
-Instructions:
-1. Open a new Claude Code session
-2. Navigate to [project directory]
-3. Paste the bootstrap prompt above
-4. oberexec will begin plan execution
-
-Planning session complete. Go rest, then execute fresh.
-```
 
 ---
 
