@@ -25,6 +25,8 @@ oberskills/
     │   └── SKILL.md
     ├── oberexec/        # Subagent plan execution
     │   └── SKILL.md
+    ├── oberhack/        # Quick hack mode
+    │   └── SKILL.md
     ├── oberplan/        # Meta-planning orchestration
     │   └── SKILL.md
     ├── oberprompt/      # Prompt engineering
@@ -70,6 +72,7 @@ Install via the RTD marketplace:
 | **oberplan** | Meta-planning orchestration with lens skills and final review |
 | **oberexec** | Checklist-driven plan executor with persistent execution file |
 | **oberweb** | Multi-dimensional web search with parallel haiku subagents |
+| **oberhack** | Quick hack mode - mini planning in-memory, direct subagent dispatch, no files |
 
 ## Examples
 
