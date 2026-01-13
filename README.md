@@ -2,6 +2,43 @@
 
 Advanced Claude Code skills for debugging, prompt engineering, agent dispatch, planning, and execution.
 
+## Quick Example
+
+**Question:**
+> "The border color isn't changing when I switch focus between windows"
+
+**Result with oberdebug:**
+```
+Step 1: Issue Identified
+  Symptom: Border stays blue (inactive) instead of green (active)
+  Expected: Demote (green→blue) + Promote (blue→green)
+
+Step 2: Reproduction confirmed ✓
+
+Step 3: Dispatching Discovery Agent
+  Explore(Analyze border logs) Haiku 4.5
+  → Searching ~/.local/state/thegrid/ for bdr.demote, bdr.promote events...
+  → Found: promote event missing when focus changes within same cell
+
+Root cause: Cell-internal focus changes bypass the border update path.
+```
+
+Each skill follows this pattern: **understand the problem → dispatch targeted agents → synthesize results**.
+
+---
+
+## Skills
+
+| Skill | Purpose | Triggers |
+|-------|---------|----------|
+| **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis | bugs, errors, "not working", test failures |
+| **oberprompt** | Research-backed prompt engineering for LLM systems | writing prompts, system messages, "prompt not working" |
+| **oberagent** | Enforces oberprompt principles before agent dispatch | Task tool, agent dispatch, subagent |
+| **oberplan** | Meta-planning with lens skills and checkpoints | "build", "create", "implement", "plan for" |
+| **oberexec** | Checklist-driven plan executor with code reviews | "execute the plan", "run the plan" |
+| **oberweb** | Multi-dimensional web search with parallel subagents | "research this", "comprehensive search", web research |
+| **oberhack** | Quick hack mode - mini planning, direct dispatch, no files | "quick hack", "just build it", "prototype" |
+
 ## Skill Chain
 
 The skills chain together to enforce quality at every step:
@@ -20,20 +57,9 @@ oberplan ──→ oberexec ──→ oberagent ──→ oberprompt
    │
    └── Planning orchestration
        (lens selection, requirements, plan structure)
+
+oberhack ──→ (skip all ceremony, just dispatch)
 ```
-
-**The chain is explicit:** oberexec identifies skills and invokes oberagent. oberagent invokes oberprompt before writing any agent prompt. Each dispatch is a fresh decision point.
-
-## Skills
-
-| Skill | Purpose | Triggers |
-|-------|---------|----------|
-| **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis | bugs, errors, "not working", test failures |
-| **oberprompt** | Research-backed prompt engineering for LLM systems | writing prompts, system messages, "prompt not working" |
-| **oberagent** | Enforces oberprompt principles before agent dispatch | Task tool, agent dispatch, subagent |
-| **oberplan** | Meta-planning with lens skills and checkpoints | "build", "create", "implement", "plan for" |
-| **oberexec** | Subagent-driven plan executor with code reviews | "execute the plan", "run the plan" |
-| **oberweb** | Multi-dimensional web search with parallel subagents | "research this", "comprehensive search", web research |
 
 ## Installation
 
@@ -48,69 +74,58 @@ oberplan ──→ oberexec ──→ oberagent ──→ oberprompt
 /plugin update oberskills@rtd
 ```
 
-## How It Works
-
-### oberplan
-Creates structured plans with agent assignments, dependencies, and validation criteria. Loads domain-specific "lens skills" based on user intent.
-
-### oberexec
-Executes plans phase-by-phase. Before each dispatch:
-1. Identifies which skills the phase needs
-2. Invokes oberagent with the skills list
-3. Dispatches the agent
-4. Runs checkpoint validation (code review)
-5. Commits on success
-
-### oberagent
-Gates every agent dispatch. Workflow:
-1. **Invoke oberprompt** (mandatory)
-2. Define agent purpose (outcome, not actions)
-3. Select agent type
-4. Identify applicable skills
-5. Write prompt
-6. Validate with checklist
-
-### oberprompt
-Provides prompt engineering principles:
-- Model capability tiers and constraint budgets
-- Progressive disclosure (start simple)
-- Anti-patterns to avoid
-- Validation checklist
-
-### oberweb
-Multi-dimensional web search:
-1. Analyzes query to identify search dimensions (docs, tutorials, discussions, etc.)
-2. Dispatches parallel haiku agents for each dimension
-3. Synthesizes results into concise summary
-4. Returns relevant findings + source URLs
-5. Preserves main agent context
-
-### oberdebug
-Hypothesis-driven debugging:
-1. Infer issue from symptoms
-2. Check reproduction, logs, git history
-3. Propose debug instrumentation
-4. Analyze results
-5. Loop until evidence confirms root cause
-
 ## Examples
 
-| Example | Demonstrates |
-|---------|--------------|
-| [oberplan-window-picker](examples/oberplan-window-picker.md) | Full skill chain: oberplan → oberexec → oberagent → oberprompt |
-| [oberagent-code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance, outcome-focused prompting |
+Each skill has a real-world example showing question → result:
 
-## Demo
+| Skill | Example | Shows |
+|-------|---------|-------|
+| **oberdebug** | [border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | Haiku subagent for log discovery |
+| **oberprompt** | [flaky-agent](examples/oberprompt-flaky-agent.md) | Diagnosing inconsistent prompts |
+| **oberagent** | [code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance |
+| **oberplan** | [multi-line-picker](examples/oberplan-multi-line-picker.md) | Full planning with checkpoints |
+| **oberexec** | [auth-feature](examples/oberexec-auth-feature.md) | Checklist-driven execution |
+| **oberweb** | [ghostty-floating](examples/oberweb-ghostty-floating-terminal.md) | Parallel search dimensions |
+| **oberhack** | [logout-button](examples/oberhack-logout-button.md) | Quick hack, no ceremony |
 
-A launchd service wouldn't start after changing deploy paths. oberdebug diagnosed it by dispatching parallel agents to check logs, verify binary paths, and analyze service behavior:
+## How It Works
 
-![Evidence synthesis and root cause](assets/oberdebug-demo-3.png)
+### oberdebug
+```
+User: "X isn't working"
+  → Infer symptoms
+  → Dispatch Explore agents (haiku) for logs/code
+  → Synthesize evidence
+  → Propose root cause
+```
 
-Root cause: The Makefile's `run` target deleted the app bundle right after `dev` deployed it. Found with evidence, not guessing.
+### oberplan + oberexec
+```
+User: "Build feature X"
+  → oberplan: Requirements → phases → checkpoints
+  → oberexec: Execute each phase with code review gates
+  → Final integration review
+```
+
+### oberhack
+```
+User: "Quick hack: add logout button"
+  → GROK: Header.tsx, wire to auth.logout()
+  → DISPATCH: Task(haiku, "Add button...")
+  → DONE: Build passes, ship it
+```
+
+### oberweb
+```
+User: "Research ghostty floating terminal"
+  → Identify dimensions: docs, config, WM integration, scripts
+  → Dispatch 5 parallel haiku agents
+  → Synthesize: Here's what works...
+```
 
 ## Version
 
-Current version: **1.11.0**
+Current version: **1.14.0**
 
 ## License
 

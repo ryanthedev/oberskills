@@ -80,6 +80,10 @@ The `examples/` folder contains real-world transcripts showing how skills work t
 
 | Example | Demonstrates |
 |---------|--------------|
-| [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) | oberplan + code-foundations + oberagent orchestrating a feature with review checkpoints |
-| [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | oberweb + oberagent parallel search for troubleshooting research |
-| [oberdebug-border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | oberdebug with Haiku subagent for efficient log discovery |
+| [oberdebug-border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | Haiku subagent for log discovery |
+| [oberprompt-flaky-agent](examples/oberprompt-flaky-agent.md) | Diagnosing and fixing inconsistent prompts |
+| [oberagent-code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance |
+| [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) | Full planning with review checkpoints |
+| [oberexec-auth-feature](examples/oberexec-auth-feature.md) | Checklist-driven phase execution |
+| [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | Parallel search dimensions |
+| [oberhack-logout-button](examples/oberhack-logout-button.md) | Quick hack mode, no ceremony |
