@@ -1,113 +1,35 @@
 # oberskills
 
-Advanced Claude Code skills for debugging, prompt engineering, agent dispatch, planning, and execution.
-
-## Quick Example
-
-**Question:**
-> "The border color isn't changing when I switch focus between windows"
-
-**Result with oberdebug:**
-```
-Step 1: Issue Identified
-  Symptom: Border stays blue (inactive) instead of green (active)
-  Expected: Demote (green→blue) + Promote (blue→green)
-
-Step 2: Reproduction confirmed ✓
-
-Step 3: Dispatching Discovery Agent
-  Explore(Analyze border logs) Haiku 4.5
-  → Searching ~/.local/state/thegrid/ for bdr.demote, bdr.promote events...
-  → Found: promote event missing when focus changes within same cell
-
-Root cause: Cell-internal focus changes bypass the border update path.
-```
-
-Each skill follows this pattern: **understand the problem → dispatch targeted agents → synthesize results**.
-
----
-
-## Skills
-
-| Skill | Purpose | Triggers |
-|-------|---------|----------|
-| **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis | bugs, errors, "not working", test failures |
-| **oberprompt** | Research-backed prompt engineering for LLM systems | writing prompts, system messages, "prompt not working" |
-| **oberagent** | Enforces oberprompt principles before agent dispatch | Task tool, agent dispatch, subagent |
-| **oberplan** | Meta-planning with lens skills and checkpoints | "build", "create", "implement", "plan for" |
-| **oberexec** | Checklist-driven plan executor with code reviews | "execute the plan", "run the plan" |
-| **oberweb** | Multi-dimensional web search with parallel subagents | "research this", "comprehensive search", web research |
-| **oberhack** | Quick hack mode - mini planning, direct dispatch, no files | "quick hack", "just build it", "prototype" |
-
-## Skill Chain
-
-The skills chain together to enforce quality at every step:
-
-```
-oberplan ──→ oberexec ──→ oberagent ──→ oberprompt
-   │            │             │             │
-   │            │             │             └── Prompt engineering principles
-   │            │             │                 (constraint budget, validation)
-   │            │             │
-   │            │             └── Agent dispatch validation
-   │            │                 (Step 1: invoke oberprompt)
-   │            │
-   │            └── Phase execution with checkpoints
-   │                (identify skills → invoke oberagent)
-   │
-   └── Planning orchestration
-       (lens selection, requirements, plan structure)
-
-oberhack ──→ (skip all ceremony, just dispatch)
-```
-
-## Installation
-
-```bash
-# Add the RTD marketplace
-/plugin marketplace add ryanthedev/rtd-claude-inn
-
-# Install the plugin
-/plugin install oberskills@rtd
-
-# Update to latest
-/plugin update oberskills@rtd
-```
-
-## Examples
-
-Each skill has a real-world example showing question → result:
-
-| Skill | Example | Shows |
-|-------|---------|-------|
-| **oberdebug** | [border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | Haiku subagent for log discovery |
-| **oberprompt** | [flaky-agent](examples/oberprompt-flaky-agent.md) | Diagnosing inconsistent prompts |
-| **oberagent** | [code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance |
-| **oberplan** | [multi-line-picker](examples/oberplan-multi-line-picker.md) | Full planning with checkpoints |
-| **oberexec** | [auth-feature](examples/oberexec-auth-feature.md) | Checklist-driven execution |
-| **oberweb** | [ghostty-floating](examples/oberweb-ghostty-floating-terminal.md) | Parallel search dimensions |
-| **oberhack** | [logout-button](examples/oberhack-logout-button.md) | Quick hack, no ceremony |
+Advanced agent orchestration skills for Claude Code.
 
 ## How It Works
 
-### oberdebug
+### DEBUG
 ```
-User: "X isn't working"
-  → Infer symptoms
+User: "X isn't working, use oberdebug"
+  → Infer symptoms from description
   → Dispatch Explore agents (haiku) for logs/code
   → Synthesize evidence
-  → Propose root cause
+  → Propose root cause with evidence
 ```
 
-### oberplan + oberexec
+### PLAN + EXECUTE
 ```
-User: "Build feature X"
+User: "Build feature X with oberplan"
   → oberplan: Requirements → phases → checkpoints
   → oberexec: Execute each phase with code review gates
   → Final integration review
 ```
 
-### oberhack
+### SEARCH
+```
+User: "Research X with oberweb"
+  → Identify search dimensions (docs, tutorials, discussions)
+  → Dispatch parallel haiku agents
+  → Synthesize: Here's what works...
+```
+
+### HACK
 ```
 User: "Quick hack: add logout button"
   → GROK: Header.tsx, wire to auth.logout()
@@ -115,13 +37,117 @@ User: "Quick hack: add logout button"
   → DONE: Build passes, ship it
 ```
 
-### oberweb
+---
+
+## Skills
+
+| Skill | Purpose | Example |
+|-------|---------|---------|
+| **oberdebug** | Hypothesis-driven debugging | "use oberdebug, X isn't working" |
+| **oberprompt** | Prompt engineering principles | "use oberprompt to fix this flaky agent" |
+| **oberagent** | Agent dispatch validation | "use oberagent before dispatching" |
+| **oberplan** | Meta-planning with checkpoints | "use oberplan to build feature X" |
+| **oberexec** | Checklist-driven execution | "use oberexec to run the plan" |
+| **oberweb** | Multi-dimensional web search | "use oberweb to research X" |
+| **oberhack** | Quick hack mode, no ceremony | "oberhack: add a logout button" |
+
+---
+
+## Example
+
+**Question:**
+> "The border color isn't changing when I switch focus between windows"
+
+**Result:**
 ```
-User: "Research ghostty floating terminal"
-  → Identify dimensions: docs, config, WM integration, scripts
-  → Dispatch 5 parallel haiku agents
-  → Synthesize: Here's what works...
+Step 1: Issue Classification
+  → DEBUG (signals: "isn't working", visual bug)
+
+Step 2: Symptom Analysis
+  Expected: Demote (green→blue) + Promote (blue→green)
+  Actual: Border stays blue
+
+Step 3: Dispatch Discovery Agent
+  Explore(Analyze border logs) Haiku 4.5
+  → Search ~/.local/state/thegrid/ for bdr.demote, bdr.promote
+  → Found: promote event missing for cell-internal focus changes
+
+Step 4: Root Cause
+  Cell-internal focus changes bypass the border update path.
+  Evidence: Log shows demote fired, promote never fired.
 ```
+
+---
+
+## Skill Chain
+
+The skills chain together based on task type:
+
+```
+oberplan (planning)
+       │
+       └── oberexec (execution)
+              │
+              ├── Phase N ──→ oberagent ──→ oberprompt
+              │                    │             │
+              │                    │             └── Prompt engineering
+              │                    │                 (constraints, validation)
+              │                    │
+              │                    └── Agent dispatch validation
+              │                        (outcome focus, skill loading)
+              │
+              └── Checkpoint ──→ Code review gate
+                                 Git commit on pass
+
+oberdebug (standalone)
+       │
+       └── Dispatch Explore agents (haiku)
+              │
+              └── Synthesize evidence → root cause
+
+oberweb (standalone)
+       │
+       └── Dispatch parallel search agents (haiku)
+              │
+              └── Synthesize results + source URLs
+
+oberhack (standalone)
+       │
+       └── GROK → DISPATCH → DONE (no ceremony)
+```
+
+---
+
+## Installation
+
+```bash
+# Add marketplace (if not already added)
+/plugin marketplace add ryanthedev/rtd-claude-inn
+
+# Install plugin
+/plugin install oberskills@rtd
+
+# Update to latest
+/plugin update oberskills@rtd
+```
+
+## Documentation
+
+For guides and detailed documentation, see `examples/` or the **[Wiki](https://github.com/ryanthedev/oberskills/wiki)**.
+
+## Case Studies
+
+Ranked by how well they demonstrate the skills:
+
+| # | Example | Type | Shows |
+|---|---------|------|-------|
+| 1 | [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) ⭐ | PLAN | Full skill chain with review checkpoints |
+| 2 | [oberdebug-border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | DEBUG | Haiku subagent for efficient log discovery |
+| 3 | [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | SEARCH | 5 parallel dimensions, result synthesis |
+| 4 | [oberprompt-flaky-agent](examples/oberprompt-flaky-agent.md) | PROMPT | Constraint budget diagnosis |
+| 5 | [oberexec-auth-feature](examples/oberexec-auth-feature.md) | EXECUTE | Checklist-driven phase execution |
+| 6 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
+| 7 | [oberhack-logout-button](examples/oberhack-logout-button.md) | HACK | Quick hack, 30 seconds total |
 
 ## Version
 
