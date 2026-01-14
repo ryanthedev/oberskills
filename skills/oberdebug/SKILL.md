@@ -33,12 +33,24 @@ Parse the prompt and any provided assets:
 
 **CRITICAL:** Use the `Task` tool to dispatch these as subagents. This keeps discovery OUT of main context - only summaries return.
 
+**MANDATORY: Invoke oberagent before ANY dispatch.**
+
+```
+→ Skill(oberagent)
+  Agent type: Explore
+  Model: haiku (discovery tasks)
+  Skills: none (exploration only)
+```
+
+oberagent validates the prompt structure and model selection. Only after oberagent approval, dispatch the agents.
+
 **Launch ALL THREE in a single message (parallel execution):**
 
 #### Agent 1: Log Analysis
 ```
 Task(
   subagent_type="Explore",
+  model="haiku",
   description="Analyze logs for [issue]",
   prompt="Issue: [description from Step 1]
 
@@ -55,6 +67,7 @@ Task(
 ```
 Task(
   subagent_type="Explore",
+  model="haiku",
   description="Check git history for [issue]",
   prompt="Issue: [description from Step 1]
 
@@ -71,6 +84,7 @@ Task(
 ```
 Task(
   subagent_type="Explore",
+  model="haiku",
   description="Trace code paths for [issue]",
   prompt="Issue: [description from Step 1]
 
@@ -144,6 +158,8 @@ This output goes to main agent or user for fix implementation.
 
 ## Red Flags - STOP
 
+- **Dispatching agents without invoking oberagent first**
+- **Using wrong model tier** (Explore = haiku, not sonnet/opus)
 - Proposing fixes before evidence confirms hypothesis
 - Skipping instrumentation: "I'm pretty sure it's X"
 - Exiting loop without confirmed evidence
