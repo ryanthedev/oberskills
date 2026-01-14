@@ -151,7 +151,7 @@ Ranked by how well they demonstrate the skills:
 
 ## Version
 
-Current version: **1.14.0**
+Current version: **1.15.0**
 
 ## License
 
