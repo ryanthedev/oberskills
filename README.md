@@ -37,6 +37,16 @@ User: "Quick hack: add logout button"
   → DONE: Build passes, ship it
 ```
 
+### CREATE
+```
+User: "Create a skill for code review"
+  → INTAKE: Problem, triggers, 5+ use rule
+  → DESIGN: Single vs router, freedom level
+  → BUILD: SKILL.md with anti-rationalization table
+  → TEST: Baseline (RED) → Compliance (GREEN) → Loopholes (REFACTOR)
+  → SHIP: Pre-flight checklist, package
+```
+
 ---
 
 ## Skills
@@ -50,6 +60,7 @@ User: "Quick hack: add logout button"
 | **oberexec** | Checklist-driven execution | "use oberexec to run the plan" |
 | **oberweb** | Multi-dimensional web search | "use oberweb to research X" |
 | **oberhack** | Quick hack mode, no ceremony | "oberhack: add a logout button" |
+| **obercreate** | Skill creation with testing | "create a skill for X" |
 
 ---
 
@@ -114,6 +125,13 @@ oberweb (standalone)
 oberhack (standalone)
        │
        └── GROK → DISPATCH → DONE (no ceremony)
+
+obercreate (standalone)
+       │
+       └── INTAKE → DESIGN → BUILD → TEST → SHIP
+              │
+              └── Pressure testing with fresh subagents
+                  Anti-rationalization enforcement
 ```
 
 ---
@@ -151,7 +169,7 @@ Ranked by how well they demonstrate the skills:
 
 ## Version
 
-Current version: **1.15.0**
+Current version: **1.16.0**
 
 ## License
 
