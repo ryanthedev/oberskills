@@ -1,0 +1,314 @@
+---
+name: simplifying-complexity
+description: Use when code is "too complex", needs "simplification", or has verbose/scattered error handling. Also for refactoring when callers do work that belongs in modules, or configuration parameters proliferate.
+---
+
+# Simplify Complexity
+
+## Overview
+
+**Core Principle:** Move complexity from interfaces to implementations, from callers to callees, and from many places to few. The goal is reducing overall system complexity, not just relocating it.
+
+**Three Simplification Levers:**
+1. Pull complexity downward (into implementations)
+2. Define errors out of existence (through better semantics)
+3. Make code obvious (reduce reader effort)
+
+## When to Use
+
+- Code is described as "too complex" or "hard to understand"
+- Error handling is verbose or scattered
+- Refactoring for clarity or simplicity
+- Callers are doing work that belongs in modules
+- Configuration parameters proliferate
+- User says: "simplify", "refactor", "too complex", "reduce errors", "clean up"
+
+## When NOT to Use
+
+- Creating new modules from scratch (see: designing-deep-modules)
+- Reviewing code quality (see: reviewing-module-design)
+- Improving names/comments only (see: improving-code-clarity)
+- Fixing bugs in legacy code (see: maintaining-design-quality)
+- Performance optimization (see: optimizing-critical-paths)
+
+---
+
+## Pull Complexity Downward
+
+### Decision Procedure
+
+Before adding complexity to an interface (new parameters, new exceptions, new caller responsibilities):
+
+```
+1. Is this complexity closely related to the module's existing functionality?
+   NO  → Should it be pulled into a DIFFERENT module?
+         YES → Identify correct module, pull there
+         NO  → Leave in place (may be inherent to caller's domain)
+   YES → Continue
+
+2. Will pulling down simplify code elsewhere in the application?
+   NO  → Do not pull down (no benefit)
+   YES → Continue
+
+3. Will pulling down simplify the module's interface?
+   NO  → Do not pull down (risk of leakage)
+   YES → Pull complexity down
+```
+
+**All three conditions must be YES to pull down.**
+
+**Critical Constraint:** Pulling down UNRELATED complexity creates information leakage. If the complexity isn't intrinsic to the module's core abstraction, it doesn't belong there—find the right home or leave it with the caller.
+
+### Example: Pull Complexity Down
+
+```python
+# BEFORE: Caller handles buffering complexity
+def read_data(file, buffer_size=4096):
+    return file.read(buffer_size)
+
+# Every caller must manage chunking:
+chunks = []
+while True:
+    chunk = read_data(file)
+    if not chunk:
+        break
+    chunks.append(chunk)
+data = b''.join(chunks)
+
+# AFTER: Module handles buffering internally
+def read_all_data(file):
+    """Read entire file, handling buffering internally."""
+    chunks = []
+    while True:
+        chunk = file.read(4096)  # Buffer size is implementation detail
+        if not chunk:
+            break
+        chunks.append(chunk)
+    return b''.join(chunks)
+
+# Caller simplified:
+data = read_all_data(file)
+```
+
+### Configuration Parameters
+
+| Situation | Wrong Approach | Right Approach |
+|-----------|---------------|----------------|
+| Uncertain what value to use | Export parameter | Compute automatically |
+| Different contexts need different values | Export parameter | Use reasonable default, expose only for exceptions |
+| Policy decision unclear | Let user decide | Make a decision and own it |
+
+**Configuration parameters represent incomplete solutions.** Every parameter pushes complexity to every user/administrator. Prefer dynamic computation over static configuration.
+
+---
+
+## Error Reduction Hierarchy
+
+Apply in order of preference:
+
+| Priority | Technique | How It Works | Example |
+|----------|-----------|--------------|---------|
+| **1** | Define out | Change semantics so error is impossible | `unset(x)` = "ensure x doesn't exist" (not "delete existing x") |
+| **2** | Mask | Handle at low level, hide from callers | TCP retransmits lost packets internally |
+| **3** | Aggregate | Single handler for multiple exceptions | One catch block in dispatcher handles all `NoSuchParameter` |
+| **Special** | Crash | Print diagnostic and abort (app-level only) | `malloc` failure in non-recoverable contexts |
+
+**Note on "Crash":** This is NOT level 4 of a hierarchy—it's a special case for truly unrecoverable errors in application code. Libraries should NEVER crash; they expose errors for callers to decide. "Just crash" applies only when recovery is impossible AND the application type permits it (CLI tools yes, long-running servers rarely).
+
+### Error Reduction Decision Procedure
+
+```
+When facing an exception handling decision:
+
+1. Can semantics be redefined to eliminate the error condition?
+   YES → Define out of existence
+   NO  → Continue
+
+2. Can exception be handled at low level without exposing?
+   YES → Mask
+   NO  → Continue
+
+3. Can multiple exceptions share the same handling?
+   YES → Aggregate
+   NO  → Continue
+
+4. Is error rare, unrecoverable, and non-value-critical?
+   YES → Just crash
+   NO  → Must expose (exception information needed outside module)
+```
+
+### Warning Signs
+
+| Pattern | Problem | Fix |
+|---------|---------|-----|
+| Try/catch in every caller | Complexity scattered | Aggregate at dispatcher |
+| Many exception types | Over-defensive programming | Define errors out or mask |
+| Error return codes everywhere | Same as exceptions | Apply hierarchy |
+| `if err != nil` proliferation | Go-style symptom | Aggregate or define out |
+
+### When NOT to Apply Hierarchy
+
+Do NOT apply error reduction in these cases:
+
+| Exception Case | Why | What to Do Instead |
+|----------------|-----|-------------------|
+| **Security-critical errors** | Aggregating auth errors loses security-relevant distinctions | Keep distinct types for audit/logging |
+| **Retry-differentiated errors** | Callers need different retry strategies per error type | Expose type info for retry decisions |
+| **Silent data loss risk** | Define-out can mask user errors, complicate debugging | Fail fast for essential data errors |
+| **Library code** | Callers should decide crash policy, not library | Expose errors; let app-level code crash |
+| **Caller needs to know** | Masking hides actionable info (e.g., persistent failures) | Expose even if handling is internal |
+
+### Validation Gates
+
+Before applying each technique:
+
+| Technique | Gate Question |
+|-----------|---------------|
+| **Define out** | Does anyone NEED to detect this error case? |
+| **Mask** | Does the caller have ANY useful response to this error? |
+| **Aggregate** | Do callers handle these errors identically? |
+| **Crash** | Is this (a) application-level code, (b) truly unrecoverable, AND (c) crash acceptable for this app type? |
+
+If the answer suggests exposing the error, expose it—even if hierarchy says otherwise.
+
+**Sometimes exposing is correct:** If exception information is genuinely needed by callers for different handling, exposing it is the right design—not a failure to simplify.
+
+### Define-Out Appropriateness Test
+
+Before defining an error out of existence, verify it's an *incidental* error (safe) not an *essential* error (must fail fast):
+
+| Question | If YES → | If NO → |
+|----------|----------|---------|
+| Would this state occur in normal, correct operation? | Safe to define out | Fail fast |
+| Can the caller proceed meaningfully with the "defined out" state? | Safe | Expose error |
+| Does the user/system have another way to detect this condition if needed? | Safe | Consider exposing |
+
+**Example:** Empty file → empty dict `{}`
+- Empty file in normal operation? Maybe (new file)
+- Can caller proceed with `{}`? Depends on context
+- Other detection path? No
+
+**Verdict:** Context-dependent—not always safe to define out. Ask caller's needs.
+
+---
+
+## Obviousness Techniques
+
+### Three Ways to Make Code Obvious
+
+| Technique | How | When to Use |
+|-----------|-----|-------------|
+| **Reduce information needed** | Abstraction, eliminate special cases | Design-level changes |
+| **Leverage reader knowledge** | Follow conventions, meet expectations | Incremental improvements |
+| **Present explicitly** | Good names, strategic comments | When other techniques insufficient |
+
+### Obviousness Test
+
+If a code reviewer says your code is not obvious, **it is not obvious**—regardless of how clear it seems to you. Use reviewer feedback to learn what made it nonobvious.
+
+### Common Obviousness Problems
+
+| Problem | Why Nonobvious | Fix |
+|---------|----------------|-----|
+| Generic containers (Pair, Tuple) | `getKey()` obscures meaning | Define specific class with named fields |
+| Event-driven handlers | Control flow hidden | Document invocation context |
+| Type mismatches | `List` declared, `ArrayList` allocated | Match declaration to allocation |
+| Violated expectations | Code doesn't do what reader assumes | Document or refactor to meet expectations |
+
+---
+
+## Mandatory Output: Show Your Work
+
+**Before presenting simplified code, output a technique analysis table:**
+
+```
+| Error Condition | Technique | Gate Check | Reasoning |
+|-----------------|-----------|------------|-----------|
+| [each error]    | [1-4]     | [PASS/FAIL]| [why]     |
+```
+
+This prevents claiming hierarchy application without evidence.
+
+---
+
+## Transformation Checklist (Mandatory Gate)
+
+**Do NOT present simplified code until ALL boxes are checked:**
+
+- [ ] Walked through EACH level of hierarchy for EACH error condition
+- [ ] Documented why earlier levels were rejected (if applicable)
+- [ ] Verified validation gates passed for each technique applied
+- [ ] Complexity moved to fewer places (not just relocated)
+- [ ] Interfaces are simpler than before
+- [ ] Callers do less work than before
+- [ ] Error handling is consolidated or eliminated
+- [ ] Reader needs less context to understand
+
+---
+
+## Anti-Rationalization Table
+
+| Rationalization | Counter |
+|-----------------|---------|
+| "This is obvious, I don't need the hierarchy" | **Stop.** The hierarchy exists because intuition fails. Walk through each level explicitly. |
+| "Define-out is over-engineering" | **Stop.** Define-out is the MOST valuable technique. Justify in writing why semantics cannot change. |
+| "Python/language already handles this" | **Stop.** This IS masking (level 2). Document it explicitly as technique application, not skip. |
+| "Creating a custom exception is overkill" | **Stop.** Count handlers before/after. If count drops, aggregation is worth it. |
+| "I've seen this pattern before" | **Stop.** Pattern recognition ≠ systematic analysis. Walk hierarchy anyway. |
+| "Callers might need to distinguish these errors" | **Stop.** Verify with evidence. Default is aggregate; distinguish only when proven necessary. |
+| "The baseline was good enough" | **Stop.** "Good enough" is not the goal. The goal is minimal complexity. Check each level. |
+| "The code is shorter, so it's simpler" | **Stop.** Complexity ≠ length. Verify: interfaces simpler? Callers do less? Errors consolidated? |
+
+---
+
+## Principle Conflict Resolution
+
+When simplification techniques conflict with other good practices:
+
+| Conflict | Resolution Heuristic |
+|----------|---------------------|
+| **Define Out vs Fail Fast** | Define out for *incidental* errors (empty file when empty is valid). Fail fast for *essential* errors (corrupt data, security violations). |
+| **Mask vs Explicit Handling** | Mask when caller has no useful response. Expose when caller's response differs from internal handling. |
+| **Aggregate vs Specific Messages** | Aggregate the HANDLING (single exception type), but preserve specificity in the MESSAGE (different strings). |
+| **Pull Down vs Single Responsibility** | Only pull down complexity RELATED to module's core purpose. If unrelated, don't bloat. |
+| **Obviousness vs Brevity** | When define-out or masking creates non-obvious behavior, add a comment explaining the semantic choice. |
+| **Simplify vs Performance** | Prefer simplicity unless profiling proves performance-critical. Document when performance forces complexity exposure. |
+
+---
+
+## Red Flags
+
+| Red Flag | Symptom | Transformation |
+|----------|---------|----------------|
+| **Scattered exceptions** | Same error handled in many places | Aggregate to single handler |
+| **Configuration explosion** | Many parameters exported | Compute automatically, provide defaults |
+| **Caller doing module's work** | Logic outside that belongs inside | Pull complexity down |
+| **Over-defensive code** | Checks for impossible conditions | Define errors out |
+| **Generic containers** | `Pair<X,Y>` obscures meaning | Create named structure |
+| **Comment-dependent understanding** | Code unreadable without comments | Refactor for obviousness |
+
+---
+
+## Quick Reference
+
+```
+SIMPLIFICATION PRIORITY ORDER:
+
+1. Can I ELIMINATE this complexity entirely?
+   → Redefine semantics, remove special cases
+
+2. Can I CONSOLIDATE this complexity?
+   → Pull down into one module, aggregate handlers
+
+3. Can I HIDE this complexity?
+   → Mask in implementation, use defaults
+
+4. Can I CLARIFY this complexity?
+   → Better names, strategic comments, meet conventions
+
+Do NOT just move complexity around—reduce it.
+```
+
+---
+
+*References: [aposd-foundations](../references/aposd-foundations.md) for complexity symptoms*
