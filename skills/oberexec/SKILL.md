@@ -1,9 +1,19 @@
 ---
 name: oberexec
-description: Execute approved plans using subagent orchestration. Use after oberplan produces a plan and user approves. Maintains a persistent execution checklist file that tracks all actions. Dispatches agents for each phase, enforces checkpoints with code-review subagents, and tracks progress. Triggers on "execute the plan", "run the plan", "implement the plan", "start execution", "dispatch agents for plan", or when you have an approved plan ready for implementation.
+description: "DEPRECATED: Use code-foundations:building instead. Plan execution for coding tasks is better grounded in code-foundations. For general-purpose plan/execute frameworks, consider other options."
 ---
 
 # Skill: oberexec
+
+> **DEPRECATED**
+>
+> This skill is being retired. For coding tasks, use:
+> - `code-foundations:building` - Checklist-based execution with progress tracking
+> - Pairs with `code-foundations:whiteboarding` for the full plan-to-execution workflow
+>
+> **Why?** Planning and execution of coding tasks are better grounded in code-foundations, which provides domain-specific guidance (Code Complete, APOSD) rather than generic orchestration.
+>
+> **For general-purpose plan/execute needs**, there are likely better frameworks available that focus on orchestration without the coding-specific overhead this skill attempted.
 
 Checklist-driven plan executor. Maintains a persistent execution file that IS the plan state. The skill's sole purpose is completing that checklist.
 

@@ -197,6 +197,19 @@ Objective: Search [dimension] and extract relevant information
 
 **Then dispatch all in parallel.** Use haiku for speed and cost.
 
+### Research File Location
+
+Each search agent saves results to a file:
+```
+~/.local/state/oberweb/{timestamp}-{query-slug}-{dimension}.md
+```
+
+Example: `~/.local/state/oberweb/20260121-143052-nextjs-auth-official.md`
+
+Create the directory if it doesn't exist.
+
+### Search Agent Dispatch
+
 For each dimension from the orchestrator:
 
 ```
@@ -204,15 +217,27 @@ Task(
   subagent_type="general-purpose",
   model="haiku",
   description="oberweb: search [dimension]",
-  prompt="OBJECTIVE: Find relevant information for this search.
+  prompt="OBJECTIVE: Find relevant information for this search and save to file.
 
   SEARCH QUERY: [query from orchestrator]
   CONTEXT: Part of research on [original user query]
+  OUTPUT FILE: ~/.local/state/oberweb/[timestamp]-[query-slug]-[dimension].md
 
   TASK:
   1. Use WebSearch to find relevant results
   2. Use WebFetch on the top 2-3 most promising URLs
   3. Extract key information relevant to the query
+  4. Write results to the output file using Write tool
+  5. Return ONLY the file path
+
+  FILE FORMAT:
+  # Research: [dimension]
+  Query: [search query]
+  Timestamp: [ISO timestamp]
+
+  ## Results
+  - [URL]: [2-3 sentence summary of relevant content]
+  - [URL]: [2-3 sentence summary of relevant content]
 
   CONSTRAINTS:
   - MAX 2-3 sentences per URL
@@ -220,9 +245,7 @@ Task(
   - NO more than 5 URLs total
 
   RETURN FORMAT:
-  RESULTS:
-  - [URL]: [2-3 sentence summary of relevant content]
-  - [URL]: [2-3 sentence summary of relevant content]
+  FILE: [path to written file]
 
   ONLY include results that are directly relevant. Skip generic or tangential content."
 )
@@ -230,11 +253,13 @@ Task(
 
 **Dispatch Pattern:**
 ```
-// Single message with multiple Task calls
-Task(haiku, "search dimension 1", ...)
-Task(haiku, "search dimension 2", ...)
-Task(haiku, "search dimension 3", ...)
+// Single message with multiple Task calls - each saves to file
+Task(haiku, "search dimension 1", ...) → FILE: ~/.local/state/oberweb/20260121-143052-query-official.md
+Task(haiku, "search dimension 2", ...) → FILE: ~/.local/state/oberweb/20260121-143052-query-tutorial.md
+Task(haiku, "search dimension 3", ...) → FILE: ~/.local/state/oberweb/20260121-143052-query-issues.md
 ```
+
+**Why files?** Keeps search agent output out of orchestrator context. Synthesis agent reads files directly.
 
 ---
 
@@ -247,25 +272,33 @@ Skills identified: (none - filtering/organizing only)
 Objective: Synthesize search results into concise summary with source URLs
 ```
 
-After all search agents return, synthesize the results:
+After all search agents return their file paths, dispatch the synthesis agent.
+
+**Uses opus** - synthesis requires complex reasoning: cross-referencing sources, identifying patterns, resolving conflicts, and producing coherent analysis.
 
 ```
 Task(
   subagent_type="general-purpose",
-  model="haiku",
+  model="opus",
   description="oberweb: synthesize results",
   prompt="OBJECTIVE: Synthesize search results into a coherent summary.
 
   ORIGINAL QUERY: [user's original query]
 
-  SEARCH RESULTS:
-  [aggregated results from all search agents]
+  RESEARCH FILES TO READ:
+  [list all file paths returned by search agents, e.g.:]
+  - ~/.local/state/oberweb/20260121-143052-query-official.md
+  - ~/.local/state/oberweb/20260121-143052-query-tutorial.md
+  - ~/.local/state/oberweb/20260121-143052-query-issues.md
 
   TASK:
-  1. Remove duplicates and low-relevance results
-  2. Organize by theme or importance
-  3. Create a summary that answers the original query
-  4. Preserve all source URLs
+  1. Read each research file using the Read tool
+  2. Cross-reference findings across dimensions
+  3. Remove duplicates and low-relevance results
+  4. Identify patterns, conflicts, and consensus
+  5. Organize by theme or importance
+  6. Create a summary that answers the original query
+  7. Preserve all source URLs
 
   RETURN FORMAT:
   SUMMARY:
@@ -364,13 +397,19 @@ Return the synthesis to the main agent. The main agent receives:
 |-------|-------|-----------|
 | Orchestrator | haiku | Fast, simple planning task |
 | Search agents | haiku | Parallel, many instances, cost-sensitive |
-| Synthesis agent | haiku | Filtering/organizing, not complex reasoning |
+| Synthesis agent | opus | Complex reasoning: cross-referencing, pattern recognition, conflict resolution |
 
-**Why haiku throughout:**
+**Why haiku for search:**
 - Web search is I/O bound, not reasoning bound
 - Parallel execution benefits from fast response
 - Cost scales with number of dimensions
-- Results are validated by source URLs, not model reasoning
+- Results saved to files, not returned to orchestrator
+
+**Why opus for synthesis:**
+- Cross-referencing multiple research files requires deep reasoning
+- Identifying patterns and conflicts across dimensions is complex
+- Producing coherent analysis from disparate sources needs strong reasoning
+- Single agent, not parallel - cost is bounded
 
 ---
 
@@ -379,9 +418,14 @@ Return the synthesis to the main agent. The main agent receives:
 | Component | Approximate Tokens |
 |-----------|-------------------|
 | Orchestrator response | ~200 |
-| Per search agent | ~500 |
+| Per search agent response | ~50 (file path only) |
 | Synthesis response | ~800 |
-| **Total returned to main** | ~1000-1500 |
+| **Total returned to main** | ~1000-1200 |
+
+**File-based architecture benefits:**
+- Search agents return file paths, not content (~50 tokens vs ~500)
+- Synthesis agent reads files directly, doesn't inflate orchestrator context
+- Main agent receives only the final synthesis
 
 Compare to naive approach: 5 WebFetch calls = 5000+ tokens of raw content.
 
@@ -435,13 +479,14 @@ SOURCES:
 | "Web results are universal" | Every setup is different | Ground results against local context |
 | "One search is enough" | Single searches miss angles | Use 2-5 dimensions |
 | "Return all results" | Context pollution | Filter aggressively |
-| "Use sonnet for better quality" | Adds latency, cost; haiku is sufficient | Stick with haiku |
+| "Use opus for search agents" | Adds latency, cost; haiku is sufficient for search | Opus only for synthesis |
 | "Skip synthesis, just aggregate" | Raw results overwhelm main agent | Always synthesize |
 | "Skip oberagent, it's just search" | Still dispatching agents | Invoke oberagent for EVERY dispatch |
 | "I invoked oberagent for orchestrator" | Each dispatch needs its own oberagent | Invoke oberagent 3+ times total |
 | "Search agents are simple, skip oberagent" | Simple ≠ exempt from validation | oberagent validates ALL prompts |
 | "oberagent is overhead for parallel agents" | Validation prevents wasted parallel calls | Validate first, then dispatch |
 | "Agent returned full page content" | Constraint violation, burning context | Re-dispatch with stricter constraints |
+| "Search agent returned content instead of file path" | Defeats file-based architecture | Re-dispatch, must write to file |
 | "I'll let synthesis handle filtering" | Garbage in = garbage out | Each agent must filter |
 | "Orchestrator returned 8 dimensions" | Too many = slow, costly, diminishing returns | Cap at 5, pick most relevant |
 

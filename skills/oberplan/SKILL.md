@@ -1,9 +1,19 @@
 ---
 name: oberplan
-description: Use when ANY planning, scoping, or design work is needed BEFORE implementation. Invoke when user asks to "build", "create", "implement", "add feature", "design", or describes desired functionality. CRITICAL - this skill dispatches FIRST, identifies relevant lens skills, clarifies requirements, and produces agent-executable plans. Triggers on "help me build", "I want to create", "let's implement", "design a", "plan for", "how should we approach", "figure out how to", or any request that requires understanding WHAT to build before building it.
+description: "DEPRECATED: Use code-foundations:whiteboarding and code-foundations:building instead. Planning and execution for coding tasks is better grounded in code-foundations. For general-purpose plan/execute frameworks, consider other options."
 ---
 
 # Skill: oberplan
+
+> **DEPRECATED**
+>
+> This skill is being retired. For coding tasks, use:
+> - `code-foundations:whiteboarding` - Discovery-oriented planning that produces implementation-ready plans
+> - `code-foundations:building` - Checklist-based execution of whiteboard plans
+>
+> **Why?** Planning and execution of coding tasks are better grounded in code-foundations, which provides domain-specific guidance (Code Complete, APOSD) rather than generic orchestration.
+>
+> **For general-purpose plan/execute needs**, there are likely better frameworks available that focus on orchestration without the coding-specific overhead this skill attempted.
 
 Meta-skill that orchestrates planning by loading domain-specific lens skills, clarifying requirements, and producing agent-executable plans.
 
