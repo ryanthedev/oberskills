@@ -162,11 +162,8 @@ Ranked by how well they demonstrate the skills:
 | 1 | [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) ⭐ | PLAN | Full skill chain with review checkpoints |
 | 2 | [oberdebug-border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | DEBUG | Haiku subagent for efficient log discovery |
 | 3 | [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | SEARCH | 5 parallel dimensions, result synthesis |
-| 4 | [oberprompt-flaky-agent](examples/oberprompt-flaky-agent.md) | PROMPT | Constraint budget diagnosis |
-| 5 | [oberexec-auth-feature](examples/oberexec-auth-feature.md) | EXECUTE | Checklist-driven phase execution |
-| 6 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
-| 7 | [oberagent-model-selection](examples/oberagent-model-selection.md) | AGENT | Model tier selection with oberprompt |
-| 8 | [oberhack-logout-button](examples/oberhack-logout-button.md) | HACK | Quick hack, 30 seconds total |
+| 4 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
+| 5 | [oberagent-model-selection](examples/oberagent-model-selection.md) | AGENT | Model tier selection with oberprompt |
 
 ## Version
 
