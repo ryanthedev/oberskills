@@ -165,7 +165,8 @@ Ranked by how well they demonstrate the skills:
 | 4 | [oberprompt-flaky-agent](examples/oberprompt-flaky-agent.md) | PROMPT | Constraint budget diagnosis |
 | 5 | [oberexec-auth-feature](examples/oberexec-auth-feature.md) | EXECUTE | Checklist-driven phase execution |
 | 6 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
-| 7 | [oberhack-logout-button](examples/oberhack-logout-button.md) | HACK | Quick hack, 30 seconds total |
+| 7 | [oberagent-model-selection](examples/oberagent-model-selection.md) | AGENT | Model tier selection with oberprompt |
+| 8 | [oberhack-logout-button](examples/oberhack-logout-button.md) | HACK | Quick hack, 30 seconds total |
 
 ## Version
 
