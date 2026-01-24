@@ -1,6 +1,6 @@
 ---
 name: oberweb
-description: Multi-dimensional web search orchestrator. Use when the user needs comprehensive web research that would benefit from parallel searches across different angles. Dispatches multiple fast subagents (haiku) to search in parallel, synthesizes results, and returns only relevant information with source URLs. Preserves main agent context by handling search complexity in subagents. Triggers on "research this", "find information about", "search the web for", "comprehensive search", or when a single search wouldn't capture all relevant aspects.
+description: Multi-dimensional web search orchestrator. Use when the user needs comprehensive web research that would benefit from parallel searches across different angles. Dispatches fast haiku subagents to search in parallel, saves results to files, then synthesizes with opus. Preserves main agent context by handling search complexity in subagents. Triggers on "research this", "find information about", "search the web for", "comprehensive search", or when a single search wouldn't capture all relevant aspects.
 ---
 
 # Skill: oberweb
@@ -45,7 +45,7 @@ oberweb breaks a query into dimensions and searches them in parallel with fast, 
       ↓
 3. Invoke oberagent → Dispatch Search Agents (parallel haiku)
       ↓
-4. Invoke oberagent → Dispatch Synthesis Agent (haiku)
+4. Invoke oberagent → Dispatch Synthesis Agent (opus)
       ↓
 5. Ground Results (validate against local context)
       ↓
