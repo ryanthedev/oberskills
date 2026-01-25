@@ -188,6 +188,24 @@ Task(
 
 ## Step 3: Dispatch Search Agents (via oberagent)
 
+### Preview Search Plan
+
+**Before dispatching, show the user what will be searched:**
+
+```
+SEARCH PLAN for "[user query]":
+  1. [dimension]: [search query]
+  2. [dimension]: [search query]
+  3. [dimension]: [search query]
+  ...
+
+Dispatching [N] parallel search agents...
+```
+
+This gives visibility into the search strategy before agents run.
+
+### Validate and Dispatch
+
 **Invoke oberagent for EACH search agent:**
 ```
 Invoke oberagent for oberweb search agent.
