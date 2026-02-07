@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Repository Purpose
 
-This is a Claude Code plugin containing reusable skills - workflow patterns that guide Claude through specific tasks like debugging, prompt engineering, and agent dispatch.
+This is a Claude Code plugin containing reusable skills - workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, and web search.
 
 ## Structure
 
@@ -14,24 +14,31 @@ oberskills/
 │   └── plugin.json      # Plugin manifest (name, version, description)
 ├── assets/              # Demo screenshots and images
 ├── examples/            # Real-world usage examples
-│   ├── oberplan-multi-line-picker.md
+│   ├── oberagent-code-review.md
+│   ├── oberagent-model-selection.md
 │   └── oberweb-ghostty-floating-terminal.md
 ├── research/            # Research papers and best practices
-│   └── anthropic-best-practices.md
+│   ├── agentic-orchestration/
+│   ├── anthropic-best-practices.md
+│   ├── FRAMEWORK-skill-best-practices.md
+│   ├── GUIDE-skill-compliance-and-persuasion.md
+│   ├── REFERENCE-skill-structure-and-constraints.md
+│   └── references/
 └── skills/
     ├── oberagent/       # Agent dispatch enforcement
     │   └── SKILL.md
-    ├── oberdebug/       # Hypothesis-driven debugging
-    │   └── SKILL.md
-    ├── oberexec/        # Subagent plan execution
-    │   └── SKILL.md
-    ├── oberhack/        # Quick hack mode
-    │   └── SKILL.md
-    ├── oberplan/        # Meta-planning orchestration
-    │   └── SKILL.md
+    ├── obercreate/      # Skill creation and review
+    │   ├── SKILL.md
+    │   └── references/
+    │       ├── review-prompt.md
+    │       ├── review-skill.md
+    │       ├── router-patterns.md
+    │       └── testing-protocol.md
     ├── oberprompt/      # Prompt engineering
     │   ├── SKILL.md
     │   └── optimization-reference.md
+    ├── obershot/        # Screenshot capture and analysis
+    │   └── SKILL.md
     └── oberweb/         # Multi-dimensional web search
         └── SKILL.md
 ```
@@ -66,13 +73,11 @@ Install via the RTD marketplace:
 
 | Skill | Purpose |
 |-------|---------|
-| **oberdebug** | Hypothesis-driven debugging with evidence-based root cause analysis |
-| **oberprompt** | Research-backed prompt engineering for LLM systems |
 | **oberagent** | Enforces oberprompt principles before any agent dispatch |
-| **oberplan** | Meta-planning orchestration with lens skills and final review |
-| **oberexec** | Checklist-driven plan executor with persistent execution file |
+| **obercreate** | Skill creation and review with checklist-driven quality gates |
+| **oberprompt** | Research-backed prompt engineering for LLM systems |
+| **obershot** | Context-efficient screenshot capture and analysis |
 | **oberweb** | Multi-dimensional web search with parallel haiku subagents |
-| **oberhack** | Quick hack mode - mini planning in-memory, direct subagent dispatch, no files |
 
 ## Examples
 
@@ -80,8 +85,6 @@ The `examples/` folder contains real-world transcripts showing how skills work t
 
 | Example | Demonstrates |
 |---------|--------------|
-| [oberdebug-border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | Haiku subagent for log discovery |
 | [oberagent-code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance |
 | [oberagent-model-selection](examples/oberagent-model-selection.md) | Model tier selection with oberprompt |
-| [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) | Full planning with review checkpoints |
 | [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | Parallel search dimensions |

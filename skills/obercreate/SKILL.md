@@ -1,9 +1,27 @@
 ---
 name: obercreate
-description: Meta-skill for creating production-quality skills. Use when user wants to create a new skill, convert workflows into skills, or build multi-skill systems with routing. Triggers on "create skill", "build skill", "make me a skill", "skill for X", "convert to skill", "automate this workflow". Guides through checklist-driven creation with integrated pressure testing. Outputs single skills OR skill sets with router.
+description: Meta-skill for creating AND reviewing production-quality skills and agent prompts. Use when creating new skills, reviewing existing skills for quality, or auditing agent prompts for issues. Triggers on "create skill", "build skill", "review skill", "audit skill", "check skill", "review prompt", "audit agent", "check agent prompt", "skill health check", "convert to skill".
 ---
 
 # Skill: obercreate
+
+Create or review skills and agent prompts with checklist-driven quality gates.
+
+---
+
+## Mode Selection
+
+| User Intent | Mode | Workflow |
+|-------------|------|----------|
+| "create skill", "build skill", "make skill for X" | CREATE | INTAKE → DESIGN → BUILD → TEST → SHIP |
+| "review skill", "audit skill", "check skill" | REVIEW-SKILL | Load `references/review-skill.md` |
+| "review prompt", "audit agent", "check agent prompt" | REVIEW-PROMPT | Load `references/review-prompt.md` |
+
+**If unclear:** Ask "Are you creating something new or reviewing something existing?"
+
+---
+
+# CREATE Mode
 
 ```
 INTAKE → DESIGN → BUILD → TEST → SHIP
@@ -246,6 +264,7 @@ scripts/package_skill.py <path/to/skill>
 
 ## Anti-Rationalization Table
 
+### CREATE Mode
 | Rationalization | Reality |
 |-----------------|---------|
 | "This skill is simple, skip testing" | Simple skills still fail under pressure |
@@ -259,13 +278,23 @@ scripts/package_skill.py <path/to/skill>
 | "I tested it mentally while writing" | Mental testing cannot capture rationalization patterns |
 | "User said skip testing" | User owns outcome, not process. Testing protects both |
 
+### REVIEW Mode
+| Rationalization | Reality |
+|-----------------|---------|
+| "The skill works, no need to review" | Working ≠ quality. Review catches drift and rot |
+| "I wrote it, I know what's wrong" | Author blindness is real. Fresh eyes find issues |
+| "Review is just testing again" | Review audits design decisions, not just behavior |
+| "Quick glance is enough" | Quick glance misses structure and pressure resistance |
+| "The prompt is short, no issues" | Short prompts often miss constraints and edge cases |
+| "Security testing is overkill" | Internal prompts often have elevated permissions |
+
 ---
 
 ## Integration
 
-- **oberplan**: Use for complex skill sets requiring architecture decisions
-- **oberdebug**: Switch if skill misbehaves in production
 - **oberprompt**: Apply for refining skill descriptions and instructions
+- **oberagent**: Invoke before dispatching subagents during TEST phase
+- **code-foundations:whiteboarding**: Use for complex skill sets requiring architecture decisions
 
 ---
 

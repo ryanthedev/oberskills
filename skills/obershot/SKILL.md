@@ -132,6 +132,5 @@ pip install mss Pillow
 
 ## Integration
 
-- **oberdebug**: Capture screen state when debugging visual issues
-- **oberplan**: Screenshot milestones during UI implementation
-- **oberhack**: Quick screenshot for visual verification
+- **code-foundations:debug**: Capture screen state when debugging visual issues
+- **code-foundations:building**: Screenshot milestones during UI implementation

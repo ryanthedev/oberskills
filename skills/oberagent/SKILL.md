@@ -5,21 +5,22 @@ description: CRITICAL - Invoke FIRST before ANY Task tool call. This skill gates
 
 # Skill: oberagent
 
-Meta-skill that enforces prompt engineering best practices before dispatching agents.
+**Output:** Just the Task tool call. Work through the checklist internally.
 
-## The Iron Law
+---
+
+## The Iron Laws
 
 ```
-NO AGENT PROMPT SHIPS WITHOUT COMPLETING THE AGENT PROMPT CHECKLIST
+1. NO AGENT PROMPT SHIPS WITHOUT COMPLETING THE CHECKLIST
+2. SUBAGENTS DON'T INHERIT SKILLS - LOAD RELEVANT SKILLS INTO THE PROMPT
 ```
 
-This applies to:
-- "Quick" agent dispatches
-- "Simple" Task tool calls
-- Agents that "just need to search"
-- Your 10th agent after 9 successes
+**Law 1** applies to all dispatches - quick, simple, or your 10th agent.
 
-**Skipping this workflow = accepting subagent failures.**
+**Law 2** means: If the task needs a skill (code review, debugging, prompt engineering), you MUST tell the subagent to invoke that skill. Subagents start fresh with zero skill awareness.
+
+**Skipping either law = accepting subagent failures.**
 
 ---
 
@@ -133,9 +134,9 @@ Before writing ANY prompt, answer:
 
 ---
 
-## Step 5: Identify Applicable Skills
+## Step 5: Load Relevant Skills (Iron Law 2)
 
-**Subagents don't inherit skill awareness.** They start fresh without knowing which skills you have access to. You must explicitly pass relevant skills.
+**Subagents don't inherit skill awareness.** They start fresh with zero knowledge of available skills. If the task needs a skill, you MUST tell the subagent to invoke it.
 
 ### Process
 
@@ -149,9 +150,9 @@ Before writing ANY prompt, answer:
 |---------------------|----------------------|
 | Write/modify code | code-foundations (or relevant coding skill) |
 | Review code/plans | code-foundations (or relevant review skill) |
-| Debug issues | oberdebug |
+| Debug issues | code-foundations:debug |
 | Design interfaces | (relevant design skill) |
-| Build features | oberplan |
+| Build features | code-foundations:building |
 | Write prompts | oberprompt |
 
 ### Example
@@ -240,12 +241,12 @@ inconsistent error messages and need to understand the current pattern.
 | 1 | Purpose is an OUTCOME, not a list of actions | [ ] |
 | 2 | Agent type matches the purpose | [ ] |
 | 3 | Model tier matches task complexity (not defaulting to Opus) | [ ] |
-| 4 | Relevant skills identified and passed to agent | [ ] |
+| 4 | **Relevant skills loaded into prompt (Iron Law 2)** | [ ] |
 | 5 | Prompt is ≤3 sentences (or justified if longer) | [ ] |
 | 6 | No step-by-step instructions telling agent HOW | [ ] |
 | 7 | Context included ONLY if agent truly lacks it | [ ] |
 
-**Check 0 is the gatekeeper.** If you didn't invoke oberprompt, checks 1-7 are based on guesswork.
+**Checks 0 and 4 are the iron laws.** Skip either = subagent failures.
 
 ---
 
@@ -274,12 +275,12 @@ Agent 3: [Outcome C - independent]
 | If You're Thinking | Reality | Action |
 |--------------------|---------|--------|
 | "I know oberprompt, skip Step 1" | You'll miss the checklist and constraint budget | Invoke oberprompt every time |
-| "I already invoked oberprompt earlier" | Each dispatch is a fresh decision point | Invoke oberprompt for EACH agent |
+| "Subagent will figure out which skills to use" | **Subagents have zero skill awareness** | Load relevant skills into prompt (Iron Law 2) |
+| "It's just a simple task, no skills needed" | If task matches a skill's purpose, load it | Check skill-to-task mapping |
 | "Just use Opus to be safe" | Opus isn't always better; haiku/sonnet excel at focused tasks | Match model to task complexity |
 | "I'll just tell it exactly what to do" | You're micromanaging. State the outcome. | Rewrite as outcome |
 | "I need to explain the tools" | Agents know their tools | Remove tool guidance |
 | "More detail = better results" | Often the opposite | Start with 1-2 sentences |
-| "This is too simple" | Simple prompts often work best | Test before adding complexity |
 | "I'll dispatch now, fix later" | You're creating rework | Complete checklist first |
 
 ---

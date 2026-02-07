@@ -4,40 +4,15 @@ Advanced agent orchestration skills for Claude Code.
 
 ## How It Works
 
-### DEBUG
-```
-User: "X isn't working, use oberdebug"
-  → Infer symptoms from description
-  → Dispatch Explore agents (haiku) for logs/code
-  → Synthesize evidence
-  → Propose root cause with evidence
-```
-
-### PLAN + EXECUTE
-```
-User: "Build feature X with oberplan"
-  → oberplan: Requirements → phases → checkpoints
-  → oberexec: Execute each phase with code review gates
-  → Final integration review
-```
-
 ### SEARCH
 ```
 User: "Research X with oberweb"
   → Identify search dimensions (docs, tutorials, discussions)
-  → Dispatch parallel haiku agents
-  → Synthesize: Here's what works...
+  → Dispatch parallel sonnet search agents
+  → Synthesize results with user's model + source URLs
 ```
 
-### HACK
-```
-User: "Quick hack: add logout button"
-  → GROK: Header.tsx, wire to auth.logout()
-  → DISPATCH: Task(haiku, "Add button...")
-  → DONE: Build passes, ship it
-```
-
-### CREATE
+### CREATE / REVIEW
 ```
 User: "Create a skill for code review"
   → INTAKE: Problem, triggers, 5+ use rule
@@ -45,6 +20,19 @@ User: "Create a skill for code review"
   → BUILD: SKILL.md with anti-rationalization table
   → TEST: Baseline (RED) → Compliance (GREEN) → Loopholes (REFACTOR)
   → SHIP: Pre-flight checklist, package
+
+User: "Review this agent prompt"
+  → Load review-prompt.md checklist
+  → Structure, efficiency, security audit
+  → Verdict table with fixes
+```
+
+### SCREENSHOT
+```
+User: "Take a screenshot and analyze it"
+  → Capture screen
+  → Dispatch haiku analyzer
+  → Return summary with insights
 ```
 
 ---
@@ -53,85 +41,41 @@ User: "Create a skill for code review"
 
 | Skill | Purpose | Example |
 |-------|---------|---------|
-| **oberdebug** | Hypothesis-driven debugging | "use oberdebug, X isn't working" |
 | **oberprompt** | Prompt engineering principles | "use oberprompt to fix this flaky agent" |
 | **oberagent** | Agent dispatch validation | "use oberagent before dispatching" |
-| **oberplan** | Meta-planning with checkpoints | "use oberplan to build feature X" |
-| **oberexec** | Checklist-driven execution | "use oberexec to run the plan" |
 | **oberweb** | Multi-dimensional web search | "use oberweb to research X" |
-| **oberhack** | Quick hack mode, no ceremony | "oberhack: add a logout button" |
-| **obercreate** | Skill creation with testing | "create a skill for X" |
-
----
-
-## Example
-
-**Question:**
-> "The border color isn't changing when I switch focus between windows"
-
-**Result:**
-```
-Step 1: Issue Classification
-  → DEBUG (signals: "isn't working", visual bug)
-
-Step 2: Symptom Analysis
-  Expected: Demote (green→blue) + Promote (blue→green)
-  Actual: Border stays blue
-
-Step 3: Dispatch Discovery Agent
-  Explore(Analyze border logs) Haiku 4.5
-  → Search ~/.local/state/thegrid/ for bdr.demote, bdr.promote
-  → Found: promote event missing for cell-internal focus changes
-
-Step 4: Root Cause
-  Cell-internal focus changes bypass the border update path.
-  Evidence: Log shows demote fired, promote never fired.
-```
+| **obercreate** | Skill creation AND review | "create a skill for X" / "review this prompt" |
+| **obershot** | Screenshot capture and analysis | "take a screenshot and analyze it" |
 
 ---
 
 ## Skill Chain
 
-The skills chain together based on task type:
-
 ```
-oberplan (planning)
-       │
-       └── oberexec (execution)
-              │
-              ├── Phase N ──→ oberagent ──→ oberprompt
-              │                    │             │
-              │                    │             └── Prompt engineering
-              │                    │                 (constraints, validation)
-              │                    │
-              │                    └── Agent dispatch validation
-              │                        (outcome focus, skill loading)
-              │
-              └── Checkpoint ──→ Code review gate
-                                 Git commit on pass
-
-oberdebug (standalone)
-       │
-       └── Dispatch Explore agents (haiku)
-              │
-              └── Synthesize evidence → root cause
-
 oberweb (standalone)
        │
-       └── Dispatch parallel search agents (haiku)
+       └── Dispatch parallel sonnet search agents
               │
-              └── Synthesize results + source URLs
-
-oberhack (standalone)
-       │
-       └── GROK → DISPATCH → DONE (no ceremony)
+              └── Synthesize with user's model + source URLs
 
 obercreate (standalone)
        │
-       └── INTAKE → DESIGN → BUILD → TEST → SHIP
+       ├── CREATE: INTAKE → DESIGN → BUILD → TEST → SHIP
+       │              │
+       │              └── Pressure testing with fresh subagents
+       │
+       └── REVIEW: Load checklist → Audit → Verdict table
+
+oberagent (invoked before any agent dispatch)
+       │
+       └── oberprompt
               │
-              └── Pressure testing with fresh subagents
-                  Anti-rationalization enforcement
+              └── Prompt engineering
+                  (constraints, validation)
+
+obershot (standalone)
+       │
+       └── Capture → Dispatch haiku analyzer → Return summary
 ```
 
 ---
@@ -155,19 +99,15 @@ For guides and detailed documentation, see `examples/` or the **[Wiki](https://g
 
 ## Case Studies
 
-Ranked by how well they demonstrate the skills:
-
 | # | Example | Type | Shows |
 |---|---------|------|-------|
-| 1 | [oberplan-multi-line-picker](examples/oberplan-multi-line-picker.md) ⭐ | PLAN | Full skill chain with review checkpoints |
-| 2 | [oberdebug-border-focus-haiku](examples/oberdebug-border-focus-haiku.md) | DEBUG | Haiku subagent for efficient log discovery |
-| 3 | [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | SEARCH | 5 parallel dimensions, result synthesis |
-| 4 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
-| 5 | [oberagent-model-selection](examples/oberagent-model-selection.md) | AGENT | Model tier selection with oberprompt |
+| 1 | [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | SEARCH | 5 parallel dimensions, result synthesis |
+| 2 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
+| 3 | [oberagent-model-selection](examples/oberagent-model-selection.md) | AGENT | Model tier selection with oberprompt |
 
 ## Version
 
-Current version: **1.17.0**
+Current version: **1.20.0**
 
 ## License
 

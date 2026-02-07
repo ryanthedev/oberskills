@@ -1,29 +1,16 @@
 ---
 name: oberprompt
-description: MUST use before writing ANY prompt for Task tool, subagents, or agent dispatch. Use when writing prompts, system messages, agent instructions, hooks, or skills. Use when prompts produce inconsistent results, wrong outputs, or hallucinations. Use when optimizing prompts for accuracy, calibration, or efficiency. Use when debugging broken prompts. Triggers on "improve my prompt", "prompt engineering", "system prompt design", "agent instructions", "Task tool prompt", "subagent prompt", "agent dispatch", "flaky LLM outputs", "overconfident responses", "prompt not working", "hallucinating", "prompt injection defense".
+description: Prompt engineering with two modes. FIX mode (default) silently improves prompts. REVIEW mode analyzes prompts verbosely. Use when writing prompts, fixing flaky prompts, or reviewing prompt quality. Triggers on "fix prompt", "improve prompt", "review prompt", "analyze prompt", "prompt engineering", "prompt not working", "flaky outputs".
 ---
 
 # Skill: oberprompt
 
-## Overview
+## Modes
 
-Research-backed prompt engineering for LLM systems. Core insight from 80+ papers: **prompt effectiveness varies dramatically with model capability, task type, and optimization strategy**. What works for GPT-3.5 may harm GPT-4+. What helps reasoning tasks may hurt creative tasks.
-
-**Key finding:** Structured prompting with DSPy+HELM shows fixed prompts underestimate LLM performance by ~4% on average (single study; may vary by task).
-
-## The Iron Law
-
-```
-NO PROMPT SHIPS WITHOUT COMPLETING THE VALIDATION CHECKLIST
-```
-
-This applies to:
-- "Quick" prompts
-- "Obvious" prompts
-- Prompts that "always work"
-- Your 11th prompt after 10 successes
-
-**Skipping validation = accepting unknown failure modes.**
+| Mode | When | Output |
+|------|------|--------|
+| **FIX** (default) | Writing/improving prompts | Fixed prompt only |
+| **REVIEW** | "review prompt", "analyze prompt" | Full analysis + verdict |
 
 ---
 

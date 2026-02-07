@@ -1,10 +1,10 @@
 {
   "name": "oberskills",
-  "version": "1.17.0",
-  "description": "Advanced Claude Code skills: hypothesis-driven debugging, prompt optimization, agent dispatch enforcement, meta-planning, subagent plan execution, multi-dimensional web search, quick hack mode, and skill creation with testing",
+  "version": "1.20.0",
+  "description": "Advanced Claude Code skills for prompt optimization, agent dispatch enforcement, skill creation and review, screenshot analysis, and web search",
   "author": {
     "name": "r"
   },
   "license": "MIT",
-  "keywords": ["debugging", "skills", "workflow", "agents", "execution", "orchestration"]
+  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "screenshot-analysis"]
 }
