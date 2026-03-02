@@ -5,6 +5,8 @@ description: Meta-skill for creating AND reviewing production-quality skills and
 
 # Skill: obercreate
 
+**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `obercreate v{version}` before proceeding.
+
 Create or review skills and agent prompts with checklist-driven quality gates.
 
 ---

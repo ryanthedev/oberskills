@@ -5,6 +5,8 @@ description: CRITICAL - Invoke FIRST before ANY Task tool call. This skill gates
 
 # Skill: oberagent
 
+**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `oberagent v{version}` before proceeding.
+
 **Output:** Just the Task tool call. Work through the checklist internally.
 
 ---

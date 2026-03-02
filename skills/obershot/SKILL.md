@@ -1,9 +1,11 @@
 ---
 name: obershot
-description: Context-efficient screenshot capture and analysis. Use when needing to see, analyze, or interact with screen content. Dispatches haiku subagent to analyze full-res image, returns summary + thumbnail to preserve context. Triggers on "take a screenshot", "screenshot", "what's on my screen", "capture screen", "show me the screen", "analyze this window".
+description: Context-efficient screenshot capture and analysis. Use when needing to see, analyze, or interact with screen content. Dispatches haiku subagent to analyze full-res image, returns summary + thumbnail to preserve context. Supports full screen, active window, or specific window by name. Triggers on "take a screenshot", "screenshot", "what's on my screen", "capture screen", "show me the screen", "analyze this window", "screenshot of [app name]".
 ---
 
 # Skill: obershot
+
+**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `obershot v{version}` before proceeding.
 
 ```
 CAPTURE → ANALYZE (haiku) → RETURN summary + thumbnail
@@ -19,6 +21,8 @@ Main agent never loads full-res image. Haiku does the analysis, returns text.
 |------|---------|----------|
 | Full screen | `--mode full` | See everything |
 | Active window | `--mode active` | Focus on current app |
+| Named window | `--mode window --name "Firefox"` | Target a specific window by title or app name |
+| List windows | `--list-windows` | Show available windows (for debugging) |
 
 ---
 
@@ -27,16 +31,30 @@ Main agent never loads full-res image. Haiku does the analysis, returns text.
 ### 1. Capture
 
 ```bash
+# Full screen or active window
 python scripts/capture.py --mode [full|active]
+
+# Specific window by name (matches title first, then app name)
+python scripts/capture.py --mode window --name "Firefox"
+python scripts/capture.py --mode window --name "VS Code"
+python scripts/capture.py --mode window --name "Terminal"
 ```
+
+**Matching rules for `--name`:**
+- Case-insensitive substring match
+- Checks window titles first (e.g., "My Doc - Google Docs")
+- Falls back to app/owner name (e.g., "Firefox", "Code")
+- On no match: error includes list of available windows
 
 **Output (JSON to stdout):**
 ```json
 {
   "full_resolution": {"path": "/tmp/obershot_full.png", "width": 2560, "height": 1440},
-  "thumbnail": {"path": "/tmp/obershot_thumb.png", "width": 480, "height": 270}
+  "thumbnail": {"path": "/tmp/obershot_thumb.png", "width": 480, "height": 270},
+  "window": {"matched_name": "My Page - Firefox", "owner": "Firefox", "id": 12345}
 }
 ```
+The `window` field only appears in `--mode window`. On macOS, uses `screencapture -l` which captures the window even if partially behind other windows.
 
 ### 2. Analyze with Haiku Subagent
 
@@ -83,6 +101,16 @@ User: "How does the login screen look?"
    social login options below. Form is centered, looks clean on mobile viewport."
 ```
 
+### Specific Window
+```
+User: "Take a screenshot of the Slack window"
+
+1. Capture: python scripts/capture.py --mode window --name "Slack"
+2. Analyze: Haiku examines full-res
+3. Return: "Slack is showing the #engineering channel. Latest message is from
+   Alice about the deploy. There are 3 unread channels in the sidebar."
+```
+
 ### Automation Help
 ```
 User: "Where's the submit button?"
@@ -111,7 +139,11 @@ User: "Is there an error message showing?"
 pip install mss Pillow
 ```
 
-**Platform-specific (for active window):**
+**For named window capture (`--mode window`):**
+- Requires [thegrid](https://github.com/ryanthedev/thegrid) with `grid-server` running
+- Uses `thegrid window find` to locate windows by name and `screencapture -l` to capture
+
+**Platform-specific (for active window `--mode active`):**
 - macOS: Uses AppleScript (built-in)
 - Windows: Uses ctypes (built-in)
 - Linux: Requires `xdotool` (`sudo apt install xdotool`)

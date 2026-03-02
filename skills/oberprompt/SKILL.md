@@ -5,6 +5,8 @@ description: Prompt engineering with two modes. FIX mode (default) silently impr
 
 # Skill: oberprompt
 
+**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `oberprompt v{version}` before proceeding.
+
 ## Modes
 
 | Mode | When | Output |

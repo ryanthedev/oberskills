@@ -5,6 +5,8 @@ description: Multi-dimensional web search orchestrator. Use when the user needs 
 
 # Skill: oberweb
 
+**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `oberweb v{version}` before proceeding.
+
 ```
 GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
 ```
@@ -73,7 +75,8 @@ Task(
   subagent_type="general-purpose",
   model="sonnet",
   description="oberweb: search [dimension]",
-  prompt="OBJECTIVE: Extract actionable, specific information for this search dimension.
+  prompt="OBJECTIVE: Extract and distill precise information for this search dimension.
+  Do NOT summarize. Pull exact details, quote sources, preserve specificity.
 
   SEARCH QUERY: [query from orchestrator]
   LOCAL CONTEXT: [grounding from orchestrator]
@@ -82,23 +85,26 @@ Task(
   TASK:
   1. WebSearch the query
   2. WebFetch top 3-4 URLs
-  3. Extract: code examples, concrete steps, caveats, version info
+  3. Extract verbatim: exact numbers, version strings, config snippets, CLI commands, concrete steps, caveats
   4. Flag conflicts with LOCAL CONTEXT
   5. Write to file, return path only
 
   FILE FORMAT:
   # Research: [dimension]
 
-  ## Key Findings
-  [3-5 actionable bullets]
+  ## Extracted Details
+  Per source — quote or reproduce exactly. No paraphrasing.
 
-  ## Sources
   ### [URL]
-  - Key insight: [specific detail]
-  - Code/config: [if applicable]
+  - Exact finding: [verbatim quote or precise detail with numbers/versions]
+  - Code/config: [literal snippet if applicable]
+  - Caveats: [specific limitations, version requirements, known issues]
+
+  ## Cross-Source Patterns
+  [What multiple sources agree on — cite which]
 
   ## Conflicts with Local Context
-  [contradictions]
+  [Specific contradictions — cite source]
 
   RETURN: FILE: [path]"
 )
