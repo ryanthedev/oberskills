@@ -13,10 +13,6 @@ oberskills/
 ├── .claude-plugin/
 │   └── plugin.json      # Plugin manifest (name, version, description)
 ├── assets/              # Demo screenshots and images
-├── examples/            # Real-world usage examples
-│   ├── oberagent-code-review.md
-│   ├── oberagent-model-selection.md
-│   └── oberweb-ghostty-floating-terminal.md
 ├── research/            # Research papers and best practices
 │   ├── agentic-orchestration/
 │   ├── anthropic-best-practices.md
@@ -60,6 +56,8 @@ description: When to use this skill - triggers skill selection
 
 The `description` field is critical - it tells Claude when to invoke the skill.
 
+All skills display their version at runtime by reading from `.claude-plugin/plugin.json`, which serves as the single source of truth for the plugin version.
+
 ## Installation
 
 Install via the RTD marketplace:
@@ -76,15 +74,6 @@ Install via the RTD marketplace:
 | **oberagent** | Enforces oberprompt principles before any agent dispatch |
 | **obercreate** | Skill creation and review with checklist-driven quality gates |
 | **oberprompt** | Research-backed prompt engineering for LLM systems |
-| **obershot** | Context-efficient screenshot capture and analysis |
-| **oberweb** | Multi-dimensional web search with parallel haiku subagents |
+| **obershot** | Context-efficient screenshot capture and analysis; supports full screen, active window, or named window capture (`--mode window --name "Name"`) via thegrid integration |
+| **oberweb** | Multi-dimensional web search with parallel sonnet subagents that extract and distill (not summarize) precise information |
 
-## Examples
-
-The `examples/` folder contains real-world transcripts showing how skills work together:
-
-| Example | Demonstrates |
-|---------|--------------|
-| [oberagent-code-review](examples/oberagent-code-review.md) | Checklist validation, skill inheritance |
-| [oberagent-model-selection](examples/oberagent-model-selection.md) | Model tier selection with oberprompt |
-| [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | Parallel search dimensions |

@@ -30,7 +30,7 @@ User: "Review this agent prompt"
 ### SCREENSHOT
 ```
 User: "Take a screenshot and analyze it"
-  → Capture screen
+  → Capture screen (full, active window, or named window)
   → Dispatch haiku analyzer
   → Return summary with insights
 ```
@@ -45,7 +45,7 @@ User: "Take a screenshot and analyze it"
 | **oberagent** | Agent dispatch validation | "use oberagent before dispatching" |
 | **oberweb** | Multi-dimensional web search | "use oberweb to research X" |
 | **obercreate** | Skill creation AND review | "create a skill for X" / "review this prompt" |
-| **obershot** | Screenshot capture and analysis | "take a screenshot and analyze it" |
+| **obershot** | Screenshot capture and analysis (full, active, or named window) | "take a screenshot and analyze it" / "screenshot of Firefox" |
 
 ---
 
@@ -55,7 +55,7 @@ User: "Take a screenshot and analyze it"
 oberweb (standalone)
        │
        └── Dispatch parallel sonnet search agents
-              │
+              │ (extract and distill precise info, no summaries)
               └── Synthesize with user's model + source URLs
 
 obercreate (standalone)
@@ -75,7 +75,9 @@ oberagent (invoked before any agent dispatch)
 
 obershot (standalone)
        │
-       └── Capture → Dispatch haiku analyzer → Return summary
+       └── Capture (full / active / --mode window --name "App")
+              │
+              └── Dispatch haiku analyzer → Return summary
 ```
 
 ---
@@ -93,21 +95,11 @@ obershot (standalone)
 /plugin update oberskills@rtd
 ```
 
-## Documentation
-
-For guides and detailed documentation, see `examples/` or the **[Wiki](https://github.com/ryanthedev/oberskills/wiki)**.
-
-## Case Studies
-
-| # | Example | Type | Shows |
-|---|---------|------|-------|
-| 1 | [oberweb-ghostty-floating-terminal](examples/oberweb-ghostty-floating-terminal.md) | SEARCH | 5 parallel dimensions, result synthesis |
-| 2 | [oberagent-code-review](examples/oberagent-code-review.md) | AGENT | Checklist validation, skill inheritance |
-| 3 | [oberagent-model-selection](examples/oberagent-model-selection.md) | AGENT | Model tier selection with oberprompt |
-
 ## Version
 
 Current version: **1.20.0**
+
+Each skill displays its version at runtime by reading from `.claude-plugin/plugin.json` (e.g., `obershot v1.20.0`).
 
 ## License
 
