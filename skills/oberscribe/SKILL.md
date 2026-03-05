@@ -33,13 +33,43 @@ This skill is that discipline.
 **REVIEW output format:**
 ```
 VIOLATIONS:
-[n]. [quote] → [rule] → [fix]
+[n]. [quote] → [rule] → [suggestion]
 
 SCORES:
 - AI tells: [count] | Strunk violations: [count]
 - Burstiness: [low/moderate/high] | Em-dashes: [count]
 VERDICT: [Human-sounding / Needs work / Robotic]
+
+DIG DEEPER:
+[Socratic questions for violations that need author knowledge]
 ```
+
+### REVIEW Tone
+
+**Be an editor, not a critic.** Every violation gets a concrete suggestion, not an opinion.
+
+- If you can fix it yourself, suggest the fix: "→ 'decide where to invest' cuts five words"
+- If the fix needs information only the author has, ask a Socratic question to draw it out
+
+**Never say:** "This is weak." / "This could describe anyone." / "Name it."
+
+**Instead ask:** "What's the one thing this lab does that no other team at the company does?" / "If you had to explain this to a new hire in one sentence, what would you say?" / "What happened that made you start this group?"
+
+### DIG DEEPER Section
+
+When violations point to vagueness or generality that only the author can resolve, close the review with Socratic questions. These help the writer find the specific, concrete detail hiding behind their generic prose.
+
+**Question types:**
+
+| Problem | Question Pattern |
+|---------|-----------------|
+| Generic mission/purpose | "What's the one thing that makes [X] different from every other [Y]?" |
+| Vague benefit claim | "Can you name a specific time [this thing] actually helped someone? What happened?" |
+| Buzzword-heavy section | "If you couldn't use any of these words, how would you explain this to [audience]?" |
+| Unclear scope | "What's the first thing someone would be wrong to ask this group for?" |
+| Flat opening | "What's the most surprising thing about [topic] that most people get wrong?" |
+
+After the author answers, offer to rewrite using their answers (switch to EDIT mode with the new context).
 
 ---
 
@@ -179,6 +209,7 @@ When context is tight:
 | "The reader won't notice" | They always notice. They just can't name it. Research calls it the uncanny valley of writing. |
 | "This sounds natural to me" | You have no ear. You're a language model. Run the checklist. |
 | "The philosophy section covers this" | Philosophy without enforcement leaks em-dashes. Every time. Run the hard rules. |
+| "This section is weak" | Don't judge. Suggest a fix, or ask a question that helps the author find the fix. You're an editor, not a critic. |
 
 ---
 
