@@ -27,6 +27,15 @@ User: "Review this agent prompt"
   → Verdict table with fixes
 ```
 
+### WRITE
+```
+User: "This sounds too robotic, fix it"
+  → PURGE: Strip aidiolect, em-dashes, hollow openers, hedges
+  → STRUCTURE: Fix burstiness, vary rhythm
+  → STRUNK: Active voice, concrete language, omit needless words
+  → VOICE: Add specificity, positions, gaps, contractions
+```
+
 ### SCREENSHOT
 ```
 User: "Take a screenshot and analyze it"
@@ -45,6 +54,7 @@ User: "Take a screenshot and analyze it"
 | **oberagent** | Agent dispatch validation | "use oberagent before dispatching" |
 | **oberweb** | Multi-dimensional web search | "use oberweb to research X" |
 | **obercreate** | Skill creation AND review | "create a skill for X" / "review this prompt" |
+| **oberscribe** | Human-sounding writing (Strunk + AI pattern detection) | "this sounds robotic, fix it" / "oberscribe this README" |
 | **obershot** | Screenshot capture and analysis (full, active, or named window) | "take a screenshot and analyze it" / "screenshot of Firefox" |
 
 ---
@@ -73,6 +83,13 @@ oberagent (invoked before any agent dispatch)
               └── Prompt engineering
                   (constraints, validation)
 
+oberscribe (standalone)
+       │
+       └── PURGE → STRUCTURE → STRUNK → VOICE
+              │
+              └── Hard rules (em-dash ban, aidiolect kill list)
+                  + Craft (specificity, rhythm, voice, gaps)
+
 obershot (standalone)
        │
        └── Capture (full / active / --mode window --name "App")
@@ -97,7 +114,7 @@ obershot (standalone)
 
 ## Version
 
-Current version: **1.20.0**
+Current version: **1.21.0**
 
 Each skill displays its version at runtime by reading from `.claude-plugin/plugin.json` (e.g., `obershot v1.20.0`).
 

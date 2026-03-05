@@ -1,10 +1,10 @@
 {
   "name": "oberskills",
-  "version": "1.20.0",
-  "description": "Advanced Claude Code skills for prompt optimization, agent dispatch enforcement, skill creation and review, screenshot analysis, and web search",
+  "version": "1.21.0",
+  "description": "Advanced Claude Code skills for prompt optimization, agent dispatch enforcement, skill creation and review, screenshot analysis, web search, and human-sounding writing",
   "author": {
     "name": "r"
   },
   "license": "MIT",
-  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "screenshot-analysis"]
+  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "screenshot-analysis", "writing", "humanization"]
 }

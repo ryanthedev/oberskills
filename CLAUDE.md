@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Repository Purpose
 
-This is a Claude Code plugin containing reusable skills - workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, and web search.
+This is a Claude Code plugin containing reusable skills - workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing.
 
 ## Structure
 
@@ -33,6 +33,11 @@ oberskills/
     ├── oberprompt/      # Prompt engineering
     │   ├── SKILL.md
     │   └── optimization-reference.md
+    ├── oberscribe/      # Human-sounding writing (Strunk + AI pattern detection)
+    │   ├── SKILL.md
+    │   ├── elements-of-style.md
+    │   └── references/
+    │       └── ai-writing-patterns.md
     ├── obershot/        # Screenshot capture and analysis
     │   └── SKILL.md
     └── oberweb/         # Multi-dimensional web search
@@ -75,5 +80,6 @@ Install via the RTD marketplace:
 | **obercreate** | Skill creation and review with checklist-driven quality gates |
 | **oberprompt** | Research-backed prompt engineering for LLM systems |
 | **obershot** | Context-efficient screenshot capture and analysis; supports full screen, active window, or named window capture (`--mode window --name "Name"`) via thegrid integration |
+| **oberscribe** | Human-sounding writing via Strunk's rules + research-backed AI pattern detection (em-dashes, aidiolect, burstiness, voice) |
 | **oberweb** | Multi-dimensional web search with parallel sonnet subagents that extract and distill (not summarize) precise information |
 
