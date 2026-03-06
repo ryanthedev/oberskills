@@ -38,6 +38,7 @@ VIOLATIONS:
 SCORES:
 - AI tells: [count] | Strunk violations: [count]
 - Burstiness: [low/moderate/high] | Em-dashes: [count]
+- Info preserved: [yes/NO — list what was lost]
 VERDICT: [Human-sounding / Needs work / Robotic]
 
 DIG DEEPER:
@@ -178,7 +179,7 @@ Full reference in `elements-of-style.md` (~12,000 tokens). Load for deep edits.
 | Tell | Fix |
 |------|-----|
 | Every paragraph the same length | Vary. One-sentence paragraphs are fine. |
-| Rule of Three in every list | Two is fine. Five is fine. Match the content. |
+| Rule of Three in every list | Vary by merging related bullets or splitting dense ones. Never delete content to change the count. Two items is fine. Five is fine. Match the content, not a target number. |
 | Topic → evidence → conclusion, every time | Break the formula. Start mid-thought. End abruptly. |
 | Trailing participial clauses (main clause, -ing verb) | You use these at 2-5x human rate. Restructure. |
 | Summary paragraph restating everything | If you said it well, don't repeat it. |
@@ -208,6 +209,7 @@ When context is tight:
 | "One em-dash is fine" | One is fine. You wrote five. Count them. |
 | "The reader won't notice" | They always notice. They just can't name it. Research calls it the uncanny valley of writing. |
 | "This sounds natural to me" | You have no ear. You're a language model. Run the checklist. |
+| "I dropped it to vary the bullet counts" | Structural variation never justifies cutting content. Merge, split, or regroup. If a bullet has real information, it stays. |
 | "The philosophy section covers this" | Philosophy without enforcement leaks em-dashes. Every time. Run the hard rules. |
 | "This section is weak" | Don't judge. Suggest a fix, or ask a question that helps the author find the fix. You're an editor, not a critic. |
 

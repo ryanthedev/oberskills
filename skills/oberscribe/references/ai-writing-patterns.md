@@ -246,7 +246,7 @@ This uniformity is measurable. GPTZero uses burstiness as a primary detection me
 |------|-----|
 | Sentences all roughly the same length | Mix deliberately. Short punch after long explanation. |
 | Paragraphs all roughly the same length | Vary. One-sentence paragraphs are fine. |
-| Rule of Three in every list | Two items is fine. Five is fine. Match the content. |
+| Rule of Three in every list | Vary by merging related bullets or splitting dense ones. Never delete content to change the count. Two items is fine. Five is fine. Match the content, not a target number. |
 | Every paragraph: topic sentence → evidence → conclusion | Break the formula. Start mid-thought. End abruptly sometimes. |
 | "First... Second... Third... In conclusion" | Let ideas overlap organically. |
 | Trailing participial clauses (main clause, -ing verb) | AI uses these at 2-5x human rate. Restructure. |

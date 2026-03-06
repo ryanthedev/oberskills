@@ -1,6 +1,6 @@
 {
   "name": "oberskills",
-  "version": "1.22.0",
+  "version": "1.23.0",
   "description": "Advanced Claude Code skills for prompt optimization, agent dispatch enforcement, skill creation and review, screenshot analysis, web search, and human-sounding writing",
   "author": {
     "name": "r"

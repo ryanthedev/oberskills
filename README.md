@@ -114,7 +114,7 @@ obershot (standalone)
 
 ## Version
 
-Current version: **1.22.0**
+Current version: **1.23.0**
 
 Each skill displays its version at runtime by reading from `.claude-plugin/plugin.json` (e.g., `obershot v1.20.0`).
 
