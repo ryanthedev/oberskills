@@ -1,6 +1,6 @@
 # oberskills
 
-Advanced agent orchestration skills for Claude Code.
+Discipline plugins for Claude Code — prompt engineering, agent dispatch, writing, and search.
 
 ## How It Works
 
@@ -114,7 +114,7 @@ obershot (standalone)
 
 ## Version
 
-Current version: **1.23.0**
+Current version: **1.24.0**
 
 Each skill displays its version at runtime by reading from `.claude-plugin/plugin.json` (e.g., `obershot v1.20.0`).
 
