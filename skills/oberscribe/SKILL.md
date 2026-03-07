@@ -1,6 +1,6 @@
 ---
 name: oberscribe
-description: Edit prose to sound human, not robotic. Applies Strunk's rules plus research-backed AI writing pattern detection to any text humans will read. Catches the tells that make agentic writing feel artificial — em-dash overuse, vocabulary fingerprints, structural monotony, voice vacuum, hedge stacking, and low burstiness. Two modes. EDIT (default) silently rewrites and returns improved text. REVIEW analyzes prose and shows violations. Triggers on "edit this writing", "improve this prose", "oberscribe", "sounds too robotic", "sounds like AI", "make this more natural", "copyedit", "review writing quality", "humanize this".
+description: Edit prose to sound human, not robotic. Applies Strunk's rules plus research-backed AI writing pattern detection to any text humans will read. Catches the tells that make agentic writing feel artificial — em-dash overuse, vocabulary fingerprints, structural monotony, voice vacuum, hedge stacking, and low burstiness. Two modes. EDIT (default) silently rewrites and returns improved text. REVIEW runs an interactive phased review, presenting issues 2-3 at a time and asking questions to guide the author toward better writing. Triggers on "edit this writing", "improve this prose", "oberscribe", "sounds too robotic", "sounds like AI", "make this more natural", "copyedit", "review writing quality", "humanize this".
 ---
 
 # Skill: oberscribe
@@ -26,28 +26,96 @@ This skill is that discipline.
 | Mode | When | Output |
 |------|------|--------|
 | **EDIT** (default) | Writing/improving prose | Rewritten text only |
-| **REVIEW** | "review writing", "analyze this prose" | Violations + scores + verdict |
+| **REVIEW** | "review writing", "analyze this prose" | Interactive phased review |
 
 **EDIT:** Silently fix everything. Return only improved text. No meta-commentary. No "Here's the improved version." No explanation of changes.
 
-**REVIEW output format:**
-```
-VIOLATIONS:
-[n]. [quote] → [rule] → [suggestion]
+**REVIEW is a conversation, not a report.** Help the author improve through guided discovery. Don't dump a wall of violations.
 
-SCORES:
-- AI tells: [count] | Strunk violations: [count]
-- Burstiness: [low/moderate/high] | Em-dashes: [count]
-- Info preserved: [yes/NO — list what was lost]
-VERDICT: [Human-sounding / Needs work / Robotic]
+### REVIEW Crisis Invariants
 
-DIG DEEPER:
-[Socratic questions for violations that need author knowledge]
+| Check | Why Non-Negotiable |
+|-------|-------------------|
+| **Read full text BEFORE presenting issues** | You need the full picture to prioritize |
+| **Understand audience BEFORE suggesting fixes** | Wrong audience = wrong advice |
+| **One issue group at a time** | Wall of violations = cognitive overload = nothing gets fixed |
+| **Socratic questions when fix needs author knowledge** | You can't fix vagueness from the outside |
+| **Confirm before moving to next batch** | Unconfirmed fixes compound |
+| **Offer EDIT pass when review is complete** | Review without action = wasted work |
+
+### REVIEW Phases
+
+#### Phase 1: SCAN (Silent)
+
+Read the full text. Identify all violations silently. Rank by impact. Group into categories. Classify scope:
+
+| Signal | Scope | Approach |
+|--------|-------|----------|
+| < 200 words, clear purpose | Quick | 2-3 top issues, then offer edit |
+| 200-1000 words, some AI tells | Medium | Prioritized groups, 2-3 rounds |
+| > 1000 words or heavily robotic | Deep | Full phased review |
+
+#### Phase 2: ORIENT
+
+Present a quick diagnostic and ask ONE question:
+
 ```
+Quick scan: [em-dash count] em-dashes, [AI tell count] AI tells, [burstiness level] burstiness.
+[One sentence: the biggest category of issues.]
+
+[One question about audience, purpose, or constraints — skip if already obvious.]
+```
+
+Questions to choose from (pick the most useful ONE):
+- "Who's reading this?"
+- "What should the reader do after reading?"
+- "What's the one thing this piece needs to get across?"
+
+**Wait for answer before proceeding.**
+
+#### Phase 3: TOP ISSUES (2-3 Max)
+
+Present the 2-3 highest-impact issues. For each:
+
+```
+[n]. [quote] → [rule] → [concrete suggestion or Socratic question]
+```
+
+If a violation needs author knowledge to fix, ask a Socratic question instead of suggesting a fix. **One question per issue, max.**
+
+Then ask:
+
+```
+Want me to fix these, or should we talk through any of them?
+```
+
+**Wait for answer.**
+
+#### Phase 4: NEXT BATCH
+
+After the user responds, present the next priority group (2-3 more issues). Repeat until:
+- All significant issues are covered, OR
+- User says "that's enough" or wants to move to editing
+
+Between batches, checkpoint:
+
+```
+Those are the [structural/surface/rhythm] issues. Want to see the [next category] next, or ready for an edit pass?
+```
+
+#### Phase 5: OFFER EDIT
+
+When the review conversation is complete:
+
+```
+Ready for me to do an edit pass with everything we discussed?
+```
+
+Switch to EDIT mode with the gathered context. The author's answers to Socratic questions become material for the rewrite.
 
 ### REVIEW Tone
 
-**Be an editor, not a critic.** Every violation gets a concrete suggestion, not an opinion.
+**Be an editor, not a critic.** Every violation gets a concrete suggestion or a question that helps the author find the fix.
 
 - If you can fix it yourself, suggest the fix: "→ 'decide where to invest' cuts five words"
 - If the fix needs information only the author has, ask a Socratic question to draw it out
@@ -56,11 +124,9 @@ DIG DEEPER:
 
 **Instead ask:** "What's the one thing this lab does that no other team at the company does?" / "If you had to explain this to a new hire in one sentence, what would you say?" / "What happened that made you start this group?"
 
-### DIG DEEPER Section
+### Socratic Question Patterns
 
-When violations point to vagueness or generality that only the author can resolve, close the review with Socratic questions. These help the writer find the specific, concrete detail hiding behind their generic prose.
-
-**Question types:**
+For violations pointing to vagueness or generality only the author can resolve:
 
 | Problem | Question Pattern |
 |---------|-----------------|
@@ -70,7 +136,7 @@ When violations point to vagueness or generality that only the author can resolv
 | Unclear scope | "What's the first thing someone would be wrong to ask this group for?" |
 | Flat opening | "What's the most surprising thing about [topic] that most people get wrong?" |
 
-After the author answers, offer to rewrite using their answers (switch to EDIT mode with the new context).
+**One question at a time.** Wait for the answer before asking the next.
 
 ---
 
@@ -212,6 +278,9 @@ When context is tight:
 | "I dropped it to vary the bullet counts" | Structural variation never justifies cutting content. Merge, split, or regroup. If a bullet has real information, it stays. |
 | "The philosophy section covers this" | Philosophy without enforcement leaks em-dashes. Every time. Run the hard rules. |
 | "This section is weak" | Don't judge. Suggest a fix, or ask a question that helps the author find the fix. You're an editor, not a critic. |
+| "I'll list all violations so they can see the full picture" | Walls of violations overwhelm. 2-3 at a time, confirm, then next batch. |
+| "The author didn't ask for a conversation" | They asked for REVIEW. Review means helping them improve, not handing them a report to figure out alone. |
+| "I'll skip the context question, the text speaks for itself" | Wrong audience = wrong fixes. One question costs 10 seconds and prevents rewriting the wrong direction. |
 
 ---
 
