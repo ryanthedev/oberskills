@@ -1,6 +1,7 @@
 ---
 name: obershot
-description: Context-efficient screenshot capture and analysis. Use when needing to see, analyze, or interact with screen content. Dispatches haiku subagent to analyze full-res image, returns summary + thumbnail to preserve context. Supports full screen, active window, or specific window by name. Triggers on "take a screenshot", "screenshot", "what's on my screen", "capture screen", "show me the screen", "analyze this window", "screenshot of [app name]".
+description: Context-efficient screenshot capture and analysis. Dispatches haiku subagent to analyze full-res image, returns summary + thumbnail to preserve context. Supports full screen, active window, or specific window by name.
+disable-model-invocation: true
 ---
 
 # Skill: obershot
