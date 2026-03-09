@@ -276,6 +276,6 @@ After updating skill, run compliance test again.
 
 ---
 
-## Example: Complete Test Run
+## Example
 
-See `research/designing-deep-modules/TEST-RESULTS.md` for a full example of this protocol applied to a discipline skill.
+Apply this protocol to any new skill. Run all four phases, record results, and verify the skill holds under pressure before shipping.

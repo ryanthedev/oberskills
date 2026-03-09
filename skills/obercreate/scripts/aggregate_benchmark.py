@@ -106,11 +106,11 @@ def load_run_results(benchmark_dir):
                 timing_path = run_dir / "timing.json"
                 if not timing_path.exists():
                     timing_path = config_dir / "timing.json"
-                timing = (
-                    json.loads(timing_path.read_text())
-                    if timing_path.exists()
-                    else {}
-                )
+                if timing_path.exists():
+                    timing = json.loads(timing_path.read_text())
+                else:
+                    # Fall back to timing block in grading.json
+                    timing = grading.get("timing", {})
 
                 metrics = grading.get("execution_metrics", {})
 

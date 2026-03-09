@@ -32,7 +32,7 @@ def parse_frontmatter(skill_path):
     if not content.startswith("---"):
         raise ValueError(f"No frontmatter found in {skill_file}")
 
-    close_idx = content.index("---", 3)
+    close_idx = content.find("---", 3)
     if close_idx < 0:
         raise ValueError(f"No closing frontmatter delimiter in {skill_file}")
 

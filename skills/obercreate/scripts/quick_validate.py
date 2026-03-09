@@ -52,6 +52,8 @@ def validate_frontmatter(content: str) -> tuple[bool, list[str]]:
                 issues.append(f"Name must be lowercase kebab-case: {name}")
 
     # Validate description field
+    # Note: multiline YAML (| or >) is handled by utils.parse_frontmatter.
+    # This regex handles the common single-line case for validation purposes.
     desc_match = re.search(
         r'^description:\s*(.+?)(?=\n[a-z]|\Z)',
         frontmatter,

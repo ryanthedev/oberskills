@@ -156,9 +156,7 @@ Triggers on [keywords].
 
 **Bad:** "Helps with testing."
 
-**Gate:** SKILL.md written + resources created
-
-### 3.4 Description Optimization
+### 3.4 Description Optimization (Recommended)
 
 After writing the description, optimize trigger accuracy:
 
@@ -169,6 +167,8 @@ python scripts/optimize_description.py --skill-path <path> --model <model-id>
 Generates 20 eval queries, splits train/test, iterates up to 5 rounds. Selects best description by held-out test score. Claude under-triggers skills — make descriptions aggressively specific about when to activate.
 
 For manual trigger checking: `python scripts/run_trigger_eval.py --eval-set queries.json --skill-path <path>`
+
+**Gate:** SKILL.md written + resources created + description optimized (or manually verified)
 
 ---
 
@@ -187,7 +187,7 @@ See `references/testing-protocol.md` for full templates.
 
 **Result:** X/5 pass. Note false positives/negatives.
 
-### 4.1b Eval Infrastructure
+### 4.1b Eval Infrastructure (Recommended)
 
 For automated testing, use the eval pipeline:
 
@@ -307,6 +307,8 @@ python scripts/package_skill.py <path/to/skill>
 | "Similar to skill X, inherits quality" | Similar ≠ tested. Every skill needs pressure testing |
 | "I tested it mentally while writing" | Mental testing cannot capture rationalization patterns |
 | "User said skip testing" | User owns outcome, not process. Testing protects both |
+| "Manual testing is enough, skip the eval pipeline" | Manual testing misses what automated runs catch at scale |
+| "The eval infrastructure is optional tooling" | It is recommended. Skipping it means less evidence of quality |
 
 ### REVIEW Mode
 | Rationalization | Reality |

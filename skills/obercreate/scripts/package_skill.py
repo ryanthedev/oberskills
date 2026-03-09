@@ -6,7 +6,7 @@ import argparse
 import zipfile
 from pathlib import Path
 
-from quick_validate import validate_skill
+from scripts.quick_validate import validate_skill
 
 # Directories excluded everywhere in the tree
 EXCLUDE_DIRS = {"__pycache__", "node_modules", ".git"}

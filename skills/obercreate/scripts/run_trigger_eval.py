@@ -12,7 +12,6 @@ Usage:
 import argparse
 import json
 import os
-import signal
 import subprocess
 import sys
 import uuid
@@ -305,7 +304,6 @@ def main():
     query_set_path = Path(args.eval_set)
     query_set = json.loads(query_set_path.read_text())
 
-    # Parse skill for name and default description
     from scripts.utils import parse_frontmatter
 
     skill_name, skill_description, _ = parse_frontmatter(args.skill_path)
