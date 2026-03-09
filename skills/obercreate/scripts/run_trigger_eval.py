@@ -10,13 +10,31 @@ Usage:
 """
 
 import argparse
+import atexit
 import json
+import logging
 import os
 import subprocess
 import sys
 import uuid
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# Track temp command files so atexit can clean up after hard crashes
+_temp_files: set[Path] = set()
+
+
+def _cleanup_temp_files():
+    for path in list(_temp_files):
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+atexit.register(_cleanup_temp_files)
 
 
 def find_project_root():
@@ -58,6 +76,7 @@ def run_single_query(query, skill_name, description, timeout, project_root, mode
             f"This is {skill_name}. Respond with: skill invoked.\n"
         )
         command_file.write_text(command_content)
+        _temp_files.add(command_file)
 
         cmd = [
             "claude", "-p", query,
@@ -104,6 +123,7 @@ def run_single_query(query, skill_name, description, timeout, project_root, mode
         return triggered
 
     except Exception:
+        logger.debug("Query evaluation failed", exc_info=True)
         return False
 
     finally:
@@ -111,6 +131,7 @@ def run_single_query(query, skill_name, description, timeout, project_root, mode
             _kill_process(proc)
         if command_file.exists():
             command_file.unlink()
+        _temp_files.discard(command_file)
 
 
 def _kill_process(proc):
@@ -122,7 +143,7 @@ def _kill_process(proc):
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=5)
-    except Exception:
+    except OSError:
         pass
 
 
@@ -215,6 +236,7 @@ def run_eval(
             try:
                 result = future.result()
             except Exception:
+                logger.debug("Worker raised exception", exc_info=True)
                 result = False
             triggers_by_query[query_idx].append(result)
 

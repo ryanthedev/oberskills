@@ -147,12 +147,12 @@ description: [Action verb] + [what it does]. Use when [triggers]. Produces [outp
 
 **Formula:**
 ```
-[Action verb] + [capability] + [output].
-Use when [conditions].
-Triggers on [keywords].
+[Action verb] + [what it does] + [scope].
+Use when [trigger conditions].
+Triggers on [quoted keyword phrases].
 ```
 
-**Good:** "Analyzes test suites for flaky tests. Use when reviewing coverage or debugging intermittent failures. Triggers on: test reliability, flaky, coverage gaps."
+**Good:** "Meta-skill for creating AND reviewing production-quality skills and agent prompts. Use when creating new skills, reviewing existing skills for quality, or auditing agent prompts for issues. Triggers on "create skill", "review skill", "audit agent"."
 
 **Bad:** "Helps with testing."
 
@@ -327,6 +327,7 @@ python scripts/package_skill.py <path/to/skill>
 - **oberprompt**: Apply for refining skill descriptions and instructions
 - **oberagent**: Invoke before dispatching subagents during TEST phase
 - **code-foundations:whiteboarding**: Use for complex skill sets requiring architecture decisions
+- **External:** Scripts in `scripts/` invoke `claude -p` via subprocess. The `claude` CLI must be installed and on PATH.
 
 ---
 
