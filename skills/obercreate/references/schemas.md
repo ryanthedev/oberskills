@@ -337,3 +337,56 @@ Optional metadata file placed in each eval directory. Provides human-readable na
 | `eval_name` | string | Human-readable name for reports |
 | `prompt` | string | The eval prompt (copied from evals.json for reference) |
 | `assertions` | array of strings | The expectations being graded |
+
+---
+
+## comparison.json
+
+Output of the blind comparator agent. Records rubric scores, assertion results, and winner determination.
+
+```json
+{
+  "rubric": [
+    {"criterion": "Correctness", "weight": 1},
+    {"criterion": "Completeness", "weight": 1},
+    {"criterion": "Structure", "weight": 1},
+    {"criterion": "Usability", "weight": 1}
+  ],
+  "scores": {
+    "output_a": [
+      {"criterion": "Correctness", "score": 5, "justification": "All assertions passed, output matches expected format exactly"}
+    ],
+    "output_b": [
+      {"criterion": "Correctness", "score": 3, "justification": "Missing date field, two formatting errors"}
+    ]
+  },
+  "assertions": [
+    {"text": "Output includes valid SKILL.md", "a_pass": true, "b_pass": true},
+    {"text": "Did not skip testing phase", "a_pass": true, "b_pass": false}
+  ],
+  "totals": {"output_a": 18, "output_b": 12},
+  "winner": "output_a",
+  "margin": "6 points (18 vs 12)",
+  "reasoning": "Output A completed all phases including testing, while Output B skipped pressure testing under time pressure."
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rubric` | array | Evaluation criteria generated from the task |
+| `rubric[].criterion` | string | Criterion name |
+| `rubric[].weight` | number | Weight multiplier (default 1) |
+| `scores` | object | Per-output scores keyed by `output_a` and `output_b` |
+| `scores.{output}[]` | array | Score entries per criterion |
+| `scores.{output}[].criterion` | string | Matches rubric criterion name |
+| `scores.{output}[].score` | integer | 1-5 rating |
+| `scores.{output}[].justification` | string | Evidence-based reasoning for the score |
+| `assertions` | array | Assertion check results (empty if none provided) |
+| `assertions[].text` | string | The assertion text |
+| `assertions[].a_pass` | boolean | Whether output A passed |
+| `assertions[].b_pass` | boolean | Whether output B passed |
+| `totals.output_a` | integer | Sum of output A scores |
+| `totals.output_b` | integer | Sum of output B scores |
+| `winner` | string | `"output_a"`, `"output_b"`, or `"tie"` |
+| `margin` | string | Human-readable score difference |
+| `reasoning` | string | Why the winner won |

@@ -158,6 +158,18 @@ Triggers on [keywords].
 
 **Gate:** SKILL.md written + resources created
 
+### 3.4 Description Optimization
+
+After writing the description, optimize trigger accuracy:
+
+```bash
+python scripts/optimize_description.py --skill-path <path> --model <model-id>
+```
+
+Generates 20 eval queries, splits train/test, iterates up to 5 rounds. Selects best description by held-out test score. Claude under-triggers skills — make descriptions aggressively specific about when to activate.
+
+For manual trigger checking: `python scripts/run_trigger_eval.py --eval-set queries.json --skill-path <path>`
+
 ---
 
 ## Phase 4: TEST
@@ -174,6 +186,19 @@ See `references/testing-protocol.md` for full templates.
 | 2-5 | ... | ... | ... |
 
 **Result:** X/5 pass. Note false positives/negatives.
+
+### 4.1b Eval Infrastructure
+
+For automated testing, use the eval pipeline:
+
+1. Define evals in `evals/evals.json` (see `references/schemas.md`)
+2. Spawn with-skill and without-skill subagents for each eval
+3. Grade with `agents/grader.md` (checks correctness AND pressure compliance)
+4. Review with `scripts/generate_review.py <workspace>/iteration-N`
+5. Aggregate with `scripts/aggregate_benchmark.py <workspace>/iteration-N --skill-name <name>`
+6. For A/B comparison: dispatch `agents/comparator.md` with two outputs
+
+Workspace layout: `<skill>-workspace/iteration-N/eval-NAME/{with_skill,without_skill}/`
 
 ### 4.2 Baseline (RED)
 
@@ -253,11 +278,14 @@ If any test fails:
 - [ ] Compliance verified under pressure
 - [ ] Loopholes closed
 
-### 5.2 Package
+### 5.2 Validate and Package
 
 ```bash
-# If using skill-creator scripts
-scripts/package_skill.py <path/to/skill>
+# Pre-ship validation
+python scripts/quick_validate.py <path/to/skill>
+
+# Package into .skill file
+python scripts/package_skill.py <path/to/skill>
 ```
 
 **Gate:** .skill file ready for distribution
@@ -297,6 +325,27 @@ scripts/package_skill.py <path/to/skill>
 - **oberprompt**: Apply for refining skill descriptions and instructions
 - **oberagent**: Invoke before dispatching subagents during TEST phase
 - **code-foundations:whiteboarding**: Use for complex skill sets requiring architecture decisions
+
+---
+
+## Reference Files
+
+| File | Purpose |
+|------|---------|
+| `agents/grader.md` | Grade eval outputs + check pressure compliance |
+| `agents/analyzer.md` | Post-hoc comparison analysis or benchmark pattern analysis |
+| `agents/comparator.md` | Blind A/B comparison between two outputs |
+| `references/schemas.md` | JSON schemas for all data formats |
+| `references/testing-protocol.md` | Full testing protocol with pressure blocks |
+| `references/review-skill.md` | Skill review checklist |
+| `references/review-prompt.md` | Prompt/agent review checklist |
+| `references/router-patterns.md` | Multi-skill router architecture |
+| `scripts/optimize_description.py` | Automated description optimization loop |
+| `scripts/run_trigger_eval.py` | Standalone trigger accuracy checker |
+| `scripts/aggregate_benchmark.py` | Aggregate grading results into benchmarks |
+| `scripts/generate_review.py` | Generate HTML review page for eval results |
+| `scripts/quick_validate.py` | Pre-ship validation checks |
+| `scripts/package_skill.py` | Validate and package into .skill file |
 
 ---
 
