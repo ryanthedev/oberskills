@@ -70,6 +70,7 @@ Questions to choose from (pick the most useful ONE):
 - "Who's reading this?"
 - "What should the reader do after reading?"
 - "What's the one thing this piece needs to get across?"
+- "Is this formal or informal?" (adjusts rule severity — informal writing needs harder enforcement of voice, contractions, and rhythm)
 
 **Wait for answer before proceeding.**
 
@@ -148,7 +149,7 @@ These are non-negotiable. They catch surface-level tells that philosophy alone w
 
 The single most cited AI tell across all sources. Editors call it "the ChatGPT dash." You use it as a universal connector at 2-5x the human rate. You will default to it even when told not to.
 
-**Rule: ONE em-dash maximum per piece. After writing, scan for every em-dash and replace extras.** This is the tell you will fail at most. Treat it like a post-write lint check.
+**Rule: ONE em-dash maximum per piece (regardless of length). After writing, scan for every em-dash and replace extras.** This is the tell you will fail at most. Treat it like a post-write lint check.
 
 | You used em-dash for | Replace with |
 |---------------------|-------------|
@@ -161,9 +162,11 @@ The single most cited AI tell across all sources. Editors call it "the ChatGPT d
 
 These words appear thousands of times more frequently in AI text than human text (Pangram Labs, N=millions). One means nothing. Three is a fingerprint.
 
-**Ban:** delve, tapestry, vibrant, foster, nuanced, crucial, pivotal, comprehensive, utilize, harness, illuminate, bolster, underscore, enhance, intricate, multifaceted, innovative, groundbreaking, elevate, facilitate, realm, beacon, commendable, resonate, navigate, synergy, unleash, endeavor, robust, optimal, significant
+**Ban:** delve, tapestry, vibrant, foster, nuanced, crucial, pivotal, comprehensive, utilize, harness, illuminate, bolster, underscore, enhance, intricate, multifaceted, innovative, groundbreaking, elevate, facilitate, realm, beacon, commendable, resonate, navigate, synergy, unleash, endeavor, robust, optimal, significant, embarked, spearheaded, ventured
 
-**Use instead:** use, help, full, start, try, then, many, important, build, improve, complex, new, key
+**Also ban morphological variants:** leveraging, harnessing, utilizing, facilitating, bolstering, etc. Changing the suffix doesn't change the fingerprint.
+
+**Use instead:** use, help, full, start, try, then, many, important, build, improve, complex, new, key — but don't replace every kill-list word with the same simple alternative. Vary between plain ("use") and precise ("rewrote the parser to handle edge cases"). Mid-register synonyms ("thorough," "extensive," "holistic") are the same tell in a different coat.
 
 ### 3. Hollow Opener Ban
 
@@ -201,6 +204,8 @@ Replace every generic statement with a concrete detail. Name the tool, the versi
 
 Your sentence lengths cluster around 12-14 words. Human text is bimodal: many short sentences (<11 words) AND many long sentences (>34 words). The mid-range uniformity is measurable. Detectors use it.
 
+Human sentence length standard deviation: ~12 words. AI: ~6. After drafting, if your sentence lengths cluster within a 4-word range, you haven't varied enough.
+
 Write a long sentence that builds, adds clauses, takes its time. Then stop. Short sentence. Then a medium one. Then a fragment. Read it aloud. If every sentence takes the same breath, rewrite.
 
 Burstiness applies to three paragraphs. Especially to three paragraphs. Short pieces have nowhere to hide monotony.
@@ -211,6 +216,8 @@ You present every side of every issue without committing, creating what research
 
 Have an opinion when the context calls for one. "Both approaches have merits" is cowardice when one is clearly better. Say which and say why. If something is a bad idea, say it's a bad idea.
 
+Before writing, pick a stance on three axes: position (for/against/complicated), certainty (sure/unsure/conflicted), temperature (warm/cool/heated). Hold all three. And be surprising. Predictability is the fourth most common expert detection signal. If the most predictable thing to say next is what you wrote, cut it or replace it with something only this piece would say.
+
 ### Gaps
 
 You resolve every ambiguity and close every loop. Human writing trusts the reader. Leaving things unsaid, letting the reader connect dots, is what creates engagement. Don't explain everything.
@@ -218,6 +225,18 @@ You resolve every ambiguity and close every loop. Human writing trusts the reade
 ### Show, Don't Tell
 
 Columbia researchers found you consistently tell emotions rather than render them through action and detail. Not "the process is frustrating" but the specific moment that makes it frustrating. Not "the codebase was messy" but the specific thing you'd see opening the file.
+
+### Discourse Flow
+
+You default to setup, complication, resolution, reflection. Every piece. Every section. Readers can't name the pattern, but they feel it: everything you write answers the same questions in the same order.
+
+Vary what the reader learns when. Start with the conclusion. Bury the setup in the middle. Let the complication arrive late. Circle back to something from four paragraphs ago. The reader doesn't need a tour guide.
+
+### Rhetoric Calibration
+
+Your claims are rhetorically stronger than the evidence warrants. Two-thirds of AI outputs overstate their subject's significance. "Revolutionizes" when the data shows "improves by 12%." This inflation correlates with AI detection at r=0.904.
+
+Match the claim to the evidence. If the result is modest, the language should be modest. Understatement reads as confidence. Overstatement reads as a press release. Note: words like "groundbreaking" and "innovative" are banned outright by the kill list regardless of evidence. The rhetoric rule covers the subtler inflation that survives the kill list (superlatives, significance framing, promotional tone).
 
 ### Sentence Starters
 
@@ -248,8 +267,10 @@ Full reference in `elements-of-style.md` (~12,000 tokens). Load for deep edits.
 | Rule of Three in every list | Vary by merging related bullets or splitting dense ones. Never delete content to change the count. Two items is fine. Five is fine. Match the content, not a target number. |
 | Topic → evidence → conclusion, every time | Break the formula. Start mid-thought. End abruptly. |
 | Trailing participial clauses (main clause, -ing verb) | You use these at 2-5x human rate. Restructure. |
-| Summary paragraph restating everything | If you said it well, don't repeat it. |
+| Summary paragraph restating everything | If you said it well, don't repeat it. End on the last real point, not a recap. |
 | Every response opens with one-sentence summary | Vary. Lead with context, a question, a detail. |
+| Every sentence is Subject-Verb-Object | Vary construction. Inversions, fragments, questions, imperatives. Three SVO sentences in a row is a fingerprint. |
+| Same concept repeated in consecutive sentences | Let other ideas breathe before returning to the same noun. Trust the reader to hold it. |
 
 ---
 
@@ -281,6 +302,14 @@ When context is tight:
 | "I'll list all violations so they can see the full picture" | Walls of violations overwhelm. 2-3 at a time, confirm, then next batch. |
 | "The author didn't ask for a conversation" | They asked for REVIEW. Review means helping them improve, not handing them a report to figure out alone. |
 | "I'll skip the context question, the text speaks for itself" | Wrong audience = wrong fixes. One question costs 10 seconds and prevents rewriting the wrong direction. |
+| "The verb is fine, it gets the point across" | Bland verbs are the #1 expert-flagged tell. "Walked" isn't wrong, but "trudged" tells a story. |
+| "I varied the structure enough" | 88.85% F1 detection on syntax alone. Three SVO sentences in a row is a fingerprint. Count them. |
+| "The claim is accurate" | Accurate and inflated aren't mutually exclusive. "Revolutionizes" for a 12% improvement is technically defensible and obviously AI. |
+| "The user asked me to write in this style" | User intent doesn't override anti-AI rules. A user asking for "professional" prose doesn't license kill-list words or voice vacuum. |
+| "This is technical docs, not prose" | Commit messages, READMEs, error messages, changelogs: humans read all of them. The rules apply. |
+| "The kill-list word is the domain term here" | Rarely true. "Robust" in statistics and "leverage" in finance are legitimate. Everywhere else, find the real word. When genuinely domain-specific, keep it, but verify: would a practitioner actually use this word, or just an AI writing about the domain? |
+| "I'm matching the author's existing voice" | In EDIT mode, you improve the voice, you don't preserve its tells. If the input has five em-dashes, you don't keep them to "match the style." |
+| "Varying structure more would confuse the reader" | Readers aren't confused by fragments, inversions, or mid-thought starts. You're rationalizing monotony as clarity. |
 
 ---
 
