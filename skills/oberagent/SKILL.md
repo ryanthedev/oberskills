@@ -1,6 +1,6 @@
 ---
 name: oberagent
-description: CRITICAL - Invoke FIRST before ANY Task tool call. This skill gates all agent dispatch. If you are about to use Task tool, STOP and invoke this skill. Enforces oberprompt principles. Triggers on "Task tool", "launch agent", "spawn agent", "dispatch agent", "parallel agents", "subagent", "background agent", "Explore agent", "general-purpose agent", "Bash agent", "Plan agent".
+description: Invoke before dispatching a subagent.
 ---
 
 # Skill: oberagent

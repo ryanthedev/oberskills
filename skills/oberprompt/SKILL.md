@@ -1,6 +1,6 @@
 ---
 name: oberprompt
-description: Prompt engineering with two modes. FIX mode (default) silently improves prompts. REVIEW mode analyzes prompts verbosely. Use when writing prompts, fixing flaky prompts, or reviewing prompt quality. Triggers on "fix prompt", "improve prompt", "review prompt", "analyze prompt", "prompt engineering", "prompt not working", "flaky outputs".
+description: Craft and review prompts for subagents and humans.
 ---
 
 # Skill: oberprompt

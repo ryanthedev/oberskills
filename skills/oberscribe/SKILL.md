@@ -1,6 +1,6 @@
 ---
 name: oberscribe
-description: Edit prose to sound human, not robotic. Applies Strunk's rules plus research-backed AI writing pattern detection to any text humans will read. Catches the tells that make agentic writing feel artificial — em-dash overuse, vocabulary fingerprints, structural monotony, voice vacuum, hedge stacking, and low burstiness. Two modes. EDIT (default) silently rewrites and returns improved text. REVIEW runs an interactive phased review, presenting issues 2-3 at a time and asking questions to guide the author toward better writing. Triggers on "edit this writing", "improve this prose", "oberscribe", "sounds too robotic", "sounds like AI", "make this more natural", "copyedit", "review writing quality", "humanize this".
+description: Edit prose to sound human.
 ---
 
 # Skill: oberscribe

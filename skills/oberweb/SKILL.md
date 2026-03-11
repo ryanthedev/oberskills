@@ -1,6 +1,6 @@
 ---
 name: oberweb
-description: Multi-dimensional web search orchestrator. Use when the user needs comprehensive web research that would benefit from parallel searches across different angles. Orchestrator grounds in local context, parallel sonnet agents extract quality information to files, then synthesis agent (user's model) produces grounded recommendations. Triggers on "research this", "find information about", "search the web for", "comprehensive search", "oberweb", or when a single search wouldn't capture all relevant aspects.
+description: Parallel web search across multiple angles.
 ---
 
 # Skill: oberweb

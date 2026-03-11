@@ -1,6 +1,6 @@
 ---
 name: obershot
-description: Context-efficient screenshot capture and analysis. Dispatches haiku subagent to analyze full-res image, returns summary + thumbnail to preserve context. Supports full screen, active window, or specific window by name.
+description: Capture and analyze screenshots without burning context.
 disable-model-invocation: true
 ---
 

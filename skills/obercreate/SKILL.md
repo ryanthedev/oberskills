@@ -1,6 +1,6 @@
 ---
 name: obercreate
-description: Meta-skill for creating AND reviewing production-quality skills and agent prompts. Use when creating new skills, reviewing existing skills for quality, or auditing agent prompts for issues. Triggers on "create skill", "build skill", "review skill", "audit skill", "check skill", "review prompt", "audit agent", "check agent prompt", "skill health check", "convert to skill".
+description: Create and review skills and agent prompts.
 ---
 
 # Skill: obercreate
