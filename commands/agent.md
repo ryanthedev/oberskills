@@ -1,11 +1,10 @@
 ---
-name: oberagent
 description: Invoke before dispatching a subagent.
 ---
 
-# Skill: oberagent
+# Skill: agent
 
-**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `oberagent v{version}` before proceeding.
+**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `agent v{version}` before proceeding.
 
 **Output:** Just the Task tool call. Work through the checklist internally.
 
@@ -29,7 +28,7 @@ description: Invoke before dispatching a subagent.
 ## Required Workflow
 
 ```
-1. Invoke oberprompt skill (MANDATORY - loads prompt engineering guidance)
+1. Invoke prompt skill (MANDATORY - loads prompt engineering guidance)
       ↓
 2. Define Agent Purpose (what outcome, not what actions)
       ↓
@@ -39,21 +38,21 @@ description: Invoke before dispatching a subagent.
       ↓
 5. Identify Applicable Skills (subagents don't inherit skill awareness)
       ↓
-6. Write Prompt (following oberprompt template + skill instructions)
+6. Write Prompt (following prompt skill template + skill instructions)
       ↓
 7. Validate (checklist)
 ```
 
-**Step 1 is non-negotiable.** The oberprompt skill provides the constraint budget, progressive disclosure patterns, and validation checklist that make agent prompts effective. Without it, you're guessing.
+**Step 1 is non-negotiable.** The prompt skill provides the constraint budget, progressive disclosure patterns, and validation checklist that make agent prompts effective. Without it, you're guessing.
 
 ---
 
-## Step 1: Invoke oberprompt
+## Step 1: Invoke prompt
 
-**Before anything else, invoke the oberprompt skill.**
+**Before anything else, invoke the prompt skill.**
 
 ```
-Invoke skill: oberprompt
+Invoke skill: prompt
 ```
 
 This loads:
@@ -62,7 +61,7 @@ This loads:
 - Validation checklist
 - Anti-patterns to avoid
 
-**Do NOT skip this step.** Even if you "know" oberprompt principles or invoked it earlier in the conversation, invoke it again. Each agent dispatch is a fresh decision point requiring the full checklist.
+**Do NOT skip this step.** Even if you "know" prompt skill principles or invoked it earlier in the conversation, invoke it again. Each agent dispatch is a fresh decision point requiring the full checklist.
 
 ---
 
@@ -155,7 +154,7 @@ Before writing ANY prompt, answer:
 | Debug issues | code-foundations:debug |
 | Design interfaces | (relevant design skill) |
 | Build features | code-foundations:building |
-| Write prompts | oberprompt |
+| Write prompts | prompt |
 
 ### Example
 
@@ -182,7 +181,7 @@ implementation plan and identify any issues with the design.
 
 ## Step 6: Write the Prompt
 
-**Use oberprompt guidance.** Since you invoked oberprompt in Step 1, apply:
+**Use prompt skill guidance.** Since you invoked prompt in Step 1, apply:
 - Constraint budget for your model tier
 - Progressive disclosure (start simple, add constraints only on failure)
 - Outcome-focused framing (what you need, not how to get it)
@@ -239,7 +238,7 @@ inconsistent error messages and need to understand the current pattern.
 
 | # | Check | Done? |
 |---|-------|-------|
-| 0 | oberprompt skill invoked (Step 1 completed) | [ ] |
+| 0 | prompt skill invoked (Step 1 completed) | [ ] |
 | 1 | Purpose is an OUTCOME, not a list of actions | [ ] |
 | 2 | Agent type matches the purpose | [ ] |
 | 3 | Model tier matches task complexity (not defaulting to Opus) | [ ] |
@@ -256,7 +255,7 @@ inconsistent error messages and need to understand the current pattern.
 
 When dispatching multiple agents:
 
-1. **Each agent gets its own oberagent checklist**
+1. **Each agent gets its own agent checklist**
 2. **Agents must be independent** - no agent depends on another's output
 3. **Combine results after all complete**
 
@@ -276,7 +275,7 @@ Agent 3: [Outcome C - independent]
 
 | If You're Thinking | Reality | Action |
 |--------------------|---------|--------|
-| "I know oberprompt, skip Step 1" | You'll miss the checklist and constraint budget | Invoke oberprompt every time |
+| "I know prompt skill, skip Step 1" | You'll miss the checklist and constraint budget | Invoke prompt every time |
 | "Subagent will figure out which skills to use" | **Subagents have zero skill awareness** | Load relevant skills into prompt (Iron Law 2) |
 | "It's just a simple task, no skills needed" | If task matches a skill's purpose, load it | Check skill-to-task mapping |
 | "Just use Opus to be safe" | Opus isn't always better; haiku/sonnet excel at focused tasks | Match model to task complexity |
@@ -305,9 +304,9 @@ When an agent returns poor results:
 
 ---
 
-## Integration with oberprompt
+## Integration with prompt
 
-**oberprompt is invoked at the start of every oberagent workflow (Step 1).**
+**prompt is invoked at the start of every agent workflow (Step 1).**
 
 This ensures you have access to:
 - Full constraint budget guidelines for your model tier
@@ -315,4 +314,4 @@ This ensures you have access to:
 - Validation checklist
 - Anti-patterns and red flags
 
-oberagent orchestrates the workflow; oberprompt provides the prompt engineering substance.
+agent orchestrates the workflow; prompt provides the prompt engineering substance.

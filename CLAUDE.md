@@ -4,64 +4,67 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Repository Purpose
 
-This is a Claude Code plugin containing reusable skills - workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing.
+This is a Claude Code plugin containing reusable commands and agents — workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing.
 
 ## Structure
 
 ```
 oberskills/
 ├── .claude-plugin/
-│   └── plugin.json      # Plugin manifest (name, version, description)
-├── assets/              # Demo screenshots and images
-├── research/            # Research papers and best practices
+│   └── plugin.json          # Plugin manifest (name, version, description)
+├── assets/                  # Demo screenshots and images
+├── commands/                # Plugin commands (flat .md files)
+│   ├── agent.md
+│   ├── prompt.md
+│   ├── shot.md
+│   ├── skill-craft.md
+│   ├── web-research.md
+│   └── write.md
+├── research/                # Research papers and best practices
 │   ├── agentic-orchestration/
 │   ├── anthropic-best-practices.md
 │   ├── FRAMEWORK-skill-best-practices.md
 │   ├── GUIDE-skill-compliance-and-persuasion.md
 │   ├── REFERENCE-skill-structure-and-constraints.md
 │   └── references/
-└── skills/
-    ├── oberagent/       # Agent dispatch enforcement
-    │   └── SKILL.md
-    ├── obercreate/      # Skill creation and review
-    │   ├── SKILL.md
-    │   └── references/
-    │       ├── review-prompt.md
-    │       ├── review-skill.md
-    │       ├── router-patterns.md
-    │       └── testing-protocol.md
-    ├── oberprompt/      # Prompt engineering
-    │   ├── SKILL.md
+└── skills/                  # Supporting files for commands (references, scripts, agents)
+    ├── prompt/
     │   └── optimization-reference.md
-    ├── oberscribe/      # Human-sounding writing (Strunk + AI pattern detection)
-    │   ├── SKILL.md
-    │   ├── elements-of-style.md
-    │   └── references/
-    │       └── ai-writing-patterns.md
-    ├── obershot/        # Screenshot capture and analysis
-    │   └── SKILL.md
-    └── oberweb/         # Multi-dimensional web search
-        └── SKILL.md
+    ├── shot/
+    │   ├── agents/
+    │   │   └── shot.md
+    │   └── scripts/
+    │       └── capture.py
+    ├── skill-craft/
+    │   ├── agents/
+    │   ├── references/
+    │   └── scripts/
+    └── write/
+        ├── elements-of-style.md
+        └── references/
+            └── ai-writing-patterns.md
 ```
 
-## Skill File Format
+## Command File Format
 
-Each skill is a Markdown file with YAML frontmatter:
+Each command is a Markdown file with YAML frontmatter:
 
 ```markdown
 ---
-name: skillname
-description: When to use this skill - triggers skill selection
+name: commandname
+description: When to use this command - triggers command selection
 ---
 
-# Skill Title
+# Command Title
 
 [Workflow steps, phases, decision tables, output formats]
 ```
 
-The `description` field is critical - it tells Claude when to invoke the skill.
+The `description` field is critical — it tells Claude when to invoke the command.
 
-All skills display their version at runtime by reading from `.claude-plugin/plugin.json`, which serves as the single source of truth for the plugin version.
+All commands display their version at runtime by reading from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`, which serves as the single source of truth for the plugin version.
+
+Supporting files (references, scripts, agents) live under `skills/` and are referenced using `${CLAUDE_PLUGIN_ROOT}` paths.
 
 ## Installation
 
@@ -72,14 +75,13 @@ Install via the RTD marketplace:
 /plugin install oberskills@rtd
 ```
 
-## Skills
+## Commands
 
-| Skill | Purpose |
-|-------|---------|
-| **oberagent** | Enforces oberprompt principles before any agent dispatch |
-| **obercreate** | Skill creation and review with checklist-driven quality gates |
-| **oberprompt** | Research-backed prompt engineering for LLM systems |
-| **obershot** | Context-efficient screenshot capture and analysis; supports full screen, active window, or named window capture (`--mode window --name "Name"`) via thegrid integration |
-| **oberscribe** | Human-sounding writing via Strunk's rules + research-backed AI pattern detection (em-dashes, aidiolect, burstiness, voice) |
-| **oberweb** | Multi-dimensional web search with parallel sonnet subagents that extract and distill (not summarize) precise information |
-
+| Command | Purpose |
+|---------|---------|
+| **agent** | Enforces prompt principles before any agent dispatch |
+| **prompt** | Research-backed prompt engineering for LLM systems |
+| **shot** | Screenshot intake + dispatches shot agent for context-efficient capture + haiku analysis |
+| **skill-craft** | Skill creation and review with checklist-driven quality gates |
+| **web-research** | Multi-dimensional web search with parallel sonnet subagents that extract and distill (not summarize) precise information |
+| **write** | Human-sounding writing via Strunk's rules + research-backed AI pattern detection (em-dashes, aidiolect, burstiness, voice) |

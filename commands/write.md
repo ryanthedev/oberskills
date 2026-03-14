@@ -1,11 +1,10 @@
 ---
-name: oberscribe
 description: Edit prose to sound human.
 ---
 
-# Skill: oberscribe
+# Skill: write
 
-**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `oberscribe v{version}` before proceeding.
+**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `write v{version}` before proceeding.
 
 ---
 
@@ -246,7 +245,7 @@ Start sentences with "And," "But," "So," "Still" when it fits. You rarely do thi
 
 ## Strunk's Rules
 
-Full reference in `elements-of-style.md` (~12,000 tokens). Load for deep edits.
+Full reference in `${CLAUDE_PLUGIN_ROOT}/skills/write/elements-of-style.md` (~12,000 tokens). Load for deep edits.
 
 | # | Rule | Your Failure Mode |
 |---|------|------------------|
@@ -278,7 +277,7 @@ Full reference in `elements-of-style.md` (~12,000 tokens). Load for deep edits.
 
 When context is tight:
 1. Write your draft
-2. Dispatch a subagent with the draft + `elements-of-style.md` + `references/ai-writing-patterns.md`
+2. Dispatch a subagent with the draft + `${CLAUDE_PLUGIN_ROOT}/skills/write/elements-of-style.md` + `${CLAUDE_PLUGIN_ROOT}/skills/write/references/ai-writing-patterns.md`
 3. Subagent edits and returns the revision
 
 ---
@@ -315,6 +314,6 @@ When context is tight:
 
 ## Integration
 
-- **oberprompt**: Use oberscribe to polish prompt text humans read
-- **obercreate**: Apply when writing skill descriptions and documentation
-- **oberweb**: Apply to synthesis output before presenting to user
+- **prompt**: Use write to polish prompt text humans read
+- **skill-craft**: Apply when writing skill descriptions and documentation
+- **web-research**: Apply to synthesis output before presenting to user

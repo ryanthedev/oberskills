@@ -1,11 +1,10 @@
 ---
-name: oberweb
 description: Parallel web search across multiple angles.
 ---
 
-# Skill: oberweb
+# Skill: web-research
 
-**On load:** Read `../../.claude-plugin/plugin.json` from this skill's base directory. Display `oberweb v{version}` before proceeding.
+**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `web-research v{version}` before proceeding.
 
 ```
 GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
@@ -16,15 +15,15 @@ GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
 ## Workflow
 
 ```
-1. Invoke oberagent → Dispatch Orchestrator (sonnet)
+1. Invoke agent skill → Dispatch Orchestrator (sonnet)
    - Grounds in local context
    - Plans 2-5 search dimensions
       ↓
-2. Invoke oberagent → Dispatch Search Agents (parallel sonnet)
-   - oberagent handles oberprompt
+2. Invoke agent skill → Dispatch Search Agents (parallel sonnet)
+   - agent handles prompt
    - Deep extraction to files
       ↓
-3. Invoke oberagent → Dispatch Synthesis Agent (user's model)
+3. Invoke agent skill → Dispatch Synthesis Agent (user's model)
    - Cross-references research files
    - Grounds against local context
       ↓
@@ -39,7 +38,7 @@ GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
 Task(
   subagent_type="general-purpose",
   model="sonnet",
-  description="oberweb: ground and plan search",
+  description="web-research: ground and plan search",
   prompt="OBJECTIVE: Ground this query in local context, then plan search dimensions.
 
   USER QUERY: [original query]
@@ -68,13 +67,13 @@ Task(
 
 Show user the search plan, then dispatch all in parallel.
 
-Each agent writes to `~/.local/state/oberweb/{timestamp}-{query-slug}-{dimension}.md`
+Each agent writes to `~/.local/state/web-research/{timestamp}-{query-slug}-{dimension}.md`
 
 ```
 Task(
   subagent_type="general-purpose",
   model="sonnet",
-  description="oberweb: search [dimension]",
+  description="web-research: search [dimension]",
   prompt="OBJECTIVE: Extract and distill precise information for this search dimension.
   Do NOT summarize. Pull exact details, quote sources, preserve specificity.
 
@@ -119,7 +118,7 @@ No `model` parameter - inherits user's current model.
 ```
 Task(
   subagent_type="general-purpose",
-  description="oberweb: synthesize results",
+  description="web-research: synthesize results",
   prompt="OBJECTIVE: Synthesize research into actionable recommendations.
 
   ORIGINAL QUERY: [query]
@@ -179,7 +178,7 @@ Task(
 |----------|---------|
 | "Skip grounding" | Generic results won't apply |
 | "Use haiku for search" | Shallow extraction - use sonnet |
-| "Skip oberagent for search agents" | oberagent validates ALL prompts including search |
+| "Skip agent skill for search agents" | agent validates ALL prompts including search |
 | "Override user's model for synthesis" | Inherit, don't override |
-| "Skip oberagent" | Invoke oberagent for EVERY dispatch |
+| "Skip agent skill" | Invoke agent for EVERY dispatch |
 | "Return full page content" | Return file paths only |
