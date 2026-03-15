@@ -16,8 +16,11 @@ import re
 import sys
 from pathlib import Path
 
-from scripts.run_trigger_eval import run_eval, find_project_root
-from scripts.utils import call_claude, parse_frontmatter
+# Resolve imports relative to this file so the script works from any cwd
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from run_trigger_eval import run_eval, find_project_root
+from utils import call_claude, parse_frontmatter
 
 
 MAX_DESCRIPTION_CHARS = 1024

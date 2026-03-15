@@ -20,6 +20,9 @@ import uuid
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
+# Sibling imports: resolve relative to this file so scripts work from any cwd
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 logger = logging.getLogger(__name__)
 
 # Track temp command files so atexit can clean up after hard crashes
@@ -326,7 +329,7 @@ def main():
     query_set_path = Path(args.eval_set)
     query_set = json.loads(query_set_path.read_text())
 
-    from scripts.utils import parse_frontmatter
+    from utils import parse_frontmatter
 
     skill_name, skill_description, _ = parse_frontmatter(args.skill_path)
     description = args.description if args.description else skill_description

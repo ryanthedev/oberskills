@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
-"""Shared utilities for obercreate description optimization pipeline.
+"""Shared utilities for skill-craft scripts.
 
-Provides frontmatter parsing for SKILL.md files and a wrapper for
-invoking `claude -p` as a subprocess (text mode, no streaming).
+Provides plugin root resolution, frontmatter parsing, and a wrapper
+for invoking `claude -p` as a subprocess (text mode, no streaming).
 """
 
 import os
 import subprocess
+import sys
 from pathlib import Path
+
+# Make sibling scripts importable from any cwd
+_scripts_dir = str(Path(__file__).resolve().parent)
+if _scripts_dir not in sys.path:
+    sys.path.insert(0, _scripts_dir)
 
 
 def parse_frontmatter(skill_path):
-    """Parse YAML frontmatter from a SKILL.md file.
+    """Parse YAML frontmatter from a skill/command file.
 
     Args:
-        skill_path: Path to directory containing SKILL.md (str or Path).
+        skill_path: Either a direct .md file path, or a directory containing
+                    SKILL.md (str or Path).
 
     Returns:
         Tuple of (name, description, full_content) where name and description
@@ -22,10 +29,14 @@ def parse_frontmatter(skill_path):
         entire file text.
 
     Raises:
-        FileNotFoundError: If SKILL.md does not exist at skill_path.
+        FileNotFoundError: If no .md file is found at skill_path.
         ValueError: If no valid YAML frontmatter (--- delimiters) is found.
     """
-    skill_file = Path(skill_path) / "SKILL.md"
+    path = Path(skill_path)
+    if path.is_file():
+        skill_file = path
+    else:
+        skill_file = path / "SKILL.md"
     content = skill_file.read_text()
 
     # Find opening and closing --- delimiters

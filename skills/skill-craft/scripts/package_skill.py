@@ -6,7 +6,10 @@ import argparse
 import zipfile
 from pathlib import Path
 
-from scripts.quick_validate import validate_skill
+# Resolve imports relative to this file so the script works from any cwd
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from quick_validate import validate_skill
 
 # Directories excluded everywhere in the tree
 EXCLUDE_DIRS = {"__pycache__", "node_modules", ".git"}
