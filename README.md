@@ -6,7 +6,7 @@ Discipline plugins for Claude Code — prompt engineering, agent dispatch, writi
 
 ### SEARCH
 ```
-User: "Research X with oberweb"
+User: "Research X with web-research"
   → Identify search dimensions (docs, tutorials, discussions)
   → Dispatch parallel sonnet search agents
   → Synthesize results with user's model + source URLs
@@ -46,29 +46,29 @@ User: "Take a screenshot and analyze it"
 
 ---
 
-## Skills
+## Commands
 
-| Skill | Purpose | Example |
-|-------|---------|---------|
-| **oberprompt** | Prompt engineering principles | "use oberprompt to fix this flaky agent" |
-| **oberagent** | Agent dispatch validation | "use oberagent before dispatching" |
-| **oberweb** | Multi-dimensional web search | "use oberweb to research X" |
-| **obercreate** | Skill creation AND review | "create a skill for X" / "review this prompt" |
-| **oberscribe** | Human-sounding writing (Strunk + AI pattern detection) | "this sounds robotic, fix it" / "oberscribe this README" |
-| **obershot** | Screenshot capture and analysis (full, active, or named window) | "take a screenshot and analyze it" / "screenshot of Firefox" |
+| Command | Purpose | Example |
+|---------|---------|---------|
+| **prompt** | Prompt engineering principles | "use prompt to fix this flaky agent" |
+| **agent** | Agent dispatch validation | "use agent before dispatching" |
+| **web-research** | Multi-dimensional web search | "use web-research to research X" |
+| **skill-craft** | Skill creation AND review | "create a skill for X" / "review this prompt" |
+| **write** | Human-sounding writing (Strunk + AI pattern detection) | "this sounds robotic, fix it" / "write this README" |
+| **shot** | Screenshot capture and analysis (full, active, or named window) | "take a screenshot and analyze it" / "screenshot of Firefox" |
 
 ---
 
-## Skill Chain
+## Command Chain
 
 ```
-oberweb (standalone)
+web-research (standalone)
        │
        └── Dispatch parallel sonnet search agents
               │ (extract and distill precise info, no summaries)
               └── Synthesize with user's model + source URLs
 
-obercreate (standalone)
+skill-craft (standalone)
        │
        ├── CREATE: INTAKE → DESIGN → BUILD → TEST → SHIP
        │              │
@@ -76,21 +76,21 @@ obercreate (standalone)
        │
        └── REVIEW: Load checklist → Audit → Verdict table
 
-oberagent (invoked before any agent dispatch)
+agent (invoked before any agent dispatch)
        │
-       └── oberprompt
+       └── prompt
               │
               └── Prompt engineering
                   (constraints, validation)
 
-oberscribe (standalone)
+write (standalone)
        │
        └── PURGE → STRUCTURE → STRUNK → VOICE
               │
               └── Hard rules (em-dash ban, aidiolect kill list)
                   + Craft (specificity, rhythm, voice, gaps)
 
-obershot (standalone)
+shot (standalone)
        │
        └── Capture (full / active / --mode window --name "App")
               │
@@ -114,9 +114,9 @@ obershot (standalone)
 
 ## Version
 
-Current version: **1.24.0**
+Current version: **1.26.0**
 
-Each skill displays its version at runtime by reading from `.claude-plugin/plugin.json` (e.g., `obershot v1.20.0`).
+Each command displays its version at runtime by reading from `.claude-plugin/plugin.json`.
 
 ## License
 

@@ -12,7 +12,6 @@ This is a Claude Code plugin containing reusable commands and agents — workflo
 oberskills/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin manifest (name, version, description)
-├── assets/                  # Demo screenshots and images
 ├── commands/                # Plugin commands (flat .md files)
 │   ├── agent.md
 │   ├── prompt.md
@@ -20,13 +19,6 @@ oberskills/
 │   ├── skill-craft.md
 │   ├── web-research.md
 │   └── write.md
-├── research/                # Research papers and best practices
-│   ├── agentic-orchestration/
-│   ├── anthropic-best-practices.md
-│   ├── FRAMEWORK-skill-best-practices.md
-│   ├── GUIDE-skill-compliance-and-persuasion.md
-│   ├── REFERENCE-skill-structure-and-constraints.md
-│   └── references/
 └── skills/                  # Supporting files for commands (references, scripts, agents)
     ├── prompt/
     │   └── optimization-reference.md
@@ -37,8 +29,23 @@ oberskills/
     │       └── capture.py
     ├── skill-craft/
     │   ├── agents/
+    │   │   ├── analyzer.md
+    │   │   ├── comparator.md
+    │   │   └── grader.md
     │   ├── references/
+    │   │   ├── review-prompt.md
+    │   │   ├── review-skill.md
+    │   │   ├── router-patterns.md
+    │   │   ├── schemas.md
+    │   │   └── testing-protocol.md
     │   └── scripts/
+    │       ├── aggregate_benchmark.py
+    │       ├── generate_review.py
+    │       ├── optimize_description.py
+    │       ├── package_skill.py
+    │       ├── quick_validate.py
+    │       ├── run_trigger_eval.py
+    │       └── utils.py
     └── write/
         ├── elements-of-style.md
         └── references/
