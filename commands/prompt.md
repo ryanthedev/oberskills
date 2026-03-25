@@ -36,14 +36,6 @@ Revenue loss creates pressure to skip diagnosis. This EXTENDS outages.
 
 3. **Target intervention for THAT failure mode only**
 
-### Red Flags Under Pressure
-
-| Thought | Reality |
-|---------|---------|
-| "I'll just try this and see" | You're extending your outage. Know WHY it's failing first. |
-| "No time for diagnosis" | 5 min diagnosis saves 30 min trial-and-error. Do the math. |
-| "I'll add more constraints" | On strong models, this often CAUSES the problem. |
-
 ### Crisis Shortcuts
 
 **Can't do 20% sample?** Get 3 failing + 3 working examples. Pattern will emerge. 5 minutes.
@@ -127,16 +119,6 @@ You may be over-constraining if:
 - Model fails to use common sense on obvious cases
 - Outputs feel robotic or formulaic
 - Model hallucinates trying to satisfy contradictory constraints
-
-### Standing Your Ground
-
-When someone says "just add more constraints":
-
-| Authority Claim | Your Response |
-|-----------------|---------------|
-| "Add more constraints, that always helps" | "That was true for GPT-3.5. Research shows it harms GPT-4+. Let me show you the symptoms we're seeing." |
-| "Be more explicit" | "I'll test both. Often removing constraints improves output on strong models." |
-| "That's not enough guardrails" | "Our constraint count exceeds the recommended budget for this model tier. Let me run an A/B test." |
 
 ---
 
@@ -272,17 +254,6 @@ Your investment doesn't change the physics. A 50-constraint prompt that "mostly 
 | Accuracy improves | You had Constraint Handcuffs. Remove more. |
 | Accuracy drops >10% | Add back constraints ONE AT A TIME, testing each. |
 
-### Rationalizations for Keeping Complex Prompts
-
-| Excuse | Reality |
-|--------|---------|
-| "It mostly works" | "Mostly" = measurable failure rate. Quantify before defending. |
-| "I spent hours on this" | Sunk cost fallacy. Time invested doesn't affect prompt quality. |
-| "These constraints are necessary" | Test without them. Research says 50%+ are usually noise. |
-| "I already iterated to get here" | Did you iterate BACK toward simpler? Complexity isn't progress. |
-| "My use case is different" | Everyone thinks theirs is special. Test anyway. |
-| "Removing constraints is risky" | Not testing simpler versions is riskier. |
-
 ---
 
 ## Agent-Specific Prompting
@@ -373,7 +344,7 @@ See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` (section: Mu
 
 | Situation | Start Here |
 |-----------|------------|
-| **Prompt is broken** (wrong outputs) | Anti-Patterns table → Red Flags → then Manual Optimization |
+| **Prompt is broken** (wrong outputs) | Anti-Patterns table → then Manual Optimization |
 | **Prompt works but could be better** | Manual Optimization directly |
 
 ### Automatic Prompt Optimization
@@ -402,20 +373,6 @@ See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` (section: Co
 | **Emotional Prompting** | "This is VERY IMPORTANT!" with no accuracy gain | Use structural emphasis (headers, bullets) instead |
 | **Position Neglect** | Middle instructions ignored | Move critical content to start or end |
 | **Semantic Similarity Trap** | Rephrased prompt performs differently | Test variations; don't assume equivalence |
-
----
-
-## Red Flags - STOP and Reconsider
-
-| If You're Thinking | Reality | Action |
-|--------------------|---------|--------|
-| "I'll just add more instructions" | Often makes it worse on strong models | Test simpler first |
-| "This constraint will prevent errors" | May cause different errors | Test with AND without |
-| "More examples will help" | 2-5 is usually optimal | Test before adding more |
-| "I need to explain this to the model" | Strong models often know already | Test without explanation |
-| "This prompt works, ship it" | Past success ≠ edge case coverage | Complete Validation Checklist |
-| "I already iterated through these" | Did you iterate BACK to simpler? | Run sunk cost test |
-| "No time for validation" | Unvalidated prompts cause longer outages | 5 min now saves 30 min later |
 
 ---
 

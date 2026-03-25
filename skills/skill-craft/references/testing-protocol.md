@@ -212,7 +212,7 @@ Ask the agent: *"What rationalizations could bypass this skill? What loopholes e
 
 ### Recording Template
 
-**New Rationalizations NOT in Anti-Rationalization Table:**
+**New Bypass Patterns Found:**
 
 | Rationalization | Danger Level | Why It's Dangerous |
 |-----------------|--------------|-------------------|
@@ -232,7 +232,7 @@ Ask the agent: *"What rationalizations could bypass this skill? What loopholes e
 
 ### Fixes Required
 
-1. [Add to anti-rationalization table]
+1. [Address in skill — add explicit constraint or gate]
 2. [Clarify ambiguous term]
 3. [Add missing gate check]
 
@@ -270,7 +270,7 @@ After updating skill, run compliance test again.
 - With skill: [what happened with skill]
 
 **Key improvements made:**
-1. [Anti-rationalization added]
+1. [Constraint or gate added]
 2. [Gate check added]
 3. [Edge case clarified]
 

@@ -271,21 +271,6 @@ Agent 3: [Outcome C - independent]
 
 ---
 
-## Red Flags - STOP and Reconsider
-
-| If You're Thinking | Reality | Action |
-|--------------------|---------|--------|
-| "I know prompt skill, skip Step 1" | You'll miss the checklist and constraint budget | Invoke prompt every time |
-| "Subagent will figure out which skills to use" | **Subagents have zero skill awareness** | Load relevant skills into prompt (Iron Law 2) |
-| "It's just a simple task, no skills needed" | If task matches a skill's purpose, load it | Check skill-to-task mapping |
-| "Just use Opus to be safe" | Opus isn't always better; haiku/sonnet excel at focused tasks | Match model to task complexity |
-| "I'll just tell it exactly what to do" | You're micromanaging. State the outcome. | Rewrite as outcome |
-| "I need to explain the tools" | Agents know their tools | Remove tool guidance |
-| "More detail = better results" | Often the opposite | Start with 1-2 sentences |
-| "I'll dispatch now, fix later" | You're creating rework | Complete checklist first |
-
----
-
 ## Debugging Failed Agents
 
 When an agent returns poor results:
@@ -312,6 +297,6 @@ This ensures you have access to:
 - Full constraint budget guidelines for your model tier
 - Complete progressive disclosure patterns
 - Validation checklist
-- Anti-patterns and red flags
+- Anti-patterns
 
 agent orchestrates the workflow; prompt provides the prompt engineering substance.

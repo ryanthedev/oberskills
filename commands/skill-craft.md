@@ -130,7 +130,7 @@ description: [Action verb] + [what it does]. Use when [triggers]. Produces [outp
 [Concrete, runnable]
 
 ## Common Mistakes
-[Anti-rationalization table if discipline-enforcing]
+[Concrete pitfalls with fixes]
 ```
 
 ### 3.2 Quality Constraints
@@ -270,8 +270,6 @@ If any test fails:
 - [ ] Uses imperative/infinitive form
 - [ ] Critical rules in first 20% of SKILL.md
 - [ ] Examples are concrete and runnable
-- [ ] Anti-rationalization table (if discipline-enforcing)
-
 **Testing:**
 - [ ] Baseline documented
 - [ ] Compliance verified under pressure
@@ -288,36 +286,6 @@ python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/package_skill.py <path/t
 ```
 
 **Gate:** .skill file ready for distribution
-
----
-
-## Anti-Rationalization Table
-
-### CREATE Mode
-| Rationalization | Reality |
-|-----------------|---------|
-| "This skill is simple, skip testing" | Simple skills still fail under pressure |
-| "I'll add description later" | Description IS the skill's advertisement |
-| "One big skill is easier" | Multi-skill with router scales better |
-| "Users will figure out triggers" | Explicit triggers = reliable activation |
-| "Testing is overkill for internal use" | Internal skills get the least scrutiny |
-| "This is just a prototype" | Prototypes become permanent - test now or never |
-| "User is waiting, ship and iterate" | Iteration requires baseline - complete Phase 4 first |
-| "Similar to skill X, inherits quality" | Similar ≠ tested. Every skill needs pressure testing |
-| "I tested it mentally while writing" | Mental testing cannot capture rationalization patterns |
-| "User said skip testing" | User owns outcome, not process. Testing protects both |
-| "Manual testing is enough, skip the eval pipeline" | Manual testing misses what automated runs catch at scale |
-| "The eval infrastructure is optional tooling" | It is recommended. Skipping it means less evidence of quality |
-
-### REVIEW Mode
-| Rationalization | Reality |
-|-----------------|---------|
-| "The skill works, no need to review" | Working ≠ quality. Review catches drift and rot |
-| "I wrote it, I know what's wrong" | Author blindness is real. Fresh eyes find issues |
-| "Review is just testing again" | Review audits design decisions, not just behavior |
-| "Quick glance is enough" | Quick glance misses structure and pressure resistance |
-| "The prompt is short, no issues" | Short prompts often miss constraints and edge cases |
-| "Security testing is overkill" | Internal prompts often have elevated permissions |
 
 ---
 
@@ -360,7 +328,6 @@ All reference files are under `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/`:
 | Decision Routing | Multiple subtasks | Front-loads branching |
 | Phased Workflow | Multi-step dependencies | Explicit checkpoints |
 | Severity Matrix | Analysis/triage | Classification tables |
-| Anti-Rationalization | Discipline enforcement | Closes loopholes |
 | Router-Worker | Heterogeneous tasks | Classification → specialized handling |
 
 ---

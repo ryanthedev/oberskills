@@ -164,21 +164,10 @@ Task(
 
 ## Model Selection
 
-| Agent | Model |
-|-------|-------|
-| Orchestrator | sonnet |
-| Search agents | sonnet |
-| Synthesis | (inherit) |
+| Agent | Model | Note |
+|-------|-------|------|
+| Orchestrator | sonnet | |
+| Search agents | sonnet | Extraction quality requires reasoning depth — not haiku |
+| Synthesis | (inherit) | Never override the user's model |
 
----
-
-## Red Flags
-
-| Thinking | Reality |
-|----------|---------|
-| "Skip grounding" | Generic results won't apply |
-| "Use haiku for search" | Shallow extraction - use sonnet |
-| "Skip agent skill for search agents" | agent validates ALL prompts including search |
-| "Override user's model for synthesis" | Inherit, don't override |
-| "Skip agent skill" | Invoke agent for EVERY dispatch |
-| "Return full page content" | Return file paths only |
+Search agents return file paths only, not full page content.

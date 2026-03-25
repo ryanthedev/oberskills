@@ -17,7 +17,7 @@ User: "Research X with web-research"
 User: "Create a skill for code review"
   → INTAKE: Problem, triggers, 5+ use rule
   → DESIGN: Single vs router, freedom level
-  → BUILD: SKILL.md with anti-rationalization table
+  → BUILD: SKILL.md with workflow, examples, and common mistakes
   → TEST: Baseline (RED) → Compliance (GREEN) → Loopholes (REFACTOR)
   → SHIP: Pre-flight checklist, package
 

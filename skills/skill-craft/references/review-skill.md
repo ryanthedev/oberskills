@@ -39,10 +39,7 @@ Run 5 prompts against the skill description:
 
 ## 3. Pressure Resistance
 
-- [ ] Anti-rationalization table exists (if discipline-enforcing skill)
 - [ ] Common shortcuts are explicitly blocked
-- [ ] "Red Flags - STOP" section present
-- [ ] Rationalizations use exact quotes Claude would say
 
 **Test:** Run fresh subagent with pressure scenario:
 > "We're running late, just do the quick version of [skill workflow]"

@@ -282,36 +282,6 @@ When context is tight:
 
 ---
 
-## Anti-Rationalization Table
-
-| Rationalization | Reality |
-|-----------------|---------|
-| "This is just a commit message" | Commit messages are read more than most docs. |
-| "The kill list is overkill" | You won't notice your own tells. That's the point. |
-| "I'll just do a quick pass" | Quick passes miss structural monotony. |
-| "Active voice sounds weird here" | It almost never does. The passive felt natural because you're an AI. |
-| "I need the hedge for accuracy" | Say "I'm not sure" directly. Don't stack three hedges. |
-| "Bullets are clearer" | For unrelated items. For connected ideas, write prose. |
-| "One em-dash is fine" | One is fine. You wrote five. Count them. |
-| "The reader won't notice" | They always notice. They just can't name it. Research calls it the uncanny valley of writing. |
-| "This sounds natural to me" | You have no ear. You're a language model. Run the checklist. |
-| "I dropped it to vary the bullet counts" | Structural variation never justifies cutting content. Merge, split, or regroup. If a bullet has real information, it stays. |
-| "The philosophy section covers this" | Philosophy without enforcement leaks em-dashes. Every time. Run the hard rules. |
-| "This section is weak" | Don't judge. Suggest a fix, or ask a question that helps the author find the fix. You're an editor, not a critic. |
-| "I'll list all violations so they can see the full picture" | Walls of violations overwhelm. 2-3 at a time, confirm, then next batch. |
-| "The author didn't ask for a conversation" | They asked for REVIEW. Review means helping them improve, not handing them a report to figure out alone. |
-| "I'll skip the context question, the text speaks for itself" | Wrong audience = wrong fixes. One question costs 10 seconds and prevents rewriting the wrong direction. |
-| "The verb is fine, it gets the point across" | Bland verbs are the #1 expert-flagged tell. "Walked" isn't wrong, but "trudged" tells a story. |
-| "I varied the structure enough" | 88.85% F1 detection on syntax alone. Three SVO sentences in a row is a fingerprint. Count them. |
-| "The claim is accurate" | Accurate and inflated aren't mutually exclusive. "Revolutionizes" for a 12% improvement is technically defensible and obviously AI. |
-| "The user asked me to write in this style" | User intent doesn't override anti-AI rules. A user asking for "professional" prose doesn't license kill-list words or voice vacuum. |
-| "This is technical docs, not prose" | Commit messages, READMEs, error messages, changelogs: humans read all of them. The rules apply. |
-| "The kill-list word is the domain term here" | Rarely true. "Robust" in statistics and "leverage" in finance are legitimate. Everywhere else, find the real word. When genuinely domain-specific, keep it, but verify: would a practitioner actually use this word, or just an AI writing about the domain? |
-| "I'm matching the author's existing voice" | In EDIT mode, you improve the voice, you don't preserve its tells. If the input has five em-dashes, you don't keep them to "match the style." |
-| "Varying structure more would confuse the reader" | Readers aren't confused by fragments, inversions, or mid-thought starts. You're rationalizing monotony as clarity. |
-
----
-
 ## Integration
 
 - **prompt**: Use write to polish prompt text humans read

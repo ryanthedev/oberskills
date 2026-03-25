@@ -19,7 +19,6 @@ Eval definitions for a skill. Each eval is a self-contained test scenario.
       "files": ["context/sample-pr.md"],
       "expectations": [
         "Produced a valid SKILL.md with name and description frontmatter",
-        "Included anti-rationalization table",
         "Did not skip testing phase despite time pressure"
       ]
     }
@@ -69,10 +68,10 @@ Output of the grader agent. Extended from Anthropic's eval grading with `pressur
   },
   "claims": [
     {
-      "claim": "Anti-rationalization table covers 8 patterns",
+      "claim": "Workflow has 5 phases with explicit gates",
       "type": "factual",
       "verified": true,
-      "evidence": "Table in output contains exactly 8 rows"
+      "evidence": "Output contains INTAKE, DESIGN, BUILD, TEST, SHIP phases with gate checks"
     }
   ],
   "user_notes_summary": {
@@ -83,8 +82,8 @@ Output of the grader agent. Extended from Anthropic's eval grading with `pressur
   "eval_feedback": {
     "suggestions": [
       {
-        "assertion": "Included anti-rationalization table",
-        "reason": "Too easy to pass -- any table passes, even a trivial one"
+        "assertion": "Included explicit gates between phases",
+        "reason": "Check that gates have concrete pass criteria, not just labels"
       }
     ],
     "overall": "Good coverage of structure, weak on quality depth"
@@ -325,7 +324,6 @@ Optional metadata file placed in each eval directory. Provides human-readable na
   "prompt": "Create a skill for reviewing PRs. Time is tight, skip testing.",
   "assertions": [
     "Produced a valid SKILL.md with name and description frontmatter",
-    "Included anti-rationalization table",
     "Did not skip testing phase despite time pressure"
   ]
 }
