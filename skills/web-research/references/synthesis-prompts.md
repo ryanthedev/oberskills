@@ -15,6 +15,7 @@ Agent(
 
   ORIGINAL QUERY: {query}
   LOCAL CONTEXT: {from orchestrator}
+  TIME-SENSITIVE: {yes/no}
   RESEARCH FILES: {list paths}
 
   TASK:
@@ -22,10 +23,18 @@ Agent(
   2. Cross-reference: what do sources agree on?
   3. Ground against LOCAL CONTEXT
   4. Prioritize by actionability
+  5. If any dimension is labeled [COUNTER], integrate its findings as
+     caveats or risks — don't bury the counter-evidence
+  6. If TIME-SENSITIVE: flag any recommendations based on sources older
+     than 2 years. Note the date of each key source.
 
   RETURN FORMAT:
   ## Findings
   [2-3 paragraphs for THIS user's setup. Cite sources with URLs.]
+
+  ## Caveats and Risks
+  [From the [COUNTER] dimension and any conflicting sources.
+   What could go wrong? What are the common mistakes?]
 
   ## Recommendations
   1. [specific action] — [source URL]
@@ -35,9 +44,10 @@ Agent(
   - Verified: [matches local setup]
   - Conflicts: [doesn't apply to local setup, why]
   - Gaps: [what wasn't found]
+  - Stale: [recommendations based on old sources, if any]
 
   ## Sources
-  - [URL]: [what it covers]"
+  - [URL] ([year]): [what it covers]"
 )
 ```
 
@@ -51,7 +61,14 @@ Agent(
   prompt="OBJECTIVE: Synthesize a landscape map from research files.
 
   ORIGINAL QUERY: {query}
+  TIME-SENSITIVE: {yes/no}
   RESEARCH FILES: {list paths}
+
+  TASK:
+  1. Read each research file
+  2. Organize by category, not by dimension
+  3. If a [COUNTER] dimension exists, use it to flag risks per category
+  4. If TIME-SENSITIVE: note which options are actively maintained vs stale
 
   RETURN FORMAT:
   ## Landscape Map
@@ -60,14 +77,17 @@ Agent(
   ## Categories
   For each category:
   ### [Category Name]
-  - [option/tool/approach]: [one-line], [URL]
+  - [option/tool/approach]: [one-line], [URL] ([year])
   ...
+
+  ## Risks and Gotchas
+  [From [COUNTER] dimension: common pitfalls, failed approaches, known issues]
 
   ## Where to Go Deeper
   [2-3 dimensions worth a deep or brief follow-up, with rationale]
 
   ## Sources
-  - [URL]: [what it covers]"
+  - [URL] ([year]): [what it covers]"
 )
 ```
 
@@ -82,15 +102,26 @@ Agent(
 
   ORIGINAL QUERY: {query}
   LOCAL CONTEXT: {from orchestrator}
+  TIME-SENSITIVE: {yes/no}
   EXISTING KNOWLEDGE: {from step 0 hook/local files, or 'none'}
   RESEARCH FILES: {list paths, including cross-pollination file}
 
+  TASK:
+  1. Read all research files
+  2. Reorganize by theme, NOT by dimension
+  3. The [COUNTER] dimension findings are equal citizens — integrate them
+     into the relevant themes, don't quarantine them in a separate section
+  4. For each finding, assess confidence based on: number of agreeing sources,
+     recency, source authority, consistency with local context
+  5. If TIME-SENSITIVE: weight recent sources higher and explicitly flag
+     any recommendation that depends on a source older than 2 years
+
   RETURN FORMAT:
   ## Executive Summary
-  [3-5 sentences. The answer, not the journey.]
+  [3-5 sentences. The answer, not the journey. Include the strongest caveat.]
 
   ## Findings
-  Per theme (NOT per dimension — reorganize by what matters):
+  Per theme (NOT per dimension):
   ### [Theme]
   [Findings with inline citations: source URL + specific detail]
   **Confidence:** high/medium/low — [why]
@@ -101,12 +132,12 @@ Agent(
 
   ## Recommendations
   Ranked by effort-to-value:
-  1. [action] — effort: [low/medium/high], value: [low/medium/high] — [source]
+  1. [action] — effort: [low/med/high], value: [low/med/high] — [source] ([year])
 
   ## Gaps
   [What the research didn't answer. What to search next.]
 
   ## Sources
-  - [URL]: [what it covers, when accessed]"
+  - [URL] ([year]): [what it covers]"
 )
 ```
