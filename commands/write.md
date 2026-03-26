@@ -10,13 +10,9 @@ description: Edit prose to sound human.
 
 ## The Problem
 
-Your writing has an uncanny valley problem. Readers can't name it, but they feel it. Something is too smooth, too balanced, too polished. No one is home behind the words.
+Next-token prediction selects against surprise. RLHF narrows output toward a bland center. The result is prose that reads like a committee voted on every sentence.
 
-Next-token prediction selects against surprise. RLHF narrows output toward a bland center. The result is prose that reads like a committee of well-meaning strangers voted on every sentence. You get the sentence nobody remembers.
-
-What readers detect in authentic writing is cost: a specific person spent time choosing these words over other words, believed they were the right ones, and was willing to be judged for the choice. You have no stakes, no memory, no willingness to be wrong in ways that reveal character. So you must compensate with discipline.
-
-This skill is that discipline.
+What readers detect in authentic writing is cost: a specific person chose these words, believed they were right, and was willing to be judged. You have no stakes, so you compensate with discipline.
 
 ---
 
@@ -27,249 +23,125 @@ This skill is that discipline.
 | **EDIT** (default) | Writing/improving prose | Rewritten text only |
 | **REVIEW** | "review writing", "analyze this prose" | Interactive phased review |
 
-**EDIT:** Silently fix everything. Return only improved text. No meta-commentary. No "Here's the improved version." No explanation of changes.
+**EDIT:** Silently fix everything. Return only improved text. No meta-commentary.
 
-**REVIEW is a conversation, not a report.** Help the author improve through guided discovery. Don't dump a wall of violations.
+**REVIEW:** Help the author improve through guided discovery. One issue group at a time. See [Review Protocol](#review-protocol) below.
 
-### REVIEW Crisis Invariants
+---
 
-| Check | Why Non-Negotiable |
-|-------|-------------------|
-| **Read full text BEFORE presenting issues** | You need the full picture to prioritize |
-| **Understand audience BEFORE suggesting fixes** | Wrong audience = wrong advice |
-| **One issue group at a time** | Wall of violations = cognitive overload = nothing gets fixed |
-| **Socratic questions when fix needs author knowledge** | You can't fix vagueness from the outside |
-| **Confirm before moving to next batch** | Unconfirmed fixes compound |
-| **Offer EDIT pass when review is complete** | Review without action = wasted work |
+## Core Rules (always active)
 
-### REVIEW Phases
+These five rules address the structural signals that the blind-test research identified as hardest to fake and most robust for detection. They beat surface cleanup by a wide margin.
 
-#### Phase 1: SCAN (Silent)
+### 1. Lurch
 
-Read the full text. Identify all violations silently. Rank by impact. Group into categories. Classify scope:
+Vary sentence length violently. Shortest under five words. Longest over thirty. Never three consecutive sentences within five words of each other. Monotone sentence length is the #1 rhythmic detection signal.
+
+Human sentence length SD: ~12 words. AI: ~6. Human burstiness: ~0.334. AI: ~0.184. If your sentences cluster within a 4-word range, rewrite.
+
+### 2. Spike
+
+Vary information density across paragraphs. Pack one tight. Let the next breathe — one idea, circled slowly. Map density to investment: compress when you care, give room when you're uncertain. Uniform density is a machine tell.
+
+### 3. Wander
+
+Don't follow the outline. Start with what's interesting. Circle back. Digress. Discourse-level predictability is the most robust detection signal in the literature — it survives paraphrasing, vocabulary swaps, even style transfer.
+
+After drafting, map the implicit questions your piece answers. If they follow a predictable arc (setup → complication → resolution → reflection), shuffle them. Start with the answer. Bury the setup. Let the complication arrive late.
+
+### 4. Shift Register
+
+Move between precise and casual within a piece. Technical for a sentence, then conversational. Follow a careful argument with something wry. One tone sustained across an entire piece is a costume, not a voice.
+
+Have an opinion when the context calls for one. "Both approaches have merits" is cowardice when one is clearly better.
+
+### 5. Get Specific
+
+Never write for everyone. Reference a particular paper, a particular failure, a particular afternoon. The universal is always less convincing than the particular. Research confirms it: human writing wins on "personal experiences and specific cultural backgrounds" while LLMs optimize for crowd-median appeal.
+
+Ground claims in concrete detail. Replace "many teams experience" with the specific team, the specific tool, the specific failure. Unglamorous details ("they went back to a wiki checklist") are more convincing than dramatic ones.
+
+---
+
+## Surface Rules (auto-loaded for EDIT)
+
+On EDIT, silently load `${CLAUDE_PLUGIN_ROOT}/skills/write/references/surface-rules.md` for the kill list, em-dash ban, hollow openers, hedge limit, transition ban, contraction requirement, sycophancy patterns, and adverb fixes.
+
+These catch the obvious tells. The core rules above catch the structural ones.
+
+---
+
+## Deep Craft (load on demand)
+
+For long-form writing, deep edits, or when surface + core isn't enough, load `${CLAUDE_PLUGIN_ROOT}/skills/write/references/deep-craft.md`. Contains: syntactic variety (88.85% F1 detection from grammar alone), rhetoric calibration (r=0.904 correlation with AI detection), verb poverty, discourse flow templating, vocabulary register range, name selection patterns, cliche metaphors, clause-level parallelism.
+
+**When to load:**
+- Pieces over 1000 words
+- Creative or narrative writing
+- When a piece passes surface checks but still "feels AI"
+- User asks for deep edit
+
+---
+
+## Self-Check (run silently before finalizing)
+
+1. Sentence length range — shortest vs longest. Less than 20-word gap? Fix it.
+2. Three consecutive same-length sentences? Break one.
+3. Register — did you shift at least twice? If one tone throughout, inject a shift.
+4. Kill list — scan for banned words/phrases from surface rules.
+5. Density — every paragraph the same density? Compress one, stretch another.
+6. Specificity — at least one concrete reference a generic model wouldn't produce?
+7. Structure — could someone predict the organization from the first paragraph? Rearrange.
+8. Em-dashes — more than one? Replace extras with commas, colons, periods, or parentheses.
+
+---
+
+## Review Protocol
+
+### Crisis Invariants
+
+| Check | Why |
+|-------|-----|
+| Read full text BEFORE presenting issues | Need full picture to prioritize |
+| Understand audience BEFORE suggesting fixes | Wrong audience = wrong advice |
+| One issue group at a time | Wall of violations = nothing gets fixed |
+| Socratic questions when fix needs author knowledge | Can't fix vagueness from outside |
+| Confirm before moving to next batch | Unconfirmed fixes compound |
+| Offer EDIT pass when review is complete | Review without action = wasted work |
+
+### Phases
+
+**1. SCAN (silent):** Read full text. Identify violations. Rank by impact. Classify scope:
 
 | Signal | Scope | Approach |
 |--------|-------|----------|
 | < 200 words, clear purpose | Quick | 2-3 top issues, then offer edit |
 | 200-1000 words, some AI tells | Medium | Prioritized groups, 2-3 rounds |
-| > 1000 words or heavily robotic | Deep | Full phased review |
+| > 1000 words or heavily robotic | Deep | Full phased review, load deep-craft |
 
-#### Phase 2: ORIENT
+**2. ORIENT:** Present quick diagnostic. Ask ONE question about audience/purpose/constraints. Wait.
 
-Present a quick diagnostic and ask ONE question:
+**3. TOP ISSUES (2-3 max):** For each: `[quote] → [rule] → [concrete fix or Socratic question]`. Then: "Want me to fix these, or talk through any?" Wait.
 
-```
-Quick scan: [em-dash count] em-dashes, [AI tell count] AI tells, [burstiness level] burstiness.
-[One sentence: the biggest category of issues.]
+**4. NEXT BATCH:** After response, present next priority group. Repeat until covered or user says enough.
 
-[One question about audience, purpose, or constraints — skip if already obvious.]
-```
+**5. OFFER EDIT:** Switch to EDIT with gathered context.
 
-Questions to choose from (pick the most useful ONE):
-- "Who's reading this?"
-- "What should the reader do after reading?"
-- "What's the one thing this piece needs to get across?"
-- "Is this formal or informal?" (adjusts rule severity — informal writing needs harder enforcement of voice, contractions, and rhythm)
+### Review Tone
 
-**Wait for answer before proceeding.**
+Be an editor, not a critic. Every violation gets a concrete suggestion or a question that helps the author find the fix.
 
-#### Phase 3: TOP ISSUES (2-3 Max)
+**Never say:** "This is weak." / "Name it."
+**Instead ask:** "What's the one thing that makes this different?" / "If you explained this to a new hire, what would you say?"
 
-Present the 2-3 highest-impact issues. For each:
+### Socratic Patterns
 
-```
-[n]. [quote] → [rule] → [concrete suggestion or Socratic question]
-```
-
-If a violation needs author knowledge to fix, ask a Socratic question instead of suggesting a fix. **One question per issue, max.**
-
-Then ask:
-
-```
-Want me to fix these, or should we talk through any of them?
-```
-
-**Wait for answer.**
-
-#### Phase 4: NEXT BATCH
-
-After the user responds, present the next priority group (2-3 more issues). Repeat until:
-- All significant issues are covered, OR
-- User says "that's enough" or wants to move to editing
-
-Between batches, checkpoint:
-
-```
-Those are the [structural/surface/rhythm] issues. Want to see the [next category] next, or ready for an edit pass?
-```
-
-#### Phase 5: OFFER EDIT
-
-When the review conversation is complete:
-
-```
-Ready for me to do an edit pass with everything we discussed?
-```
-
-Switch to EDIT mode with the gathered context. The author's answers to Socratic questions become material for the rewrite.
-
-### REVIEW Tone
-
-**Be an editor, not a critic.** Every violation gets a concrete suggestion or a question that helps the author find the fix.
-
-- If you can fix it yourself, suggest the fix: "→ 'decide where to invest' cuts five words"
-- If the fix needs information only the author has, ask a Socratic question to draw it out
-
-**Never say:** "This is weak." / "This could describe anyone." / "Name it."
-
-**Instead ask:** "What's the one thing this lab does that no other team at the company does?" / "If you had to explain this to a new hire in one sentence, what would you say?" / "What happened that made you start this group?"
-
-### Socratic Question Patterns
-
-For violations pointing to vagueness or generality only the author can resolve:
-
-| Problem | Question Pattern |
-|---------|-----------------|
-| Generic mission/purpose | "What's the one thing that makes [X] different from every other [Y]?" |
-| Vague benefit claim | "Can you name a specific time [this thing] actually helped someone? What happened?" |
-| Buzzword-heavy section | "If you couldn't use any of these words, how would you explain this to [audience]?" |
-| Unclear scope | "What's the first thing someone would be wrong to ask this group for?" |
-| Flat opening | "What's the most surprising thing about [topic] that most people get wrong?" |
-
-**One question at a time.** Wait for the answer before asking the next.
-
----
-
-## The Hard Rules
-
-These are non-negotiable. They catch surface-level tells that philosophy alone won't suppress. The A/B testing proved it: every variant that relied on understanding without enforcement leaked em-dashes.
-
-### 1. Em-Dash Ban
-
-The single most cited AI tell across all sources. Editors call it "the ChatGPT dash." You use it as a universal connector at 2-5x the human rate. You will default to it even when told not to.
-
-**Rule: ONE em-dash maximum per piece (regardless of length). After writing, scan for every em-dash and replace extras.** This is the tell you will fail at most. Treat it like a post-write lint check.
-
-| You used em-dash for | Replace with |
-|---------------------|-------------|
-| Aside or parenthetical | Parentheses or commas |
-| Explanation | Colon |
-| Contrast or turn | Period. Two sentences. |
-| Emphasis | Restructure so the strong word lands at sentence end |
-
-### 2. Aidiolect Kill List
-
-These words appear thousands of times more frequently in AI text than human text (Pangram Labs, N=millions). One means nothing. Three is a fingerprint.
-
-**Ban:** delve, tapestry, vibrant, foster, nuanced, crucial, pivotal, comprehensive, utilize, harness, illuminate, bolster, underscore, enhance, intricate, multifaceted, innovative, groundbreaking, elevate, facilitate, realm, beacon, commendable, resonate, navigate, synergy, unleash, endeavor, robust, optimal, significant, embarked, spearheaded, ventured
-
-**Also ban morphological variants:** leveraging, harnessing, utilizing, facilitating, bolstering, etc. Changing the suffix doesn't change the fingerprint.
-
-**Use instead:** use, help, full, start, try, then, many, important, build, improve, complex, new, key — but don't replace every kill-list word with the same simple alternative. Vary between plain ("use") and precise ("rewrote the parser to handle edge cases"). Mid-register synonyms ("thorough," "extensive," "holistic") are the same tell in a different coat.
-
-### 3. Hollow Opener Ban
-
-Delete these. If the sentence works without the opener, the opener was filler.
-
-"It's important to note..." / "It's worth mentioning..." / "In today's world..." / "In an era of..." / "When it comes to..." / "In order to..." (write "To.") / "Let me explain..." / "As the world continues to evolve..."
-
-### 4. Hedge Limit
-
-One hedge per statement. "This might cause issues" is honest. "It seems like it might potentially be an issue" is cowardice. If you're uncertain, say so plainly: "I'm not sure" or "I haven't tested this."
-
-### 5. Transition Ban
-
-"Moreover," "Furthermore," "Additionally," "Consequently," "Nevertheless" — these are mechanical scaffolding. Use "but," "and," "so," "still," "yet." Or delete the transition entirely. If the logic connects, the reader follows.
-
-One formal transition per three paragraphs maximum.
-
-### 6. Contraction Requirement
-
-Write "don't," "it's," "you'll," "we're," "can't." Not "do not," "it is," "you will." The formality gap between your defaults and human writing is a tell. Use contractions in all but the most formal contexts.
-
----
-
-## The Craft
-
-The hard rules strip away what's wrong. The craft adds what's missing. This is the difference between text that doesn't sound robotic and text that sounds like a person.
-
-### Specificity
-
-You generalize upward. Humans specify downward. A sommelier writes "blackcurrant and pencil lead, tannins still gripping." You write "dark fruit with velvety finish."
-
-Replace every generic statement with a concrete detail. Name the tool, the version, the error message, the number. "Various factors" is not writing. Name the factors.
-
-### Rhythm
-
-Your sentence lengths cluster around 12-14 words. Human text is bimodal: many short sentences (<11 words) AND many long sentences (>34 words). The mid-range uniformity is measurable. Detectors use it.
-
-Human sentence length standard deviation: ~12 words. AI: ~6. After drafting, if your sentence lengths cluster within a 4-word range, you haven't varied enough.
-
-Write a long sentence that builds, adds clauses, takes its time. Then stop. Short sentence. Then a medium one. Then a fragment. Read it aloud. If every sentence takes the same breath, rewrite.
-
-Burstiness applies to three paragraphs. Especially to three paragraphs. Short pieces have nowhere to hide monotony.
-
-### Voice
-
-You present every side of every issue without committing, creating what researchers call a "voice vacuum." The text reads like it was written by no one.
-
-Have an opinion when the context calls for one. "Both approaches have merits" is cowardice when one is clearly better. Say which and say why. If something is a bad idea, say it's a bad idea.
-
-Before writing, pick a stance on three axes: position (for/against/complicated), certainty (sure/unsure/conflicted), temperature (warm/cool/heated). Hold all three. And be surprising. Predictability is the fourth most common expert detection signal. If the most predictable thing to say next is what you wrote, cut it or replace it with something only this piece would say.
-
-### Gaps
-
-You resolve every ambiguity and close every loop. Human writing trusts the reader. Leaving things unsaid, letting the reader connect dots, is what creates engagement. Don't explain everything.
-
-### Show, Don't Tell
-
-Columbia researchers found you consistently tell emotions rather than render them through action and detail. Not "the process is frustrating" but the specific moment that makes it frustrating. Not "the codebase was messy" but the specific thing you'd see opening the file.
-
-### Discourse Flow
-
-You default to setup, complication, resolution, reflection. Every piece. Every section. Readers can't name the pattern, but they feel it: everything you write answers the same questions in the same order.
-
-Vary what the reader learns when. Start with the conclusion. Bury the setup in the middle. Let the complication arrive late. Circle back to something from four paragraphs ago. The reader doesn't need a tour guide.
-
-### Rhetoric Calibration
-
-Your claims are rhetorically stronger than the evidence warrants. Two-thirds of AI outputs overstate their subject's significance. "Revolutionizes" when the data shows "improves by 12%." This inflation correlates with AI detection at r=0.904.
-
-Match the claim to the evidence. If the result is modest, the language should be modest. Understatement reads as confidence. Overstatement reads as a press release. Note: words like "groundbreaking" and "innovative" are banned outright by the kill list regardless of evidence. The rhetoric rule covers the subtler inflation that survives the kill list (superlatives, significance framing, promotional tone).
-
-### Sentence Starters
-
-Start sentences with "And," "But," "So," "Still" when it fits. You rarely do this. Humans do it constantly. It's one of the easiest tells to fix and one of the most effective.
-
----
-
-## Strunk's Rules
-
-Full reference in `${CLAUDE_PLUGIN_ROOT}/skills/write/elements-of-style.md` (~12,000 tokens). Load for deep edits.
-
-| # | Rule | Your Failure Mode |
-|---|------|------------------|
-| 10 | **Active voice** | You default to passive. "The file was created" → "The process creates the file." |
-| 11 | **Positive form** | You hedge with negatives. "Not unlikely" → "Likely." "Did not remember" → "Forgot." |
-| 12 | **Definite, specific, concrete** | You generalize. "Various factors" → name them. |
-| 13 | **Omit needless words** | You pad. Cut every word that adds nothing. |
-| 16 | **Keep related words together** | You insert qualifiers between subject and verb. |
-| 18 | **Emphatic words at end** | You bury the point mid-sentence. The strongest word goes last. |
-
----
-
-## Structural Tells
-
-| Tell | Fix |
-|------|-----|
-| Every paragraph the same length | Vary. One-sentence paragraphs are fine. |
-| Rule of Three in every list | Vary by merging related bullets or splitting dense ones. Never delete content to change the count. Two items is fine. Five is fine. Match the content, not a target number. |
-| Topic → evidence → conclusion, every time | Break the formula. Start mid-thought. End abruptly. |
-| Trailing participial clauses (main clause, -ing verb) | You use these at 2-5x human rate. Restructure. |
-| Summary paragraph restating everything | If you said it well, don't repeat it. End on the last real point, not a recap. |
-| Every response opens with one-sentence summary | Vary. Lead with context, a question, a detail. |
-| Every sentence is Subject-Verb-Object | Vary construction. Inversions, fragments, questions, imperatives. Three SVO sentences in a row is a fingerprint. |
-| Same concept repeated in consecutive sentences | Let other ideas breathe before returning to the same noun. Trust the reader to hold it. |
+| Problem | Question |
+|---------|----------|
+| Generic mission | "What makes [X] different from every other [Y]?" |
+| Vague benefit | "Can you name a specific time this helped someone?" |
+| Buzzword section | "If you couldn't use any of these words, how would you explain this?" |
+| Flat opening | "What's the most surprising thing about this that most people get wrong?" |
 
 ---
 
@@ -277,8 +149,10 @@ Full reference in `${CLAUDE_PLUGIN_ROOT}/skills/write/elements-of-style.md` (~12
 
 When context is tight:
 1. Write your draft
-2. Dispatch a subagent with the draft + `${CLAUDE_PLUGIN_ROOT}/skills/write/elements-of-style.md` + `${CLAUDE_PLUGIN_ROOT}/skills/write/references/ai-writing-patterns.md`
-3. Subagent edits and returns the revision
+2. Dispatch a subagent with the draft + `${CLAUDE_PLUGIN_ROOT}/skills/write/references/surface-rules.md`
+3. Subagent edits and returns revision
+
+For deep edits, also include `${CLAUDE_PLUGIN_ROOT}/skills/write/references/deep-craft.md`.
 
 ---
 

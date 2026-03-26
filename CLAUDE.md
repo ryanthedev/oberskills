@@ -47,9 +47,9 @@ oberskills/
     │       ├── run_trigger_eval.py
     │       └── utils.py
     └── write/
-        ├── elements-of-style.md
         └── references/
-            └── ai-writing-patterns.md
+            ├── surface-rules.md
+            └── deep-craft.md
 ```
 
 ## Command File Format
