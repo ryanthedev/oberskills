@@ -46,6 +46,11 @@ oberskills/
     │       ├── quick_validate.py
     │       ├── run_trigger_eval.py
     │       └── utils.py
+    ├── web-research/
+    │   └── references/
+    │       ├── search-prompts.md
+    │       ├── synthesis-prompts.md
+    │       └── deep-mode.md
     └── write/
         └── references/
             ├── surface-rules.md
