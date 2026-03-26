@@ -31,19 +31,22 @@ If the user specifies a depth, use it. Otherwise, infer from the query or ask:
 
 ---
 
-## Step 0: Check Memory (brief, breadth, deep only)
+## Step 0: Check Existing Knowledge (brief, breadth, deep only)
 
-Before hitting the web, check what you already know.
+Before hitting the web, ground in what's already available.
 
 ```
-1. grug-search "[key terms from query]"
-2. grug-docs — check if a relevant category exists
-3. Check local files (package.json, configs, code) for grounding context
+1. Check local files relevant to the query (package.json, configs, code, docs)
+2. If a PreSearch hook is configured, run it with the query terms
+   (hook can check project-specific memory, knowledge bases, internal docs, etc.)
+3. Use results to skip dimensions already covered and focus search on gaps
 ```
 
-**If memory covers part of the query:** Skip those dimensions. Tell the user what you already know and focus search on the gaps.
+**Hook contract:** The PreSearch hook receives the query as input. It returns any existing knowledge as text. The skill uses this to inform dimension planning — not as a gate. If no hook is configured, skip to Step 1.
 
-**If memory fully covers the query:** Present what you have. Ask if they want fresh results anyway.
+**If existing knowledge covers part of the query:** Tell the user what you already have and focus search on the gaps.
+
+**If existing knowledge fully covers the query:** Present it. Ask if they want fresh web results anyway.
 
 ---
 
@@ -59,7 +62,7 @@ Agent(
 
   USER QUERY: {query}
   DEPTH MODE: {mode}
-  EXISTING KNOWLEDGE: {from step 0, or 'none'}
+  EXISTING KNOWLEDGE: {from step 0 hook/local files, or 'none'}
 
   PHASE 1 - GROUNDING:
   Check local files relevant to this query (package.json, configs, code).
