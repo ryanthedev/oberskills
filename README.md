@@ -1,123 +1,80 @@
 # oberskills
 
-Discipline plugins for Claude Code — prompt engineering, agent dispatch, writing, and search.
-
-## How It Works
-
-### SEARCH
-```
-User: "Research X with web-research"
-  → Identify search dimensions (docs, tutorials, discussions)
-  → Dispatch parallel sonnet search agents
-  → Synthesize results with user's model + source URLs
-```
-
-### CREATE / REVIEW
-```
-User: "Create a skill for code review"
-  → INTAKE: Problem, triggers, 5+ use rule
-  → DESIGN: Single vs router, freedom level
-  → BUILD: SKILL.md with workflow, examples, and common mistakes
-  → TEST: Baseline (RED) → Compliance (GREEN) → Loopholes (REFACTOR)
-  → SHIP: Pre-flight checklist, package
-
-User: "Review this agent prompt"
-  → Load review-prompt.md checklist
-  → Structure, efficiency, security audit
-  → Verdict table with fixes
-```
-
-### WRITE
-```
-User: "This sounds too robotic, fix it"
-  → PURGE: Strip aidiolect, em-dashes, hollow openers, hedges
-  → STRUCTURE: Fix burstiness, vary rhythm
-  → STRUNK: Active voice, concrete language, omit needless words
-  → VOICE: Add specificity, positions, gaps, contractions
-```
-
-### SCREENSHOT
-```
-User: "Take a screenshot and analyze it"
-  → Capture screen (full, active window, or named window)
-  → Dispatch haiku analyzer
-  → Return summary with insights
-```
-
----
+Six commands that make Claude Code better at the things it's worst at: writing like a person, searching the web without hallucinating URLs, building skills that actually work, and not embarrassing itself when dispatching agents.
 
 ## Commands
 
-| Command | Purpose | Example |
-|---------|---------|---------|
-| **prompt** | Prompt engineering principles | "use prompt to fix this flaky agent" |
-| **agent** | Agent dispatch validation | "use agent before dispatching" |
-| **web-research** | Multi-dimensional web search | "use web-research to research X" |
-| **skill-craft** | Skill creation AND review | "create a skill for X" / "review this prompt" |
-| **write** | Human-sounding writing (Strunk + AI pattern detection) | "this sounds robotic, fix it" / "write this README" |
-| **shot** | Screenshot capture and analysis (full, active, or named window) | "take a screenshot and analyze it" / "screenshot of Firefox" |
+### write
 
----
+Two modes. EDIT rewrites silently. REVIEW walks you through issues one batch at a time, asks questions, then offers an edit pass.
 
-## Command Chain
+The skill loads in three layers depending on what the piece needs:
 
 ```
-web-research (standalone)
-       │
-       └── Dispatch parallel sonnet search agents
-              │ (extract and distill precise info, no summaries)
-              └── Synthesize with user's model + source URLs
+Layer 1 — Core (always loaded, ~160 lines)
+  Five structural rules that won a blind test against a 3-judge panel:
+  lurch (sentence length variance), spike (density variation),
+  wander (non-linear structure), shift register, get specific.
 
-skill-craft (standalone)
-       │
-       ├── CREATE: INTAKE → DESIGN → BUILD → TEST → SHIP
-       │              │
-       │              └── Pressure testing with fresh subagents
-       │
-       └── REVIEW: Load checklist → Audit → Verdict table
+Layer 2 — Surface (auto-loaded for EDIT, ~170 lines)
+  Kill list, em-dash ban, hollow openers, hedge limit,
+  transition crutches, contractions, sycophancy, verb poverty.
 
-agent (invoked before any agent dispatch)
-       │
-       └── prompt
-              │
-              └── Prompt engineering
-                  (constraints, validation)
-
-write (standalone)
-       │
-       └── PURGE → STRUCTURE → STRUNK → VOICE
-              │
-              └── Hard rules (em-dash ban, aidiolect kill list)
-                  + Craft (specificity, rhythm, voice, gaps)
-
-shot (standalone)
-       │
-       └── Capture (full / active / --mode window --name "App")
-              │
-              └── Dispatch haiku analyzer → Return summary
+Layer 3 — Deep Craft (on demand, ~200 lines)
+  Syntactic variety, rhetoric calibration, discourse templating,
+  register range, name patterns, cliche metaphors, parallelism.
 ```
 
----
+Typical edit: ~330 lines of instruction. Deep edit: ~530. Built on 47 AI-writing detection papers, Pangram Labs data (N=millions), and a blind test that dropped AI detection probability from 85% to 15%.
 
-## Installation
+### web-research
+
+Parallel search agents fan out across multiple dimensions (docs, tutorials, discussions, forums). Each agent extracts precise information with source URLs. Results synthesize back through your model. No hallucinated links.
+
+### skill-craft
+
+Creates and reviews Claude Code skills. CREATE mode runs intake, design, build, test (baseline/compliance/loopholes), and ship. REVIEW mode loads a checklist and audits structure, efficiency, and security. Both produce concrete artifacts, not advice.
+
+### prompt
+
+Prompt engineering principles. Invoked standalone or chained through the agent command. Covers constraints, validation, and the structural patterns that make prompts stick.
+
+### agent
+
+Validation gate before dispatching subagents. Chains into prompt engineering. Catches the things that go wrong when you hand work to a subprocess without thinking about it first.
+
+### shot
+
+Screenshot capture and analysis. Full screen, active window, or named window. Dispatches a haiku-tier analyzer and returns a summary.
+
+## How They Connect
+
+```
+web-research ─── parallel search agents ─── synthesize with source URLs
+
+skill-craft ──┬─ CREATE: intake → design → build → test → ship
+              └─ REVIEW: checklist → audit → verdict
+
+agent ──── prompt (constraints, validation)
+
+write ──┬─ EDIT: core rules + surface rules (+ deep craft if needed)
+        └─ REVIEW: scan → orient → top issues → next batch → offer edit
+
+shot ──── capture → haiku analyzer → summary
+```
+
+## Install
 
 ```bash
-# Add marketplace (if not already added)
 /plugin marketplace add ryanthedev/rtd-claude-inn
-
-# Install plugin
 /plugin install oberskills@rtd
-
-# Update to latest
 /plugin update oberskills@rtd
 ```
 
 ## Version
 
-Current version: **1.26.0**
+**1.27.0**
 
-Each command displays its version at runtime by reading from `.claude-plugin/plugin.json`.
-
-## License
+---
 
 MIT
