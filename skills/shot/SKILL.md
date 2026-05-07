@@ -1,10 +1,9 @@
 ---
+name: shot
 description: Capture and analyze screenshots without burning context.
 ---
 
 # Skill: shot
-
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `shot v{version}` before proceeding.
 
 ```
 UNDERSTAND REQUEST → DISPATCH shot agent → RETURN summary
@@ -33,7 +32,7 @@ If the user's intent is ambiguous, ask which window or screen area they want cap
 
 ### 2. Dispatch Shot Agent
 
-Pass the capture mode and any specific analysis question to the shot agent at `${CLAUDE_PLUGIN_ROOT}/skills/shot/agents/shot.md`.
+Pass the capture mode and any specific analysis question to the shot agent at `agents/shot.md`.
 
 ```
 Agent(
@@ -48,7 +47,7 @@ Agent(
 
   INSTRUCTIONS:
   1. Run the capture script from the shot skill directory:
-     python ${CLAUDE_PLUGIN_ROOT}/skills/shot/scripts/capture.py --mode [mode] [--name 'window name']
+     python scripts/capture.py --mode [mode] [--name 'window name']
 
   2. Read the full-resolution image from the JSON output path.
 

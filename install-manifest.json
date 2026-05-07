@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "pluginName": "oberskills",
+  "groups": {
+    "agents": [],
+    "commands": [],
+    "plugins": [],
+    "skills": [
+      "agent",
+      "prompt",
+      "shot",
+      "skill-craft",
+      "web-research",
+      "write"
+    ]
+  }
+}

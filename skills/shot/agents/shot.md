@@ -15,12 +15,12 @@ Run the capture script:
 
 ```bash
 # Full screen or active window
-python ${CLAUDE_PLUGIN_ROOT}/skills/shot/scripts/capture.py --mode [full|active]
+python scripts/capture.py --mode [full|active]
 
 # Specific window by name (matches title first, then app name)
-python ${CLAUDE_PLUGIN_ROOT}/skills/shot/scripts/capture.py --mode window --name "Firefox"
-python ${CLAUDE_PLUGIN_ROOT}/skills/shot/scripts/capture.py --mode window --name "VS Code"
-python ${CLAUDE_PLUGIN_ROOT}/skills/shot/scripts/capture.py --mode window --name "Terminal"
+python scripts/capture.py --mode window --name "Firefox"
+python scripts/capture.py --mode window --name "VS Code"
+python scripts/capture.py --mode window --name "Terminal"
 ```
 
 **Matching rules for `--name`:**

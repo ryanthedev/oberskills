@@ -4,22 +4,16 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Repository Purpose
 
-This is a Claude Code plugin containing reusable commands and agents — workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing.
+This is an opencode plugin containing reusable skills and agents — workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing.
 
 ## Structure
 
 ```
 oberskills/
-├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest (name, version, description)
+├── .opencode/
+│   └── opencode.json        # Plugin configuration
 ├── assets/                  # Demo screenshots and images
-├── commands/                # Plugin commands (flat .md files)
-│   ├── agent.md
-│   ├── prompt.md
-│   ├── shot.md
-│   ├── skill-craft.md
-│   ├── web-research.md
-│   └── write.md
+├── install-manifest.json    # Plugin manifest for opencode
 ├── research/                # Research papers and best practices
 │   ├── agentic-orchestration/
 │   ├── anthropic-best-practices.md
@@ -27,58 +21,63 @@ oberskills/
 │   ├── GUIDE-skill-compliance-and-persuasion.md
 │   ├── REFERENCE-skill-structure-and-constraints.md
 │   └── references/
-└── skills/                  # Supporting files for commands (references, scripts, agents)
+└── skills/                  # Skills (SKILL.md + supporting files)
+    ├── agent/
+    │   └── SKILL.md
     ├── prompt/
+    │   ├── SKILL.md
     │   └── optimization-reference.md
     ├── shot/
+    │   ├── SKILL.md
     │   ├── agents/
     │   │   └── shot.md
     │   └── scripts/
     │       └── capture.py
     ├── skill-craft/
+    │   ├── SKILL.md
     │   ├── agents/
     │   ├── references/
     │   └── scripts/
+    ├── web-research/
+    │   └── SKILL.md
     └── write/
+        ├── SKILL.md
         ├── elements-of-style.md
         └── references/
             └── ai-writing-patterns.md
 ```
 
-## Command File Format
+## Skill File Format
 
-Each command is a Markdown file with YAML frontmatter:
+Each skill is a Markdown file with YAML frontmatter:
 
 ```markdown
 ---
-name: commandname
-description: When to use this command - triggers command selection
+name: skillname
+description: When to use this skill - triggers skill selection
 ---
 
-# Command Title
+# Skill Title
 
 [Workflow steps, phases, decision tables, output formats]
 ```
 
-The `description` field is critical — it tells Claude when to invoke the command.
+The `description` field is critical — it tells Claude when to invoke the skill.
 
-All commands display their version at runtime by reading from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`, which serves as the single source of truth for the plugin version.
-
-Supporting files (references, scripts, agents) live under `skills/` and are referenced using `${CLAUDE_PLUGIN_ROOT}` paths.
+Supporting files (references, scripts, agents) live under each skill directory and are referenced using relative paths from the skill directory.
 
 ## Installation
 
-Install via the RTD marketplace:
+Install via opencode:
 
 ```bash
-/plugin marketplace add ryanthedev/rtd-claude-inn
-/plugin install oberskills@rtd
+/plugin install oberskills
 ```
 
-## Commands
+## Skills
 
-| Command | Purpose |
-|---------|---------|
+| Skill | Purpose |
+|-------|---------|
 | **agent** | Enforces prompt principles before any agent dispatch |
 | **prompt** | Research-backed prompt engineering for LLM systems |
 | **shot** | Screenshot intake + dispatches shot agent for context-efficient capture + haiku analysis |

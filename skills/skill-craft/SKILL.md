@@ -1,10 +1,9 @@
 ---
+name: skill-craft
 description: Create and review skills and agent prompts.
 ---
 
 # Skill: skill-craft
-
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `skill-craft v{version}` before proceeding.
 
 Create or review skills and agent prompts with checklist-driven quality gates.
 
@@ -15,8 +14,8 @@ Create or review skills and agent prompts with checklist-driven quality gates.
 | User Intent | Mode | Workflow |
 |-------------|------|----------|
 | "create skill", "build skill", "make skill for X" | CREATE | INTAKE → DESIGN → BUILD → TEST → SHIP |
-| "review skill", "audit skill", "check skill" | REVIEW-SKILL | Load `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/references/review-skill.md` |
-| "review prompt", "audit agent", "check agent prompt" | REVIEW-PROMPT | Load `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/references/review-prompt.md` |
+| "review skill", "audit skill", "check skill" | REVIEW-SKILL | Load `references/review-skill.md` |
+| "review prompt", "audit agent", "check agent prompt" | REVIEW-PROMPT | Load `references/review-prompt.md` |
 
 **If unclear:** Ask "Are you creating something new or reviewing something existing?"
 
@@ -102,7 +101,7 @@ skill-family/
     └── references/
 ```
 
-See `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/references/router-patterns.md` for implementation.
+See `references/router-patterns.md` for implementation.
 
 **Gate:** File structure planned + freedom levels assigned
 
@@ -160,12 +159,12 @@ Triggers on [quoted keyword phrases].
 After writing the description, optimize trigger accuracy:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/optimize_description.py --skill-path <path> --model <model-id>
+python scripts/optimize_description.py --skill-path <path> --model <model-id>
 ```
 
 Generates 20 eval queries, splits train/test, iterates up to 5 rounds. Selects best description by held-out test score. Claude under-triggers skills — make descriptions aggressively specific about when to activate.
 
-For manual trigger checking: `python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/run_trigger_eval.py --eval-set queries.json --skill-path <path>`
+For manual trigger checking: `python scripts/run_trigger_eval.py --eval-set queries.json --skill-path <path>`
 
 **Gate:** SKILL.md written + resources created + description optimized (or manually verified)
 
@@ -175,7 +174,7 @@ For manual trigger checking: `python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/sc
 
 **All tests run via fresh subagent** - no prior context contamination.
 
-See `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/references/testing-protocol.md` for full templates.
+See `references/testing-protocol.md` for full templates.
 
 ### 4.1 Trigger Tests
 
@@ -190,12 +189,12 @@ See `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/references/testing-protocol.md` fo
 
 For automated testing, use the eval pipeline:
 
-1. Define evals in `evals/evals.json` (see `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/references/schemas.md`)
+1. Define evals in `evals/evals.json` (see `references/schemas.md`)
 2. Spawn with-skill and without-skill subagents for each eval
-3. Grade with `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/agents/grader.md` (checks correctness AND pressure compliance)
-4. Review with `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/generate_review.py <workspace>/iteration-N`
-5. Aggregate with `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/aggregate_benchmark.py <workspace>/iteration-N --skill-name <name>`
-6. For A/B comparison: dispatch `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/agents/comparator.md` with two outputs
+3. Grade with `agents/grader.md` (checks correctness AND pressure compliance)
+4. Review with `scripts/generate_review.py <workspace>/iteration-N`
+5. Aggregate with `scripts/aggregate_benchmark.py <workspace>/iteration-N --skill-name <name>`
+6. For A/B comparison: dispatch `agents/comparator.md` with two outputs
 
 Workspace layout: `<skill>-workspace/iteration-N/eval-NAME/{with_skill,without_skill}/`
 
@@ -281,10 +280,10 @@ If any test fails:
 
 ```bash
 # Pre-ship validation
-python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/quick_validate.py <path/to/skill>
+python scripts/quick_validate.py <path/to/skill>
 
 # Package into .skill file
-python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/package_skill.py <path/to/skill>
+python scripts/package_skill.py <path/to/skill>
 ```
 
 **Gate:** .skill file ready for distribution
@@ -332,7 +331,7 @@ python ${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/scripts/package_skill.py <path/t
 
 ## Reference Files
 
-All reference files are under `${CLAUDE_PLUGIN_ROOT}/skills/skill-craft/`:
+All reference files are under the skill directory:
 
 | File | Purpose |
 |------|---------|

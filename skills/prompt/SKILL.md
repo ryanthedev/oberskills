@@ -1,10 +1,9 @@
 ---
+name: prompt
 description: Craft and review prompts for subagents and humans.
 ---
 
 # Skill: prompt
-
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `prompt v{version}` before proceeding.
 
 ## Modes
 
@@ -338,7 +337,7 @@ The context window is shared. For EACH instruction, ask:
 
 ## Multimodal Prompting
 
-See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` (section: Multimodal Prompting) for vision model guidance.
+See `optimization-reference.md` (section: Multimodal Prompting) for vision model guidance.
 
 ---
 
@@ -385,11 +384,11 @@ See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` (section: Mu
 | **DEEVO** | Variable | No ground truth available |
 | **EMPOWER** | Hours | Medical/safety-critical |
 
-See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` for details.
+See `optimization-reference.md` for details.
 
 ### Compression Strategy
 
-See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` (section: Compression Techniques) for compression guidance.
+See `optimization-reference.md` (section: Compression Techniques) for compression guidance.
 
 ---
 
@@ -453,4 +452,4 @@ See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` (section: Co
 
 ## Domain-Specific & Reference
 
-See `${CLAUDE_PLUGIN_ROOT}/skills/prompt/optimization-reference.md` for domain-specific guidance, evidence summary, and research references.
+See `optimization-reference.md` for domain-specific guidance, evidence summary, and research references.

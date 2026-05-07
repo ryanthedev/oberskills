@@ -1,10 +1,9 @@
 ---
+name: agent
 description: Invoke before dispatching a subagent.
 ---
 
 # Skill: agent
-
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `agent v{version}` before proceeding.
 
 **Output:** Just the Task tool call. Work through the checklist internally.
 

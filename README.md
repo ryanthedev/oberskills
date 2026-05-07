@@ -102,21 +102,18 @@ obershot (standalone)
 ## Installation
 
 ```bash
-# Add marketplace (if not already added)
-/plugin marketplace add ryanthedev/rtd-claude-inn
+# Install via opencode
+/plugin install oberskills
 
-# Install plugin
-/plugin install oberskills@rtd
-
-# Update to latest
-/plugin update oberskills@rtd
+# Or add from GitHub
+/plugin install ryanthedev/oberskills
 ```
 
 ## Version
 
-Current version: **1.24.0**
+Current version: **1.26.0**
 
-Each skill displays its version at runtime by reading from `.claude-plugin/plugin.json` (e.g., `obershot v1.20.0`).
+Version is tracked in `install-manifest.json`.
 
 ## License
 

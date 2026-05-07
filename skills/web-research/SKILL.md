@@ -1,10 +1,9 @@
 ---
+name: web-research
 description: Parallel web search across multiple angles.
 ---
 
 # Skill: web-research
-
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `web-research v{version}` before proceeding.
 
 ```
 GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
