@@ -1,10 +1,28 @@
 {
   "name": "oberskills",
-  "version": "1.29.0",
+  "version": "2.0.0",
   "description": "Discipline plugins for Claude Code — prompt engineering, agent dispatch, writing, and search",
   "author": {
     "name": "r"
   },
   "license": "MIT",
-  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "screenshot-analysis", "writing", "humanization"]
+  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "screenshot-analysis", "writing", "humanization"],
+  "mcpServers": {
+    "skill-eval": {
+      "command": "bun",
+      "args": ["run", "${CLAUDE_PLUGIN_ROOT}/mcp/src/server.ts"]
+    }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v bun >/dev/null 2>&1 || exit 0; diff -q \"${CLAUDE_PLUGIN_ROOT}/mcp/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" >/dev/null 2>&1 || (mkdir -p \"${CLAUDE_PLUGIN_DATA}\" && cp \"${CLAUDE_PLUGIN_ROOT}/mcp/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" && { cp \"${CLAUDE_PLUGIN_ROOT}/mcp/bun.lock\" \"${CLAUDE_PLUGIN_DATA}/bun.lock\" 2>/dev/null || true; } && cd \"${CLAUDE_PLUGIN_DATA}\" && bun install --silent) || rm -f \"${CLAUDE_PLUGIN_DATA}/package.json\"; { [ -e \"${CLAUDE_PLUGIN_ROOT}/mcp/node_modules\" ] && [ ! -L \"${CLAUDE_PLUGIN_ROOT}/mcp/node_modules\" ]; } || ln -sfn \"${CLAUDE_PLUGIN_DATA}/node_modules\" \"${CLAUDE_PLUGIN_ROOT}/mcp/node_modules\""
+          }
+        ]
+      }
+    ]
+  }
 }

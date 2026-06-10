@@ -1,0 +1,8 @@
+{
+  "total_tool_calls": 1,
+  "errors_encountered": 0,
+  "skill_invoked": false,
+  "num_turns": 2,
+  "total_cost_usd": 0.001,
+  "terminal": "success"
+}

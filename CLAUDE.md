@@ -4,96 +4,70 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Repository Purpose
 
-This is a Claude Code plugin containing reusable commands and agents — workflow patterns that guide Claude through specific tasks like prompt engineering, agent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing.
+This is a Claude Code plugin containing reusable skills and commands — workflow patterns that guide Claude through specific tasks like prompt engineering, subagent dispatch, skill creation, screenshot analysis, web search, and human-sounding writing. The three meta-skills (prompt, agent, skill-craft) are teaching instruments: their job is to make the Claude that invokes them produce best-practice prompts, dispatches, and skills.
 
 ## Structure
 
 ```
 oberskills/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest (name, version, description)
-├── commands/                # Plugin commands (flat .md files)
-│   ├── agent.md
-│   ├── prompt.md
+│   └── plugin.json          # Manifest: name, version, mcpServers (skill-eval), SessionStart dep hook
+├── skills/                  # Skills (skills/<name>/SKILL.md + references/ — the current format)
+│   ├── prompt/              # Claude-first prompt design + review; 8 reference files
+│   ├── agent/               # Subagent dispatch guidance; 3 reference files
+│   ├── skill-craft/         # Skill creation/eval/review; references/ + agents/analyzer.md
+│   ├── shot/                # (legacy command format: commands/shot.md + these support files)
+│   ├── web-research/        # (legacy command format)
+│   └── write/               # (legacy command format)
+├── commands/                # Legacy flat command files (migrate to skills/ when refreshed)
 │   ├── shot.md
-│   ├── skill-craft.md
 │   ├── web-research.md
-│   └── write.md
-└── skills/                  # Supporting files for commands (references, scripts, agents)
-    ├── prompt/
-    │   └── optimization-reference.md
-    ├── shot/
-    │   ├── agents/
-    │   │   └── shot.md
-    │   └── scripts/
-    │       └── capture.py
-    ├── skill-craft/
-    │   ├── agents/
-    │   │   ├── analyzer.md
-    │   │   ├── comparator.md
-    │   │   └── grader.md
-    │   ├── references/
-    │   │   ├── review-prompt.md
-    │   │   ├── review-skill.md
-    │   │   ├── router-patterns.md
-    │   │   ├── schemas.md
-    │   │   └── testing-protocol.md
-    │   └── scripts/
-    │       ├── aggregate_benchmark.py
-    │       ├── generate_review.py
-    │       ├── optimize_description.py
-    │       ├── package_skill.py
-    │       ├── quick_validate.py
-    │       ├── run_trigger_eval.py
-    │       └── utils.py
-    ├── web-research/
-    │   └── references/
-    │       ├── search-prompts.md
-    │       ├── synthesis-prompts.md
-    │       └── deep-mode.md
-    └── write/
-        └── references/
-            ├── surface-rules.md
-            └── deep-craft.md
+│   ├── write.md
+│   └── clarify.md
+└── mcp/                     # skill-eval MCP server (Bun + TypeScript, strict)
+    ├── src/                 # server bootstrap, register, tools/, lib/, types.ts
+    ├── data/                # pressure-blocks.json, rationalization-patterns.json
+    ├── prompts/             # grader.md, comparator.md, query-gen, description-improvement
+    └── test/                # bun test; live tests gated behind RUN_LIVE_EVALS=1
 ```
 
-## Command File Format
+## Conventions
 
-Each command is a Markdown file with YAML frontmatter:
+- **Skills format**: new/refreshed components are skills (`skills/<name>/SKILL.md`), not flat commands — Claude Code merged commands into skills; the directory name defines the command name. Frontmatter includes `name` (matches directory), `description` (third person, what + when, exclusion clause), `when_to_use` (trigger phrases). `description` + `when_to_use` ≤ 1,536 chars combined.
+- **Paths**: only the braced forms `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` are substituted, and only in harness-loaded content (SKILL.md bodies, configs, hooks) — never rely on substitution inside `references/*.md` (use skill-name phrasing there).
+- **Evidence discipline**: every number in a skill traces to a source; each canonical number lives in exactly one file, others point to it. No anti-rationalization tables or self-assessed compliance constructs in skill bodies (binding decision; `validate_skill` lints for them).
+- **No version banners**: skills do not read or display the plugin version. `plugin.json` is the single version source.
+- **MCP server code**: Bun + strict TypeScript; `bunx tsc --noEmit` and `bun test` must pass clean; no `console.log` in `src/` (stdout is the MCP transport — stderr only).
+- Dogfood gate: `validate_skill` over `skills/{prompt,agent,skill-craft}` must report zero errors and zero warnings.
 
-```markdown
----
-name: commandname
-description: When to use this command - triggers command selection
----
+## Working on the MCP server
 
-# Command Title
-
-[Workflow steps, phases, decision tables, output formats]
+```bash
+cd mcp
+bun install
+bunx tsc --noEmit     # typecheck (strict)
+bun test              # unit suite
+RUN_LIVE_EVALS=1 bun test test/smoke.live.test.ts   # live smoke (~$0.15, spawns Agent SDK sessions)
 ```
 
-The `description` field is critical — it tells Claude when to invoke the command.
-
-All commands display their version at runtime by reading from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`, which serves as the single source of truth for the plugin version.
-
-Supporting files (references, scripts, agents) live under `skills/` and are referenced using `${CLAUDE_PLUGIN_ROOT}` paths.
+Changes to `plugin.json` (mcpServers/hooks) need `/reload-plugins` or a restart to take effect.
 
 ## Installation
-
-Install via the RTD marketplace:
 
 ```bash
 /plugin marketplace add ryanthedev/rtd-claude-inn
 /plugin install oberskills@rtd
 ```
 
-## Commands
+## Components
 
-| Command | Purpose |
-|---------|---------|
-| **agent** | Enforces prompt principles before any agent dispatch |
-| **prompt** | Research-backed prompt engineering for LLM systems |
-| **shot** | Screenshot intake + dispatches shot agent for context-efficient capture + haiku analysis |
-| **skill-craft** | Skill creation and review with checklist-driven quality gates |
-| **web-research** | Multi-dimensional web search with parallel sonnet subagents that extract and distill (not summarize) precise information |
-| **write** | Human-sounding writing via Strunk's rules + research-backed AI pattern detection (em-dashes, aidiolect, burstiness, voice) |
+| Component | Form | Purpose |
+|-----------|------|---------|
+| **prompt** | skill | Claude-first prompt design + adversarial review (owns all prompt review, incl. agent prompts) |
+| **agent** | skill | Subagent dispatch: delegate-vs-inline, delegation contract, model/effort, verifier dispatch |
+| **skill-craft** | skill | Skill creation/eval/review, orchestrating the skill-eval MCP tools |
+| **skill-eval** | MCP server | validate_skill, test_triggers, optimize_description, run_eval, grade_run, aggregate_benchmark, compare_outputs |
+| **shot** | command | Screenshot intake + haiku analysis subagent |
+| **web-research** | command | Multi-angle parallel web search with extraction |
+| **write** | command | Human-sounding writing (Strunk + AI-pattern detection) |
+| **clarify** | command | Intent decomposition for ambiguous requests |
