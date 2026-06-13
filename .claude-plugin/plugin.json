@@ -11,6 +11,10 @@
     "skill-eval": {
       "command": "bun",
       "args": ["run", "${CLAUDE_PLUGIN_ROOT}/mcp/src/server.ts"]
+    },
+    "mcp-browser": {
+      "command": "bun",
+      "args": ["run", "${CLAUDE_PLUGIN_ROOT}/mcp-browser/src/server.ts"]
     }
   },
   "hooks": {
@@ -20,6 +24,10 @@
           {
             "type": "command",
             "command": "command -v bun >/dev/null 2>&1 || exit 0; diff -q \"${CLAUDE_PLUGIN_ROOT}/mcp/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" >/dev/null 2>&1 || (mkdir -p \"${CLAUDE_PLUGIN_DATA}\" && cp \"${CLAUDE_PLUGIN_ROOT}/mcp/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" && { cp \"${CLAUDE_PLUGIN_ROOT}/mcp/bun.lock\" \"${CLAUDE_PLUGIN_DATA}/bun.lock\" 2>/dev/null || true; } && cd \"${CLAUDE_PLUGIN_DATA}\" && bun install --silent) || rm -f \"${CLAUDE_PLUGIN_DATA}/package.json\"; { [ -e \"${CLAUDE_PLUGIN_ROOT}/mcp/node_modules\" ] && [ ! -L \"${CLAUDE_PLUGIN_ROOT}/mcp/node_modules\" ]; } || ln -sfn \"${CLAUDE_PLUGIN_DATA}/node_modules\" \"${CLAUDE_PLUGIN_ROOT}/mcp/node_modules\""
+          },
+          {
+            "type": "command",
+            "command": "command -v bun >/dev/null 2>&1 || exit 0; diff -q \"${CLAUDE_PLUGIN_ROOT}/mcp-browser/package.json\" \"${CLAUDE_PLUGIN_DATA}/mcp-browser/package.json\" >/dev/null 2>&1 || (mkdir -p \"${CLAUDE_PLUGIN_DATA}/mcp-browser\" && cp \"${CLAUDE_PLUGIN_ROOT}/mcp-browser/package.json\" \"${CLAUDE_PLUGIN_DATA}/mcp-browser/package.json\" && { cp \"${CLAUDE_PLUGIN_ROOT}/mcp-browser/bun.lock\" \"${CLAUDE_PLUGIN_DATA}/mcp-browser/bun.lock\" 2>/dev/null || true; } && cd \"${CLAUDE_PLUGIN_DATA}/mcp-browser\" && bun install --silent) || rm -f \"${CLAUDE_PLUGIN_DATA}/mcp-browser/package.json\"; { [ -e \"${CLAUDE_PLUGIN_ROOT}/mcp-browser/node_modules\" ] && [ ! -L \"${CLAUDE_PLUGIN_ROOT}/mcp-browser/node_modules\" ]; } || ln -sfn \"${CLAUDE_PLUGIN_DATA}/mcp-browser/node_modules\" \"${CLAUDE_PLUGIN_ROOT}/mcp-browser/node_modules\""
           }
         ]
       }
