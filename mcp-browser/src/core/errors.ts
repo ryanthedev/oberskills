@@ -15,7 +15,19 @@ export type BrowserErrorCode =
   | "no_active_tab" // no tab is currently active (e.g. last tab closed)
   | "unknown_tab" // tabId not in the live tab set
   | "launch_failed" // adapter could not launch Chrome
-  | "attach_failed"; // adapter could not attach to the target
+  | "attach_failed" // adapter could not attach to the target
+  // --- Phase 2: snapshot / targeting / interaction / navigation ---
+  | "stale_ref" // a ref from a prior snapshot used after a page change
+  | "unknown_ref" // a ref never issued by any snapshot
+  | "ambiguous_match" // a selector matched >1 elements without an nth disambiguator
+  | "no_match" // a selector matched 0 elements
+  | "coord_out_of_viewport" // a coordinate target lies outside the layout viewport
+  | "wait_timeout" // a wait strategy (navigation/selector/idle) timed out
+  | "page_unstable" // snapshot attempted while the document was mid-navigation
+  | "invalid_url" // navigate given an unparseable URL
+  | "blocked_url" // navigate given a non-http(s)/internal scheme without opt-in
+  | "nav_failed" // navigation reached the adapter but failed
+  | "interaction_failed"; // an interaction reached the adapter but failed
 
 export type BrowserErrorShape = {
   code: BrowserErrorCode;

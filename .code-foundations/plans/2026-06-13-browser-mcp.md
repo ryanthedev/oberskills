@@ -426,4 +426,10 @@ Grouped by phase; `~5:1` dirty:clean. Unit = pure logic with a fake `BrowserPort
 
 ---
 ## Execution Log
-_To be filled during /code-foundations:build_
+
+### Phase 1: Foundation & connection (Gate: Full)
+- [x] BUILD: Discovery + design + TDD — hexagonal skeleton, 32 unit + 5 live tests, tsc clean
+- [x] REVIEW: PASS (all 7 DW + 6 edge cases with execution evidence; 4 non-blocking test-assertion notes)
+- [x] Committed
+Commit: 808bb7f
+Summary: mcp-browser/ Bun+strict-TS server stands; BrowserPort core seam + puppeteer-core adapter (zero puppeteer in core/tools, static-enforced), ConnectionManager (launch+attach, liveness/reuse), tabs tool, BrowserError barricade, writePayload/PAYLOAD_THRESHOLD_BYTES seam, plugin.json 2nd mcpServers entry + dep hook. P2-6 extend BrowserPort and consume getPage()/writePayload — never bypass them.

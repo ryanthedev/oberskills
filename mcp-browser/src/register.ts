@@ -16,6 +16,18 @@ import { log } from "./lib/log.ts";
 import { friendlyMessage, type ToolModule, type ToolResult } from "./lib/tool.ts";
 import * as connect from "./tools/connect.ts";
 import * as tabs from "./tools/tabs.ts";
+import * as snapshot from "./tools/snapshot.ts";
+import * as click from "./tools/click.ts";
+import * as type_ from "./tools/type.ts";
+import * as hover from "./tools/hover.ts";
+import * as select from "./tools/select.ts";
+import * as pressKey from "./tools/press-key.ts";
+import * as drag from "./tools/drag.ts";
+import * as fillForm from "./tools/fill-form.ts";
+import * as navigate from "./tools/navigate.ts";
+import * as wait from "./tools/wait.ts";
+import * as scroll from "./tools/scroll.ts";
+import * as screenshot from "./tools/screenshot.ts";
 
 const INSTRUCTIONS = `Persistent Chrome/CDP control via puppeteer-core, in a hexagonal architecture.
 Phase 1 surface — connection + tabs:
@@ -75,7 +87,22 @@ function defineTool<Shape extends z.ZodRawShape>(mod: ToolModule<Shape>): Regist
   };
 }
 
-export const TOOLS: RegisteredTool[] = [defineTool(connect), defineTool(tabs)];
+export const TOOLS: RegisteredTool[] = [
+  defineTool(connect),
+  defineTool(tabs),
+  defineTool(snapshot),
+  defineTool(click),
+  defineTool(type_),
+  defineTool(hover),
+  defineTool(select),
+  defineTool(pressKey),
+  defineTool(drag),
+  defineTool(fillForm),
+  defineTool(navigate),
+  defineTool(wait),
+  defineTool(scroll),
+  defineTool(screenshot),
+];
 
 /**
  * The single error boundary wrapping every tool handler. Exported so a unit test

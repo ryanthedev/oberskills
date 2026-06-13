@@ -2,9 +2,28 @@ import { describe, expect, test } from "bun:test";
 import { TOOLS, buildErrorBoundaryHandler } from "../src/register.ts";
 
 describe("register (DW-1.1 / DW-1.6)", () => {
-  test("all P1 tools are registered with valid shapes", () => {
+  test("all P1 + P2 tools are registered with valid shapes", () => {
     const names = TOOLS.map((t) => t.name).sort();
-    expect(names).toEqual(["browser_connect", "browser_tabs"]);
+    expect(names).toEqual(
+      [
+        // P1
+        "browser_connect",
+        "browser_tabs",
+        // P2 — snapshot + interaction + navigation + capture
+        "browser_snapshot",
+        "browser_click",
+        "browser_type",
+        "browser_hover",
+        "browser_select",
+        "browser_press_key",
+        "browser_drag",
+        "browser_fill_form",
+        "browser_navigate",
+        "browser_wait",
+        "browser_scroll",
+        "browser_screenshot",
+      ].sort(),
+    );
     for (const t of TOOLS) {
       expect(typeof t.title).toBe("string");
       expect(t.title.length).toBeGreaterThan(0);

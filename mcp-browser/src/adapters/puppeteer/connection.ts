@@ -15,15 +15,35 @@
  * Failures surface as core BrowserError so the tool barricade converts them to
  * structured err() envelopes — never a raw puppeteer stack to the client.
  */
-import puppeteer, { type Browser, type ChromeReleaseChannel, type Page } from "puppeteer-core";
+import puppeteer, {
+  type Browser,
+  type ChromeReleaseChannel,
+  type Page,
+  type PuppeteerLifeCycleEvent,
+} from "puppeteer-core";
 import { BrowserError } from "../../core/errors.ts";
 import type {
   BrowserPort,
   ConnectionInfo,
   ConnectOptions,
+  NavResult,
   PageHandle,
+  ScrollOpts,
+  SnapshotOpts,
+  SnapshotResult,
   TabInfo,
+  WaitOpts,
+  WaitStrategy,
 } from "../../core/browser-port.ts";
+import type {
+  FillFormField,
+  InteractAction,
+  InteractOpts,
+  ResolvedTarget,
+  Target,
+} from "../../core/targeting.ts";
+import { buildSnapshot, RefRegistry, type RawAxNode } from "./refs.ts";
+import { executeAction, resolveOnPage } from "./interactions.ts";
 
 const ENV_EXECUTABLE = process.env.BROWSER_MCP_EXECUTABLE_PATH;
 const ENV_CHANNEL = process.env.BROWSER_MCP_CHANNEL;
@@ -154,7 +174,122 @@ export class PuppeteerConnectionManager implements BrowserPort {
     return { tabId: this.activeTabId };
   }
 
+  // --- Phase 2: snapshot / interaction / navigation ------------------------
+
+  /** ref → ElementHandle registry, invalidated (epoch-bumped) on each snapshot. */
+  private readonly refs = new RefRegistry();
+
+  async snapshot(opts?: SnapshotOpts): Promise<SnapshotResult> {
+    const page = await this.activePage();
+    // A page mid-navigation has no stable document — surface page_unstable rather
+    // than snapshotting a tearing tree.
+    let raw: RawAxNode | null;
+    try {
+      raw = (await page.accessibility.snapshot({
+        interestingOnly: opts?.interestingOnly ?? true,
+      })) as RawAxNode | null;
+    } catch (e) {
+      throw new BrowserError("page_unstable", `snapshot failed: ${e instanceof Error ? e.message : String(e)}`, "retry browser_snapshot once the page settles");
+    }
+    if (raw === null) {
+      throw new BrowserError("page_unstable", "no accessibility tree (document is empty or mid-navigation)", "navigate to a page, or retry once it settles");
+    }
+    return buildSnapshot([raw], this.refs);
+  }
+
+  async resolveTarget(t: Target): Promise<ResolvedTarget> {
+    const page = await this.activePage();
+    const resolved = await resolveOnPage(page, this.refs, t);
+    // Hand back an OPAQUE token — core/tools never read the handle off it.
+    return { kind: resolved.kind, token: resolved };
+  }
+
+  async interact(action: InteractAction, t: Target, opts?: InteractOpts): Promise<void> {
+    const page = await this.activePage();
+    const resolved = await resolveOnPage(page, this.refs, t);
+    await executeAction(page, this.refs, action, resolved, opts);
+  }
+
+  async fillForm(fields: FillFormField[]): Promise<void> {
+    const page = await this.activePage();
+    for (const f of fields) {
+      const resolved = await resolveOnPage(page, this.refs, f.target);
+      await executeAction(page, this.refs, "fill", resolved, { text: f.value });
+    }
+  }
+
+  async navigate(url: string): Promise<NavResult> {
+    const page = await this.activePage();
+    try {
+      const resp = await page.goto(url, { waitUntil: "load" });
+      const status = resp?.status();
+      return { url: page.url(), ...(status !== undefined ? { status } : {}) };
+    } catch (e) {
+      throw new BrowserError("nav_failed", `navigation to ${url} failed: ${e instanceof Error ? e.message : String(e)}`, "check the URL is reachable and the page loads");
+    }
+  }
+
+  async wait(strategy: WaitStrategy, opts?: WaitOpts): Promise<void> {
+    const page = await this.activePage();
+    const timeout = opts?.timeoutMs ?? 30000;
+    try {
+      if (strategy === "navigation") {
+        await page.waitForNavigation({ timeout, waitUntil: "load" });
+      } else if (strategy === "selector") {
+        if (!opts?.selector) {
+          throw new BrowserError("wait_timeout", "selector strategy requires a selector", "pass selector for strategy=selector");
+        }
+        await page.waitForSelector(opts.selector, { timeout });
+      } else {
+        const idle: PuppeteerLifeCycleEvent = "networkidle0";
+        await page.waitForNavigation({ timeout, waitUntil: idle }).catch(async () => {
+          // No navigation in flight — fall back to a network-idle poll on the live page.
+          await page.waitForNetworkIdle({ timeout });
+        });
+      }
+    } catch (e) {
+      if (e instanceof BrowserError) throw e;
+      throw new BrowserError("wait_timeout", `${strategy} did not complete within ${timeout}ms`, `increase timeout_ms or check the ${strategy} condition`);
+    }
+  }
+
+  async scroll(opts: ScrollOpts): Promise<void> {
+    const page = await this.activePage();
+    if (opts.target) {
+      const resolved = await resolveOnPage(page, this.refs, opts.target);
+      if (resolved.kind === "coords") {
+        await page.mouse.move(resolved.x, resolved.y);
+        return;
+      }
+      await resolved.handle.scrollIntoView();
+      return;
+    }
+    const dx = opts.dx ?? 0;
+    const dy = opts.dy ?? 0;
+    await page.evaluate(
+      (x: number, y: number) => {
+        (globalThis as { scrollBy?: (x: number, y: number) => void }).scrollBy?.(x, y);
+      },
+      dx,
+      dy,
+    );
+  }
+
+  async screenshot(opts?: { fullPage?: boolean }): Promise<Buffer> {
+    const page = await this.activePage();
+    const data = await page.screenshot({ fullPage: opts?.fullPage ?? false, type: "png" });
+    return Buffer.from(data);
+  }
+
   // --- internals -----------------------------------------------------------
+
+  /** Resolve the active tab to its puppeteer Page (or a structured error). */
+  private async activePage(): Promise<Page> {
+    if (this.activeTabId === null) {
+      throw new BrowserError("no_active_tab", "no tab is currently active", "open a tab with browser_tabs action=new");
+    }
+    return this.findPage(this.activeTabId);
+  }
 
   private requireBrowser(): Browser {
     if (this.browser === null || !this.browser.connected) {

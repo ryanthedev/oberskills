@@ -5,7 +5,7 @@
  * child stderr.
  */
 import type { z } from "zod";
-import { isBrowserError, type BrowserError } from "../core/errors.ts";
+import { BrowserError, isBrowserError } from "../core/errors.ts";
 
 export type ToolResult = {
   content: { type: "text"; text: string }[];
@@ -55,4 +55,42 @@ export function friendlyMessage(e: unknown): string {
   if (isBrowserError(e)) return e.toText();
   if (e instanceof Error) return e.message.slice(0, 2048);
   return String(e).slice(0, 2048);
+}
+
+/**
+ * Shared P2 liveness barricade: every interaction/snapshot/navigation tool first
+ * checks the port is alive (a dead connection → structured connection_lost, never
+ * a silent retry — RF-12). Returns null when alive, or the err() result to return.
+ * Keeps the liveness check in ONE place instead of copied into every tool.
+ */
+import type { BrowserPort } from "../core/browser-port.ts";
+
+const connectionLost = new BrowserError(
+  "connection_lost",
+  "the browser connection is no longer alive",
+  "reconnect with browser_connect before retrying",
+);
+
+export async function ensureAlive(port: BrowserPort): Promise<ToolResult | null> {
+  let alive: boolean;
+  try {
+    alive = await port.isAlive();
+  } catch {
+    alive = false;
+  }
+  return alive ? null : errFromBrowserError(connectionLost);
+}
+
+/**
+ * Run a port operation, converting any BrowserError into a structured err() result
+ * (the single failure path every P2 tool shares). A non-BrowserError rethrows to
+ * the registrar error boundary — it is a genuine bug, not a structured failure.
+ */
+export async function runPort(op: () => Promise<ToolResult>): Promise<ToolResult> {
+  try {
+    return await op();
+  } catch (e) {
+    if (isBrowserError(e)) return errFromBrowserError(e);
+    throw e;
+  }
 }

@@ -54,6 +54,74 @@ export type PageHandle = {
   readonly tabId: string;
 };
 
+// ---------------------------------------------------------------------------
+// Phase 2: snapshot / interaction / navigation use cases.
+// `Target`/`ResolvedTarget`/`InteractAction`/`InteractOpts` are the Strategy
+// contract in core/targeting.ts. `AxNode` below is a compact CORE DTO — never
+// puppeteer's SerializedAXNode; the adapter maps at the boundary.
+// ---------------------------------------------------------------------------
+import type {
+  FillFormField,
+  InteractAction,
+  InteractOpts,
+  ResolvedTarget,
+  Target,
+} from "./targeting.ts";
+
+/**
+ * Compact accessibility node. Interactive nodes carry a stable `ref` minted by
+ * the last snapshot(); non-interactive structural nodes do not. The internal
+ * element identity (puppeteer ElementHandle) never appears here.
+ */
+export type AxNode = {
+  role: string;
+  name?: string;
+  value?: string | number;
+  /** Present iff this node is interactive — a token for ref-targeting. */
+  ref?: string;
+  level?: number;
+  checked?: boolean | "mixed";
+  disabled?: boolean;
+  selected?: boolean;
+  children?: AxNode[];
+};
+
+export type SnapshotOpts = {
+  /** Include only interesting nodes (default true) — keeps the tree compact. */
+  interestingOnly?: boolean;
+};
+
+/** A11y snapshot result: the compact tree plus the flat ref list it minted. */
+export type SnapshotResult = {
+  tree: AxNode[];
+  /** Every ref present in `tree`, in document order. tree↔refs are consistent. */
+  refs: string[];
+};
+
+export type NavResult = {
+  url: string;
+  /** HTTP status of the main document response, if one was produced. */
+  status?: number;
+};
+
+/** Which condition `wait` blocks on. The strategy name appears in a timeout err. */
+export type WaitStrategy = "navigation" | "selector" | "idle";
+
+export type WaitOpts = {
+  /** selector strategy: the CSS selector to await. */
+  selector?: string;
+  /** ms before a wait_timeout err naming the strategy. */
+  timeoutMs?: number;
+};
+
+export type ScrollOpts = {
+  /** Element to scroll to / within; absent = scroll the page. */
+  target?: Target;
+  /** Page-scroll deltas (px) when no target is given. */
+  dx?: number;
+  dy?: number;
+};
+
 export interface BrowserPort {
   connect(opts: ConnectOptions): Promise<ConnectionInfo>;
   disconnect(): Promise<void>;
@@ -64,4 +132,36 @@ export interface BrowserPort {
   closeTab(tabId: string): Promise<void>;
   /** The currently active page handle. Throws BrowserError(no_active_tab) when none is active. */
   activePageHandle(): PageHandle;
+
+  // --- Phase 2 -------------------------------------------------------------
+  /**
+   * A11y snapshot of the active page. Mints a fresh ref per interactive node
+   * (invalidating refs from the previous snapshot). Throws page_unstable if the
+   * document is mid-navigation.
+   */
+  snapshot(opts?: SnapshotOpts): Promise<SnapshotResult>;
+  /**
+   * Resolve a Target to an opaque handle via the Strategy. Throws
+   * stale_ref / unknown_ref / ambiguous_match / no_match / coord_out_of_viewport.
+   * The single chokepoint P3/P5 reuse for element-scoped work.
+   */
+  resolveTarget(t: Target): Promise<ResolvedTarget>;
+  /**
+   * Act on a Target. Auto-wait/actionability is handled internally (deep module).
+   * Routes through resolveTarget, so the Strategy applies to every action.
+   */
+  interact(action: InteractAction, t: Target, opts?: InteractOpts): Promise<void>;
+  /** Fill several fields in one call; each entry resolves through the Strategy. */
+  fillForm(fields: FillFormField[]): Promise<void>;
+  /** Navigate the active page. The URL is barricade-validated by the tool first. */
+  navigate(url: string): Promise<NavResult>;
+  /** Block until a condition holds; throws wait_timeout naming the strategy on timeout. */
+  wait(strategy: WaitStrategy, opts?: WaitOpts): Promise<void>;
+  /** Scroll the page or scroll an element into view / within it. */
+  scroll(opts: ScrollOpts): Promise<void>;
+  /**
+   * Capture a PNG screenshot of the active page. Returns raw bytes; the tool
+   * writes them to disk via the writePayload seam (P3 fills threshold logic).
+   */
+  screenshot(opts?: { fullPage?: boolean }): Promise<Buffer>;
 }
