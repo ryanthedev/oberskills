@@ -440,3 +440,10 @@ Summary: mcp-browser/ Bun+strict-TS server stands; BrowserPort core seam + puppe
 - [x] Committed
 Commit: d49689e
 Summary: BrowserPort extended with snapshot/resolveTarget/interact/navigate/wait/scroll/screenshot. Refs = live ElementHandles via SerializedAXNode.elementHandle() (detached→stale_ref; no CDP fallback). resolveTarget is the single Strategy chokepoint (ref→selector→coords) that P3/P5 reuse for element-scoped ops — do not re-implement targeting. Navigate barricade is allowlist-only, pre-adapter (blocks file://, chrome://, javascript:). screenshot writes via the frozen writePayload seam ({path,bytes}); P3 fills the real threshold logic.
+
+### Phase 3: Read / extract + parity (Gate: Standard — tests are the gate)
+- [x] BUILD: real writePayload + dom/accessibility/extract/collect/evaluate/dismiss/form; ported svelte heuristics; 135 unit pass / 0 fail, tsc clean
+- [x] REVIEW: SKIPPED — Standard gate, tests are the gate (orchestrator re-ran suite: 135 pass, tsc clean before commit)
+- [x] Committed
+Commit: 78ad059
+Summary: writePayload seam reconciled to ONE signature `writePayload(data, opts) → {path,bytes,inlinedPreview,written}` (P2 screenshot call-site updated; suite green). PAYLOAD_THRESHOLD_BYTES canonical in lib/payload.ts — all phases import it. Read tools route large payloads through writePayload; element-scoped reads reuse resolveTarget via the port. Ported DOM heuristics live as page.evaluate string constants split lib/dom-helpers (tool-safe) + adapters/puppeteer/dom-helpers (adapter-only) to keep core/tools puppeteer-free. evaluate is page-sandbox only (never server eval), caps payloads, surfaces page throws as structured errs. P4 HAR + P5 captures consume writePayload.

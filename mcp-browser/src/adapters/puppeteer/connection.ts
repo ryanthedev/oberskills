@@ -29,18 +29,33 @@ import type {
   ConnectionInfo,
   ConnectOptions,
   DismissResult,
+  EmulateConditionsOpts,
   ExtractOpts,
   FormFieldState,
+  HarExportResult,
+  InsightMetric,
+  InsightResult,
+  LighthouseOpts,
+  LighthouseResult,
   NavResult,
+  NetworkProfile,
   PageHandle,
   ReadDomOpts,
+  RouteRule,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
   TabInfo,
+  TraceOpts,
+  TraceStopResult,
   WaitOpts,
   WaitStrategy,
 } from "../../core/browser-port.ts";
+import type { HarPort } from "../../core/har-port.ts";
+import { writePayload } from "../../lib/payload.ts";
+import { TraceController } from "./tracing.ts";
+import { NetworkController } from "./network.ts";
+import { runLighthouse } from "./lighthouse.ts";
 import {
   FIND_DIALOG_JS,
   QUERY_SELECTOR_ALL_DEEP_JS,
@@ -123,6 +138,16 @@ export class PuppeteerConnectionManager implements BrowserPort {
   }
 
   async disconnect(): Promise<void> {
+    // P4 teardown: disarm interception + listeners so nothing leaks into a later
+    // session (DW-4.4). Best-effort — the page may already be gone.
+    try {
+      if (this.network) await this.network.disable();
+    } catch {
+      // page/connection gone — state is reset below regardless.
+    }
+    this.network = null;
+    this.networkPage = null;
+    this.trace = null;
     if (this.browser === null) return;
     try {
       if (this.owned) await this.browser.close();
@@ -557,6 +582,94 @@ export class PuppeteerConnectionManager implements BrowserPort {
     };
   }
 
+  // --- Phase 4: performance / network -------------------------------------
+
+  /** Trace lifecycle controller, bound to the active page (lazily created). */
+  private trace: TraceController | null = null;
+  /** Network capture + interception controller, bound to the active page. */
+  private network: NetworkController | null = null;
+  /** The page the network controller is bound to (rebind on tab switch). */
+  private networkPage: Page | null = null;
+
+  async startTrace(opts?: TraceOpts): Promise<void> {
+    const page = await this.activePage();
+    if (this.trace === null) this.trace = new TraceController(page);
+    await this.trace.start(opts?.screenshots ?? false);
+  }
+
+  async stopTrace(): Promise<TraceStopResult> {
+    if (this.trace === null) {
+      throw new BrowserError("no_trace_running", "no performance trace is running", "call browser_performance_start_trace first");
+    }
+    const buf = await this.trace.stop();
+    const written = await writePayload(buf, { ext: "json" });
+    // Trace is always above threshold in practice, but force a path for the contract.
+    const path = written.written ? written.path : await forceWrite(buf);
+    return { tracePath: path, bytes: written.bytes };
+  }
+
+  async analyzeInsight(metric: InsightMetric): Promise<InsightResult> {
+    if (this.trace === null) {
+      throw new BrowserError("no_trace_running", "no captured trace to analyze", "run start_trace then stop_trace first");
+    }
+    return this.trace.analyze(metric);
+  }
+
+  async lighthouseAudit(opts: LighthouseOpts): Promise<LighthouseResult> {
+    const browser = this.requireBrowser();
+    const page = await this.activePage();
+    const url = page.url();
+    // Lighthouse needs the CDP debugging port — extract it from the ws endpoint.
+    const debugPort = wsEndpointPort(browser.wsEndpoint());
+    if (debugPort === null) {
+      throw new BrowserError("lighthouse_failed", "could not determine the Chrome debugging port", "launch Chrome with a debugging port, or attach via browser_url");
+    }
+    const res = await runLighthouse(url, debugPort, opts.categories);
+    const written = await writePayload(res.reportJson, { ext: "json" });
+    const reportPath = written.written ? written.path : await forceWrite(res.reportJson);
+    return { scores: res.scores, reportPath };
+  }
+
+  async exportHar(har: HarPort): Promise<HarExportResult> {
+    const net = await this.activeNetwork();
+    const entries = net.exportEntries();
+    const path = await har.write(entries);
+    return { path, entryCount: entries.length, empty: entries.length === 0 };
+  }
+
+  async setRoutes(rules: RouteRule[]): Promise<void> {
+    const net = await this.activeNetwork();
+    await net.setRoutes(rules);
+  }
+
+  async clearRoutes(): Promise<void> {
+    // Recovery primitive: safe even if no network controller exists yet.
+    if (this.network) await this.network.clearRoutes();
+  }
+
+  async emulateConditions(opts: EmulateConditionsOpts): Promise<void> {
+    const page = await this.activePage();
+    if (opts.network !== undefined) {
+      await page.emulateNetworkConditions(toNetworkConditions(opts.network));
+    }
+    if (opts.cpuThrottlingRate !== undefined) {
+      await page.emulateCPUThrottling(opts.cpuThrottlingRate);
+    }
+  }
+
+  /** Get (or create + start capturing on) the network controller for the active page. */
+  private async activeNetwork(): Promise<NetworkController> {
+    const page = await this.activePage();
+    if (this.network === null || this.networkPage !== page) {
+      // Tab switched or first use — tear down the old controller, bind a new one.
+      if (this.network) await this.network.disable().catch(() => {});
+      this.network = new NetworkController(page);
+      this.networkPage = page;
+      await this.network.startCapture();
+    }
+    return this.network;
+  }
+
   // --- internals -----------------------------------------------------------
 
   /** Resolve the active tab to its puppeteer Page (or a structured error). */
@@ -611,5 +724,56 @@ async function safeTitle(page: Page): Promise<string> {
     return await page.title();
   } catch {
     return "";
+  }
+}
+
+/**
+ * Force a payload to disk even when below the writePayload threshold. Traces and
+ * Lighthouse reports must always be a FILE (never inlined into a tool result) per
+ * the anti-context discipline — so we write directly when writePayload inlined.
+ */
+async function forceWrite(data: Buffer | string): Promise<string> {
+  const { writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const path = join(tmpdir(), `browser-mcp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`);
+  await writeFile(path, data);
+  return path;
+}
+
+/** Extract the numeric port from a ws://host:port/... endpoint, or null. */
+function wsEndpointPort(wsEndpoint: string): number | null {
+  try {
+    const port = Number(new URL(wsEndpoint).port);
+    return Number.isFinite(port) && port > 0 ? port : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Map a core NetworkProfile to puppeteer's NetworkConditions. */
+function toNetworkConditions(profile: NetworkProfile): {
+  offline: boolean;
+  download: number;
+  upload: number;
+  latency: number;
+} {
+  if (typeof profile === "object") {
+    return {
+      offline: false,
+      download: (profile.downloadKbps * 1000) / 8,
+      upload: (profile.uploadKbps * 1000) / 8,
+      latency: profile.latencyMs,
+    };
+  }
+  switch (profile) {
+    case "none":
+      return { offline: false, download: -1, upload: -1, latency: 0 };
+    case "offline":
+      return { offline: true, download: 0, upload: 0, latency: 0 };
+    case "slow-3g":
+      return { offline: false, download: (500 * 1000) / 8, upload: (500 * 1000) / 8, latency: 400 };
+    case "fast-3g":
+      return { offline: false, download: (1.6 * 1000 * 1000) / 8, upload: (750 * 1000) / 8, latency: 150 };
   }
 }

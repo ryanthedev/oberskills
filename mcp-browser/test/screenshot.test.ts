@@ -13,18 +13,28 @@ import type {
   ConnectionInfo,
   ConnectOptions,
   DismissResult,
+  EmulateConditionsOpts,
   ExtractOpts,
   FormFieldState,
+  HarExportResult,
+  InsightMetric,
+  InsightResult,
+  LighthouseOpts,
+  LighthouseResult,
   NavResult,
   PageHandle,
   ReadDomOpts,
+  RouteRule,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
   TabInfo,
+  TraceOpts,
+  TraceStopResult,
   WaitOpts,
   WaitStrategy,
 } from "../src/core/browser-port.ts";
+import type { HarPort } from "../src/core/har-port.ts";
 import type { FillFormField, InteractAction, InteractOpts, ResolvedTarget, Target } from "../src/core/targeting.ts";
 import * as screenshot from "../src/tools/screenshot.ts";
 
@@ -80,6 +90,15 @@ class CapturePort implements BrowserPort {
   async evaluate(_e: string): Promise<unknown> { return null; }
   async dismiss(): Promise<DismissResult> { return { method: "escape", element: "DIV" }; }
   async readForm(_s: string): Promise<FormFieldState> { return { value: null, checked: null, selectedOptions: null }; }
+  // P4 stubs — not under test here.
+  async startTrace(_o?: TraceOpts): Promise<void> {}
+  async stopTrace(): Promise<TraceStopResult> { return { tracePath: "", bytes: 0 }; }
+  async analyzeInsight(m: InsightMetric): Promise<InsightResult> { return { metric: m, found: false, detail: "" }; }
+  async lighthouseAudit(_o: LighthouseOpts): Promise<LighthouseResult> { return { scores: {}, reportPath: "" }; }
+  async exportHar(_h: HarPort): Promise<HarExportResult> { return { path: "", entryCount: 0, empty: true }; }
+  async setRoutes(_r: RouteRule[]): Promise<void> {}
+  async clearRoutes(): Promise<void> {}
+  async emulateConditions(_o: EmulateConditionsOpts): Promise<void> {}
 }
 
 describe("screenshot tool (writes via the writePayload seam)", () => {

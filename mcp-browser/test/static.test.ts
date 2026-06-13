@@ -46,6 +46,20 @@ describe("static gates", () => {
     expect(offenders).toEqual([]);
   });
 
+  // DW-4.6 — perf/network use cases live in core with NO substrate dependency.
+  // Lighthouse needs the CDP debugging port, so its import lives in the puppeteer
+  // adapter only — never in core/tools (same boundary discipline as puppeteer).
+  test("zero lighthouse imports in src/core and src/tools", () => {
+    const offenders: string[] = [];
+    for (const file of [...tsFiles(coreDir), ...tsFiles(toolsDir)]) {
+      const code = stripComments(readFileSync(file, "utf8"));
+      if (/\bfrom\s+["'][^"']*lighthouse/i.test(code) || /\bimport\s*\(\s*["'][^"']*lighthouse/i.test(code)) {
+        offenders.push(file);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   test("tsc --noEmit exits 0 (all errors and warnings fixed)", async () => {
     const proc = Bun.spawn(["bunx", "tsc", "--noEmit"], {
       cwd: new URL("..", import.meta.url).pathname,

@@ -30,6 +30,14 @@ describe("register (DW-1.1 / DW-1.6)", () => {
         "browser_evaluate",
         "browser_dismiss",
         "browser_form",
+        // P4 — performance / network
+        "browser_performance_start_trace",
+        "browser_performance_stop_trace",
+        "browser_analyze_insight",
+        "browser_lighthouse_audit",
+        "browser_export_har",
+        "browser_route",
+        "browser_emulate",
       ].sort(),
     );
     for (const t of TOOLS) {

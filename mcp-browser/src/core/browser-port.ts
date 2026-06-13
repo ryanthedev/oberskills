@@ -67,6 +67,7 @@ import type {
   ResolvedTarget,
   Target,
 } from "./targeting.ts";
+import type { HarPort } from "./har-port.ts";
 
 /**
  * Compact accessibility node. Interactive nodes carry a stable `ref` minted by
@@ -213,7 +214,140 @@ export interface BrowserPort {
    * located by selector. Throws read_failed when selector matches nothing.
    */
   readForm(selector: string): Promise<FormFieldState>;
+
+  // --- Phase 4: performance / network -------------------------------------
+
+  /**
+   * Start a performance trace. Throws trace_already_running if one is in flight
+   * (concurrent traces are rejected — the lifecycle is start → stop → analyze).
+   */
+  startTrace(opts?: TraceOpts): Promise<void>;
+  /**
+   * Stop the running trace and persist it. Throws no_trace_running when none was
+   * started. Returns the /tmp path of the trace file (routed through writePayload).
+   */
+  stopTrace(): Promise<TraceStopResult>;
+  /**
+   * Analyze a captured trace for a Core Web Vital (or related insight). Throws
+   * no_trace_running when no trace has been captured (analyze before start/stop).
+   */
+  analyzeInsight(metric: InsightMetric): Promise<InsightResult>;
+  /**
+   * Run a Lighthouse audit in-process. Throws lighthouse_failed with the
+   * underlying reason on a run failure — NEVER returns a zeroed audit as success.
+   * The full report is written to disk; only the category scores + path return.
+   */
+  lighthouseAudit(opts: LighthouseOpts): Promise<LighthouseResult>;
+  /**
+   * Snapshot the network capture buffer into HAR entries and write them via the
+   * injected HarPort. An empty buffer yields a valid-but-empty HAR. Returns the
+   * file path plus whether the capture was empty.
+   */
+  exportHar(har: HarPort): Promise<HarExportResult>;
+  /**
+   * Arm request interception/mocking from a rule LIST (data, not callbacks). The
+   * rules are pre-validated at the tool barricade. Replaces any prior rule set.
+   */
+  setRoutes(rules: RouteRule[]): Promise<void>;
+  /**
+   * Disarm all interception. The recovery primitive: callable even after a failed
+   * setRoutes(), and called on disconnect so no interception leaks into a later
+   * session.
+   */
+  clearRoutes(): Promise<void>;
+  /**
+   * Apply network and/or CPU throttling. Out-of-range values are rejected at the
+   * tool barricade (throttle_out_of_range) before reaching the adapter.
+   */
+  emulateConditions(opts: EmulateConditionsOpts): Promise<void>;
 }
+
+// --- Phase 4 option / result types ----------------------------------------
+
+export type TraceOpts = {
+  /** Trace category set; the adapter supplies a CWV-capable default. */
+  categories?: string[];
+  /** Capture screenshots in the trace (heavier). Default false. */
+  screenshots?: boolean;
+};
+
+export type TraceStopResult = {
+  /** Absolute /tmp path of the persisted trace (via writePayload). */
+  tracePath: string;
+  /** Byte size of the trace. */
+  bytes: number;
+};
+
+/** Core Web Vitals + related trace insights. */
+export type InsightMetric = "LCP" | "INP" | "CLS" | "TTFB" | "FCP";
+
+export type InsightResult = {
+  metric: InsightMetric;
+  /** Time-based metrics (LCP/INP/TTFB/FCP) in ms; absent for unitless metrics. */
+  valueMs?: number;
+  /** Unitless metrics (CLS) value; absent for time-based metrics. */
+  value?: number;
+  /** Whether the metric was found in the captured trace. */
+  found: boolean;
+  /** Human note (e.g. the event the value came from, or why it was not found). */
+  detail: string;
+};
+
+/** Lighthouse audit categories (validated at the barricade against this set). */
+export type LighthouseCategory = "performance" | "accessibility" | "seo" | "best-practices";
+
+export type LighthouseOpts = {
+  /** Categories to audit. At least one; barricade-validated. */
+  categories: LighthouseCategory[];
+};
+
+export type LighthouseResult = {
+  /** 0..1 scores per requested category (only those requested are present). */
+  scores: Partial<Record<LighthouseCategory, number>>;
+  /** /tmp path of the full JSON report (via writePayload). */
+  reportPath: string;
+};
+
+export type HarExportResult = {
+  /** Absolute path of the written HAR file. */
+  path: string;
+  /** Number of entries in the HAR. */
+  entryCount: number;
+  /** True when the capture buffer was empty (a valid-but-empty HAR was written). */
+  empty: boolean;
+};
+
+/** A request-interception rule, applied as DATA by the adapter. */
+export type RouteAction = "block" | "abort" | "stub" | "modify";
+
+export type RouteRule = {
+  /** URL glob/substring to match. Barricade-validated (non-empty, length-capped). */
+  urlPattern: string;
+  action: RouteAction;
+  /** stub/modify: HTTP status (100..599, barricade-validated). */
+  status?: number;
+  /** stub/modify: response body. UNTRUSTED — size-capped, never executed. */
+  body?: string;
+  /** stub/modify: content-type for the stubbed/modified response. */
+  contentType?: string;
+  /** stub/modify: extra response headers. */
+  headers?: Record<string, string>;
+};
+
+/** A named network throttle preset or explicit conditions. */
+export type NetworkProfile =
+  | "none"
+  | "offline"
+  | "slow-3g"
+  | "fast-3g"
+  | { downloadKbps: number; uploadKbps: number; latencyMs: number };
+
+export type EmulateConditionsOpts = {
+  /** Network throttle profile/preset. Absent = leave network unchanged. */
+  network?: NetworkProfile;
+  /** CPU slowdown multiplier (1 = none). Barricade-validated to 1..20. */
+  cpuThrottlingRate?: number;
+};
 
 // --- Phase 3 option / result types ----------------------------------------
 

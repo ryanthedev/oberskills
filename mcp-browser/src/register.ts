@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { z } from "zod";
-import { setPort } from "./core/session.ts";
+import { setHarPort, setPort } from "./core/session.ts";
 import { log } from "./lib/log.ts";
 import { friendlyMessage, type ToolModule, type ToolResult } from "./lib/tool.ts";
 import * as connect from "./tools/connect.ts";
@@ -35,6 +35,13 @@ import * as collect from "./tools/collect.ts";
 import * as evaluate from "./tools/evaluate.ts";
 import * as dismiss from "./tools/dismiss.ts";
 import * as form from "./tools/form.ts";
+import * as performanceStartTrace from "./tools/performance-start-trace.ts";
+import * as performanceStopTrace from "./tools/performance-stop-trace.ts";
+import * as analyzeInsight from "./tools/analyze-insight.ts";
+import * as lighthouseAudit from "./tools/lighthouse-audit.ts";
+import * as exportHar from "./tools/export-har.ts";
+import * as route from "./tools/route.ts";
+import * as emulate from "./tools/emulate.ts";
 
 const INSTRUCTIONS = `Persistent Chrome/CDP control via puppeteer-core, in a hexagonal architecture.
 Phase 1 surface — connection + tabs:
@@ -116,6 +123,13 @@ export const TOOLS: RegisteredTool[] = [
   defineTool(evaluate),
   defineTool(dismiss),
   defineTool(form),
+  defineTool(performanceStartTrace),
+  defineTool(performanceStopTrace),
+  defineTool(analyzeInsight),
+  defineTool(lighthouseAudit),
+  defineTool(exportHar),
+  defineTool(route),
+  defineTool(emulate),
 ];
 
 /**
@@ -144,6 +158,9 @@ export async function startServer(): Promise<void> {
   // so unit tests that import TOOLS/buildErrorBoundaryHandler never load puppeteer.
   const { PuppeteerConnectionManager } = await import("./adapters/puppeteer/connection.ts");
   setPort(new PuppeteerConnectionManager());
+  // Install the real HAR writer (driven adapter behind the HarPort seam).
+  const { FsHarWriter } = await import("./adapters/fs/har-writer.ts");
+  setHarPort(new FsHarWriter());
 
   const server = new McpServer(
     { name: "mcp-browser", version: readVersion() },

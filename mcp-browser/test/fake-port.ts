@@ -11,18 +11,28 @@ import type {
   ConnectionInfo,
   ConnectOptions,
   DismissResult,
+  EmulateConditionsOpts,
   ExtractOpts,
   FormFieldState,
+  HarExportResult,
+  InsightMetric,
+  InsightResult,
+  LighthouseOpts,
+  LighthouseResult,
   NavResult,
   PageHandle,
   ReadDomOpts,
+  RouteRule,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
   TabInfo,
+  TraceOpts,
+  TraceStopResult,
   WaitOpts,
   WaitStrategy,
 } from "../src/core/browser-port.ts";
+import type { HarEntry, HarPort } from "../src/core/har-port.ts";
 import type {
   FillFormField,
   InteractAction,
@@ -68,6 +78,10 @@ export class FakePort implements BrowserPort {
   }
 
   async disconnect(): Promise<void> {
+    // Teardown contract (DW-4.4): interception must not leak into a later session.
+    await this.clearRoutes();
+    this.tracing = false;
+    this.traceCaptured = false;
     this.connected = false;
     this.tabs = [];
     this.activeId = null;
@@ -281,6 +295,87 @@ export class FakePort implements BrowserPort {
       throw new BrowserError("read_failed", `selector matched nothing: ${selector}`, "check the selector");
     }
     return this.cannedFormState;
+  }
+
+  // --- Phase 4: performance / network ----------------------------------------
+
+  /** Trace lifecycle state — proves start/stop/analyze ordering errs. */
+  tracing = false;
+  /** True once a trace has been stopped+captured (analyze needs a captured trace). */
+  traceCaptured = false;
+  /** Canned insight result analyzeInsight returns. */
+  cannedInsight: InsightResult = { metric: "LCP", valueMs: 1200, found: true, detail: "largest-contentful-paint" };
+  /** When set, lighthouseAudit throws lighthouse_failed with this reason. */
+  lighthouseError: string | null = null;
+  /** Canned lighthouse scores. */
+  cannedLighthouseScores: Partial<Record<string, number>> = { performance: 0.95 };
+  /** Rules last armed via setRoutes (proves rules are applied as DATA). */
+  routes: RouteRule[] = [];
+  /** Count of clearRoutes() calls — proves teardown on disconnect + recovery. */
+  clearRoutesCalls = 0;
+  /** When set, the FIRST setRoutes throws (proves clearRoutes works after a failed setRoutes). */
+  setRoutesError: string | null = null;
+  /** Network capture buffer the fake exposes as HAR entries. */
+  harEntries: HarEntry[] = [];
+  /** Last emulate conditions recorded. */
+  lastEmulate: EmulateConditionsOpts | null = null;
+
+  async startTrace(_opts?: TraceOpts): Promise<void> {
+    if (this.tracing) {
+      throw new BrowserError("trace_already_running", "a trace is already running", "stop the current trace before starting another");
+    }
+    this.tracing = true;
+  }
+
+  async stopTrace(): Promise<TraceStopResult> {
+    if (!this.tracing) {
+      throw new BrowserError("no_trace_running", "no trace is running", "call performance_start_trace first");
+    }
+    this.tracing = false;
+    this.traceCaptured = true;
+    return { tracePath: "/tmp/fake-trace.json", bytes: 1024 };
+  }
+
+  async analyzeInsight(metric: InsightMetric): Promise<InsightResult> {
+    if (!this.traceCaptured) {
+      throw new BrowserError("no_trace_running", "no captured trace to analyze", "run start_trace then stop_trace first");
+    }
+    return { ...this.cannedInsight, metric };
+  }
+
+  async lighthouseAudit(opts: LighthouseOpts): Promise<LighthouseResult> {
+    if (this.lighthouseError !== null) {
+      throw new BrowserError("lighthouse_failed", this.lighthouseError, "check the page is reachable and Chrome is healthy");
+    }
+    const scores: Partial<Record<string, number>> = {};
+    for (const c of opts.categories) {
+      const v = this.cannedLighthouseScores[c];
+      if (v !== undefined) scores[c] = v;
+    }
+    return { scores: scores as LighthouseResult["scores"], reportPath: "/tmp/fake-lh.json" };
+  }
+
+  async exportHar(har: HarPort): Promise<HarExportResult> {
+    const path = await har.write(this.harEntries);
+    return { path, entryCount: this.harEntries.length, empty: this.harEntries.length === 0 };
+  }
+
+  async setRoutes(rules: RouteRule[]): Promise<void> {
+    if (this.setRoutesError !== null) {
+      const msg = this.setRoutesError;
+      this.setRoutesError = null; // only fail once
+      throw new BrowserError("interaction_failed", msg, "retry or clear routes");
+    }
+    this.routes = rules;
+  }
+
+  async clearRoutes(): Promise<void> {
+    this.clearRoutesCalls += 1;
+    this.routes = [];
+  }
+
+  async emulateConditions(opts: EmulateConditionsOpts): Promise<void> {
+    this.lastEmulate = opts;
   }
 
   /** Every ref ever minted — distinguishes unknown_ref (never seen) from stale_ref (seen, now dead). */

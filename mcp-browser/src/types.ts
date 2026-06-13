@@ -313,3 +313,161 @@ export type FormOut = {
   checked: boolean | null;
   selected_options: string[] | null;
 };
+
+// ---------------------------------------------------------------------------
+// Phase 4: performance / network — input schemas, barricade constants, DTOs
+// ---------------------------------------------------------------------------
+
+/** RouteRule barricade limits (canonical home). Captured/stub bodies are untrusted. */
+export const ROUTE_URL_PATTERN_MAX = 2048;
+/** Max bytes for a stub/modify body OR a captured response body before it is capped. */
+export const RESPONSE_BODY_MAX_BYTES = 256 * 1024;
+/** CPU throttle multiplier bounds (1 = no throttle). */
+export const CPU_THROTTLE_MIN = 1;
+export const CPU_THROTTLE_MAX = 20;
+
+// --- performance_start_trace ----------------------------------------------
+
+export const PerformanceStartTraceInputSchema = {
+  screenshots: z
+    .boolean()
+    .default(false)
+    .describe("Capture screenshots in the trace (heavier output). Default false."),
+};
+
+// --- performance_stop_trace (no inputs) -----------------------------------
+
+export const PerformanceStopTraceInputSchema = {};
+
+// --- analyze_insight -------------------------------------------------------
+
+export const InsightMetricSchema = z.enum(["LCP", "INP", "CLS", "TTFB", "FCP"]);
+
+export const AnalyzeInsightInputSchema = {
+  metric: InsightMetricSchema.describe(
+    "Core Web Vital / insight to extract from the captured trace: LCP, INP, CLS, TTFB, or FCP.",
+  ),
+};
+
+// --- lighthouse_audit ------------------------------------------------------
+
+export const LighthouseCategorySchema = z.enum([
+  "performance",
+  "accessibility",
+  "seo",
+  "best-practices",
+]);
+
+export const LighthouseAuditInputSchema = {
+  categories: z
+    .array(LighthouseCategorySchema)
+    .min(1)
+    .default(["performance"])
+    .describe(
+      "Lighthouse categories to audit (one or more): performance, accessibility, seo, best-practices.",
+    ),
+};
+
+// --- export_har (no inputs) ------------------------------------------------
+
+export const ExportHarInputSchema = {};
+
+// --- route (interception/mocking) -----------------------------------------
+
+export const RouteActionSchema = z.enum(["block", "abort", "stub", "modify"]);
+
+/**
+ * A single route rule as input. zod enforces shape + the action enum; the tool
+ * barricade enforces the cross-field rules zod can't (stub/modify need a status
+ * and a size-capped body; URL pattern length) before reaching the adapter.
+ */
+export const RouteRuleInputSchema = z.object({
+  url_pattern: z
+    .string()
+    .min(1)
+    .max(ROUTE_URL_PATTERN_MAX)
+    .describe("URL glob/substring to match (non-empty, length-capped)."),
+  action: RouteActionSchema.describe("block | abort | stub | modify."),
+  status: z
+    .number()
+    .int()
+    .optional()
+    .describe("stub/modify: HTTP status 100..599 (validated at the barricade)."),
+  body: z
+    .string()
+    .optional()
+    .describe("stub/modify: response body. UNTRUSTED — size-capped, never executed."),
+  content_type: z.string().optional().describe("stub/modify: response content-type."),
+  headers: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe("stub/modify: extra response headers."),
+});
+
+export const RouteInputSchema = {
+  rules: z
+    .array(RouteRuleInputSchema)
+    .describe(
+      "Interception rules applied as data. An empty array clears all interception (same as clearing).",
+    ),
+  clear: z
+    .boolean()
+    .default(false)
+    .describe("Disarm all interception and ignore rules. The recovery primitive."),
+};
+
+// --- emulate (network + CPU throttle) -------------------------------------
+
+export const NetworkProfileNameSchema = z.enum(["none", "offline", "slow-3g", "fast-3g"]);
+
+export const EmulateInputSchema = {
+  network: NetworkProfileNameSchema.optional().describe(
+    "Network throttle preset: none | offline | slow-3g | fast-3g. Omit to leave network unchanged.",
+  ),
+  download_kbps: z
+    .number()
+    .optional()
+    .describe("Explicit network: download throughput in kbps (with upload_kbps + latency_ms)."),
+  upload_kbps: z.number().optional().describe("Explicit network: upload throughput in kbps."),
+  latency_ms: z.number().optional().describe("Explicit network: added latency in ms."),
+  cpu_throttling_rate: z
+    .number()
+    .optional()
+    .describe("CPU slowdown multiplier 1..20 (1 = no throttle). Out-of-range is rejected."),
+};
+
+// --- Output DTOs -----------------------------------------------------------
+
+export type TraceStopOut = {
+  trace_path: string;
+  bytes: number;
+};
+
+export type InsightOut = {
+  metric: string;
+  value_ms?: number;
+  value?: number;
+  found: boolean;
+  detail: string;
+};
+
+export type LighthouseOut = {
+  scores: Record<string, number>;
+  report_path: string;
+};
+
+export type HarExportOut = {
+  path: string;
+  entry_count: number;
+  empty: boolean;
+};
+
+export type RouteOut = {
+  armed: boolean;
+  rule_count: number;
+};
+
+export type EmulateOut = {
+  network: string | null;
+  cpu_throttling_rate: number | null;
+};

@@ -31,7 +31,14 @@ export type BrowserErrorCode =
   // --- Phase 3: read / extract ---
   | "evaluate_failed" // page.evaluate threw or returned a non-serializable value
   | "no_dialog" // dismiss() called but no open dialog or overlay was found
-  | "read_failed"; // a DOM/form/AX read failed (selector missing, page error, etc.)
+  | "read_failed" // a DOM/form/AX read failed (selector missing, page error, etc.)
+  // --- Phase 4: performance / network ---
+  | "trace_already_running" // start_trace called while a trace is already running (concurrent reject)
+  | "no_trace_running" // stop_trace/analyze_insight called with no trace started/captured
+  | "lighthouse_failed" // lighthouse could not run — structured reason, never a zeroed audit as success
+  | "invalid_route_rule" // a RouteRule failed barricade validation (url/status/body)
+  | "har_export_failed" // the HAR writer failed to produce a file
+  | "throttle_out_of_range"; // a CPU/network throttle value is outside the defined range
 
 export type BrowserErrorShape = {
   code: BrowserErrorCode;
