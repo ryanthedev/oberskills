@@ -38,6 +38,19 @@ describe("register (DW-1.1 / DW-1.6)", () => {
         "browser_export_har",
         "browser_route",
         "browser_emulate",
+        // P5 — storage / emulation / capture
+        "browser_storage",
+        "browser_storage_state_save",
+        "browser_storage_state_restore",
+        "browser_emulate_device",
+        "browser_geolocation",
+        "browser_permissions",
+        "browser_pdf",
+        "browser_screencast_start",
+        "browser_screencast_stop",
+        "browser_upload",
+        "browser_download",
+        "browser_wait_for_text",
       ].sort(),
     );
     for (const t of TOOLS) {

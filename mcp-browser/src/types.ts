@@ -471,3 +471,240 @@ export type EmulateOut = {
   network: string | null;
   cpu_throttling_rate: number | null;
 };
+
+// ---------------------------------------------------------------------------
+// Phase 5: storage / emulation / capture — schemas + DTOs
+// ---------------------------------------------------------------------------
+
+/**
+ * StorageStateSchema — validated at the restore boundary (external input from disk).
+ * Any field failing validation causes a full reject (never partial accept).
+ */
+export const StorageStateSchema = z.object({
+  origin: z.string().min(1).describe("Page origin the state was captured from."),
+  cookies: z
+    .array(
+      z.object({
+        name: z.string(),
+        value: z.string(),
+        domain: z.string().optional(),
+        path: z.string().optional(),
+        expires: z.number().optional(),
+        httpOnly: z.boolean().optional(),
+        secure: z.boolean().optional(),
+        sameSite: z.enum(["Strict", "Lax", "None"]).optional(),
+      }),
+    )
+    .default([]),
+  localStorage: z.array(z.object({ key: z.string(), value: z.string() })).default([]),
+  sessionStorage: z.array(z.object({ key: z.string(), value: z.string() })).default([]),
+});
+
+export type StorageStateInput = z.infer<typeof StorageStateSchema>;
+
+// --- storage tool (multiplexed: cookies | localStorage | sessionStorage, get/set/delete) ---
+
+export const StorageStoreSchema = z.enum(["cookies", "localStorage", "sessionStorage"]);
+export const StorageOpSchema = z.enum(["get", "set", "delete"]);
+
+export const CookieSetAttrsSchema = z.object({
+  value: z.string(),
+  domain: z.string().optional().describe("Cookie domain. Defaults to active page domain."),
+  path: z.string().optional(),
+  expiry: z.number().int().optional().describe("Expiry as Unix timestamp seconds."),
+  httpOnly: z.boolean().optional(),
+  secure: z.boolean().optional(),
+  same_site: z
+    .enum(["Strict", "Lax", "None"])
+    .optional()
+    .describe("SameSite attribute."),
+  allow_cross_domain: z
+    .boolean()
+    .default(false)
+    .describe("Allow setting a cookie for a domain other than the active page. Required for cross-domain cookies."),
+});
+
+export const StorageInputSchema = {
+  store: StorageStoreSchema.describe("cookies | localStorage | sessionStorage"),
+  op: StorageOpSchema.describe("get | set | delete"),
+  key: z.string().min(1).describe("Cookie name or storage key."),
+  value: z
+    .string()
+    .optional()
+    .describe("Value to set (required for op=set on localStorage/sessionStorage)."),
+  cookie_attrs: CookieSetAttrsSchema.optional().describe(
+    "Cookie attributes for op=set, store=cookies. Includes domain, path, expiry, httpOnly, secure, sameSite.",
+  ),
+};
+
+// --- storage_state tool ---
+
+export const StorageSaveInputSchema = {};
+
+export const StorageRestoreInputSchema = {
+  state_json: z
+    .string()
+    .describe(
+      "JSON string of the storage state previously saved by browser_storage_state_save. " +
+        "Validated against StorageStateSchema at the restore boundary — malformed or wrong-origin state is rejected.",
+    ),
+};
+
+// --- emulate_device tool ---
+
+export const EmulateDeviceInputSchema = {
+  preset: z
+    .string()
+    .optional()
+    .describe('Named device preset (e.g. "iPhone 12", "Pixel 5"). Takes priority over explicit dimensions.'),
+  width: z.number().int().min(1).optional().describe("Viewport width in px (explicit mode)."),
+  height: z.number().int().min(1).optional().describe("Viewport height in px (explicit mode)."),
+  device_scale_factor: z.number().min(1).optional().describe("Device pixel ratio (explicit mode, default 1)."),
+  is_mobile: z.boolean().optional().describe("Treat as mobile device (explicit mode)."),
+};
+
+// --- geolocation tool ---
+
+export const GeolocationInputSchema = {
+  latitude: z.number().min(-90).max(90).describe("Latitude in degrees: -90..90."),
+  longitude: z.number().min(-180).max(180).describe("Longitude in degrees: -180..180."),
+  accuracy: z.number().min(0).optional().describe("Accuracy in meters (≥0). Default 1."),
+};
+
+// --- permissions tool ---
+
+/**
+ * Allowlisted permission names (CDP spec subset the browser actually supports).
+ * Unknown names are rejected at the barricade.
+ */
+export const KNOWN_PERMISSIONS = new Set([
+  "geolocation",
+  "camera",
+  "microphone",
+  "notifications",
+  "background-sync",
+  "ambient-light-sensor",
+  "accelerometer",
+  "gyroscope",
+  "magnetometer",
+  "accessibility-events",
+  "clipboard-read",
+  "clipboard-write",
+  "payment-handler",
+  "midi",
+]);
+
+export const PermissionsInputSchema = {
+  permissions: z
+    .array(z.string())
+    .min(1)
+    .describe("Permission names to grant. Use an empty list to revoke all."),
+  origin: z
+    .string()
+    .optional()
+    .describe("Origin to grant permissions for (default: active page origin)."),
+};
+
+// --- pdf tool ---
+
+export const PdfInputSchema = {
+  format: z
+    .string()
+    .optional()
+    .describe('Paper format (e.g. "A4", "Letter"). Default Letter.'),
+  print_background: z.boolean().default(true).describe("Include background graphics."),
+  landscape: z.boolean().default(false).describe("Landscape orientation."),
+};
+
+// --- screencast tool ---
+
+export const ScreencastStartInputSchema = {};
+export const ScreencastStopInputSchema = {};
+
+// --- upload tool ---
+
+export const UploadInputSchema = {
+  .../** flat TargetInputFields are spread at use-site */ {},
+  file_path: z.string().min(1).describe("Absolute path to the file to upload."),
+};
+
+// --- download tool ---
+
+export const DownloadInputSchema = {
+  timeout_ms: z
+    .number()
+    .int()
+    .min(0)
+    .default(30000)
+    .describe("Milliseconds to wait for the download to start and complete. Returns download_timeout on expiry."),
+};
+
+// --- wait_for_text tool ---
+
+export const WaitForTextInputSchema = {
+  text: z.string().min(1).describe("Text or substring to wait for in the page body."),
+  appear: z
+    .boolean()
+    .default(true)
+    .describe("true (default): wait for text to appear. false: wait for it to disappear."),
+  timeout_ms: z.number().int().min(0).default(30000).describe("Milliseconds before a wait_for_text_timeout err."),
+};
+
+// --- Output DTOs ------------------------------------------------------------
+
+export type StorageOut = {
+  value?: string | null;
+  entries?: { key: string; value: string }[];
+};
+
+export type StorageSaveOut = {
+  path: string;
+};
+
+export type StorageRestoreOut = {
+  restored: string[];
+  skipped: string[];
+};
+
+export type EmulateDeviceOut = {
+  preset?: string;
+  width?: number;
+  height?: number;
+};
+
+export type GeolocationOut = {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+};
+
+export type PermissionsOut = {
+  granted: string[];
+  origin: string;
+};
+
+export type PdfOut = {
+  path: string;
+};
+
+export type ScreencastStartOut = {
+  status: "started" | "deferred";
+  message?: string;
+};
+
+export type ScreencastStopOut = {
+  path: string;
+};
+
+export type UploadOut = {
+  uploaded: boolean;
+};
+
+export type DownloadOut = {
+  path: string;
+};
+
+export type WaitForTextOut = {
+  found: boolean;
+  condition: "appear" | "disappear";
+};

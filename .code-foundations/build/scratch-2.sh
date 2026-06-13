@@ -1,18 +1,15 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
+
 cd /Users/r/repos/oberskills/.claude/worktrees/browser-mcp/mcp-browser
 
-echo "=== bun install ==="
-bun install 2>&1 || true
+echo "=== Installing dependencies ==="
+bun install
 
-echo ""
-echo "=== typecheck ==="
-bunx tsc --noEmit 2>&1; echo "tsc exit: $?"
+echo "=== Running typecheck ==="
+bunx tsc --noEmit
 
-echo ""
-echo "=== unit tests (non-live) — verbose for phase4 files ==="
-bun test --timeout 30000 test/perf-network.test.ts test/har-writer.test.ts 2>&1; echo "bun test exit: $?"
+echo "=== Running test suite ==="
+bun test
 
-echo ""
-echo "=== full suite for reference ==="
-bun test --timeout 30000 2>&1; echo "full test exit: $?"
+echo "All tests passed!"

@@ -10,10 +10,12 @@ import type {
   CollectResult,
   ConnectionInfo,
   ConnectOptions,
+  DeviceProfile,
   DismissResult,
   EmulateConditionsOpts,
   ExtractOpts,
   FormFieldState,
+  GeolocationOpts,
   HarExportResult,
   InsightMetric,
   InsightResult,
@@ -21,14 +23,20 @@ import type {
   LighthouseResult,
   NavResult,
   PageHandle,
+  PdfOpts,
+  PermissionsOpts,
   ReadDomOpts,
   RouteRule,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
+  StorageOp,
+  StorageResult,
+  StorageState,
   TabInfo,
   TraceOpts,
   TraceStopResult,
+  WaitForTextOpts,
   WaitOpts,
   WaitStrategy,
 } from "../src/core/browser-port.ts";
@@ -376,6 +384,156 @@ export class FakePort implements BrowserPort {
 
   async emulateConditions(opts: EmulateConditionsOpts): Promise<void> {
     this.lastEmulate = opts;
+  }
+
+  // --- Phase 5: storage / emulation / capture --------------------------------
+
+  /** Recorded storage ops (proves the tool routes through the port). */
+  storageOps: StorageOp[] = [];
+  /** Canned storage result storage() returns. */
+  cannedStorageResult: StorageResult = {};
+  /** When set, storage() throws storage_failed with this message. */
+  storageError: string | null = null;
+  /** When set, storage() throws cross_domain_cookie. */
+  crossDomainCookieError = false;
+  /** When set, storage() throws storage_failed (no-origin). */
+  noOriginError = false;
+
+  /** Canned storage state for saveStorageState(). */
+  cannedStorageStatePath = "/tmp/fake-storage-state.json";
+  /** Canned storage state restore result. */
+  cannedRestoreResult: { restored: string[]; skipped: string[] } = { restored: [], skipped: [] };
+  /** When set, restoreStorageState throws storage_state_invalid. */
+  restoreError: string | null = null;
+
+  /** Recorded emulateDevice calls. */
+  lastDeviceProfile: DeviceProfile | null = null;
+  /** When set, emulateDevice throws emulation_failed. */
+  emulateDeviceError: string | null = null;
+
+  /** Recorded setGeolocation calls. */
+  lastGeolocation: GeolocationOpts | null = null;
+
+  /** Recorded grantPermissions calls. */
+  lastPermissions: PermissionsOpts | null = null;
+
+  /** Canned PDF path printPdf() returns. */
+  cannedPdfPath = "/tmp/fake.pdf";
+  /** When set, printPdf throws pdf_failed. */
+  pdfError: string | null = null;
+  /** Canned PDF opts received. */
+  lastPdfOpts: PdfOpts | undefined = undefined;
+
+  /** Screencast lifecycle state. */
+  screencastRunning = false;
+  /** Whether double-start has been tested. */
+  screencastDoubleStartThrows = false;
+  /** Canned download path. */
+  cannedDownloadPath = "/tmp/fake-download.bin";
+  /** When set, captureDownload throws download_timeout. */
+  downloadTimeout = false;
+
+  /** Recorded upload calls: { target, filePath }. */
+  uploadCalls: { target: Target; filePath: string }[] = [];
+  /** When set, uploadFile throws upload_failed with this message. */
+  uploadError: string | null = null;
+
+  /** wait_for_text state. */
+  waitForTextTimeout = false;
+  /** Recorded waitForText calls. */
+  waitForTextCalls: WaitForTextOpts[] = [];
+
+  async storage(op: StorageOp): Promise<StorageResult> {
+    this.storageOps.push(op);
+    if (this.noOriginError) {
+      throw new BrowserError("storage_failed", "localStorage/sessionStorage is not available (no origin)", "navigate to an http(s) page");
+    }
+    if (this.crossDomainCookieError) {
+      throw new BrowserError("cross_domain_cookie", "cookie domain does not match active page origin", "set allow_cross_domain=true");
+    }
+    if (this.storageError !== null) {
+      throw new BrowserError("storage_failed", this.storageError, "check the store/op/key and retry");
+    }
+    return this.cannedStorageResult;
+  }
+
+  async saveStorageState(): Promise<{ path: string }> {
+    return { path: this.cannedStorageStatePath };
+  }
+
+  async restoreStorageState(_state: StorageState): Promise<{ restored: string[]; skipped: string[] }> {
+    if (this.restoreError !== null) {
+      throw new BrowserError("storage_state_invalid", this.restoreError, "use the JSON from browser_storage_state_save");
+    }
+    return this.cannedRestoreResult;
+  }
+
+  async emulateDevice(opts: DeviceProfile): Promise<void> {
+    if (this.emulateDeviceError !== null) {
+      throw new BrowserError("emulation_failed", this.emulateDeviceError, 'use a known device preset (e.g. "iPhone 12")');
+    }
+    this.lastDeviceProfile = opts;
+  }
+
+  async setGeolocation(opts: GeolocationOpts): Promise<void> {
+    this.lastGeolocation = opts;
+  }
+
+  async grantPermissions(opts: PermissionsOpts): Promise<void> {
+    this.lastPermissions = opts;
+  }
+
+  async printPdf(opts?: PdfOpts): Promise<{ path: string }> {
+    this.lastPdfOpts = opts;
+    if (this.pdfError !== null) {
+      throw new BrowserError("pdf_failed", this.pdfError, "ensure the page is loaded before exporting PDF");
+    }
+    return { path: this.cannedPdfPath };
+  }
+
+  async startScreencast(): Promise<void> {
+    if (this.screencastRunning) {
+      throw new BrowserError("screencast_already_running", "a screencast is already running", "call browser_screencast_stop before starting another");
+    }
+    this.screencastRunning = true;
+  }
+
+  async stopScreencast(): Promise<{ path: string }> {
+    if (!this.screencastRunning) {
+      throw new BrowserError("no_screencast_running", "no screencast is currently running", "call browser_screencast_start before stopping");
+    }
+    this.screencastRunning = false;
+    // Fake always returns deferral (mirrors the real adapter P5b deferral).
+    throw new BrowserError("screencast_not_supported", "screencast video assembly deferred to P5b", "use browser_pdf or browser_screenshot for now");
+  }
+
+  async uploadFile(target: Target, filePath: string): Promise<void> {
+    // Honor the resolveTarget Strategy: stale/unknown/ambiguous refs must propagate.
+    await this.resolveTarget(target);
+    this.uploadCalls.push({ target, filePath });
+    if (this.uploadError !== null) {
+      throw new BrowserError("upload_failed", this.uploadError, "ensure the element is a file input and the ref is current");
+    }
+  }
+
+  async captureDownload(_opts?: { timeoutMs?: number }): Promise<{ path: string }> {
+    if (this.downloadTimeout) {
+      const timeout = _opts?.timeoutMs ?? 30000;
+      throw new BrowserError("download_timeout", `no download completed within ${timeout}ms`, "trigger the download action first");
+    }
+    return { path: this.cannedDownloadPath };
+  }
+
+  async waitForText(opts: WaitForTextOpts): Promise<void> {
+    this.waitForTextCalls.push(opts);
+    if (this.waitForTextTimeout) {
+      const condition = opts.appear ? "appear" : "disappear";
+      throw new BrowserError(
+        "wait_for_text_timeout",
+        `wait_for_text timed out waiting for text to ${condition}: "${opts.text}"`,
+        `increase timeout_ms or check that the text will ${condition} on this page`,
+      );
+    }
   }
 
   /** Every ref ever minted — distinguishes unknown_ref (never seen) from stale_ref (seen, now dead). */

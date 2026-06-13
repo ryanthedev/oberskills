@@ -42,6 +42,18 @@ import * as lighthouseAudit from "./tools/lighthouse-audit.ts";
 import * as exportHar from "./tools/export-har.ts";
 import * as route from "./tools/route.ts";
 import * as emulate from "./tools/emulate.ts";
+import * as storage from "./tools/storage.ts";
+import * as storageStateSave from "./tools/storage-state-save.ts";
+import * as storageStateRestore from "./tools/storage-state-restore.ts";
+import * as emulateDevice from "./tools/emulate-device.ts";
+import * as geolocation from "./tools/geolocation.ts";
+import * as permissions from "./tools/permissions.ts";
+import * as pdf from "./tools/pdf.ts";
+import * as screencastStart from "./tools/screencast-start.ts";
+import * as screencastStop from "./tools/screencast-stop.ts";
+import * as upload from "./tools/upload.ts";
+import * as download from "./tools/download.ts";
+import * as waitForText from "./tools/wait-for-text.ts";
 
 const INSTRUCTIONS = `Persistent Chrome/CDP control via puppeteer-core, in a hexagonal architecture.
 Phase 1 surface — connection + tabs:
@@ -130,6 +142,19 @@ export const TOOLS: RegisteredTool[] = [
   defineTool(exportHar),
   defineTool(route),
   defineTool(emulate),
+  // Phase 5: storage / emulation / capture
+  defineTool(storage),
+  defineTool(storageStateSave),
+  defineTool(storageStateRestore),
+  defineTool(emulateDevice),
+  defineTool(geolocation),
+  defineTool(permissions),
+  defineTool(pdf),
+  defineTool(screencastStart),
+  defineTool(screencastStop),
+  defineTool(upload),
+  defineTool(download),
+  defineTool(waitForText),
 ];
 
 /**

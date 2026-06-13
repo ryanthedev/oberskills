@@ -447,3 +447,10 @@ Summary: BrowserPort extended with snapshot/resolveTarget/interact/navigate/wait
 - [x] Committed
 Commit: 78ad059
 Summary: writePayload seam reconciled to ONE signature `writePayload(data, opts) → {path,bytes,inlinedPreview,written}` (P2 screenshot call-site updated; suite green). PAYLOAD_THRESHOLD_BYTES canonical in lib/payload.ts — all phases import it. Read tools route large payloads through writePayload; element-scoped reads reuse resolveTarget via the port. Ported DOM heuristics live as page.evaluate string constants split lib/dom-helpers (tool-safe) + adapters/puppeteer/dom-helpers (adapter-only) to keep core/tools puppeteer-free. evaluate is page-sandbox only (never server eval), caps payloads, surfaces page throws as structured errs. P4 HAR + P5 captures consume writePayload.
+
+### Phase 4: DevTools — performance + network (Gate: Full, security-sensitive)
+- [x] BUILD: perf trace/CWV, Lighthouse (in-process under bun — verified), HAR via HarPort, route interception/mocking, emulate throttling; 163 unit + 7 live pass, tsc clean
+- [x] REVIEW: 3-sample security review, 3/3 PASS (all 6 DW + 8 edge cases with evidence)
+- [x] Committed
+Commit: e163b6c
+Summary: Lighthouse runs in-process under bun (no Node child) — DW-4.2 shipped, not deferred; lighthouse@^13.4.0 dep, import confined to adapter (static boundary blocks it in core/tools). HarPort is a substitutable driven adapter (FakeHarPort in tests); HAR 1.2 hidden behind write(entries)→path, atomic write-then-rename. Interception = RouteRule[] data validated at barricade; bodies size-capped, never executed; tears down on disconnect; clearRoutes() recovers after failed setRoutes(). Trace = start/stop/analyze 3 ops. emulate = network+CPU throttle, out-of-range → defined err. All large outputs route through writePayload. P5/P6 consume these.

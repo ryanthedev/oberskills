@@ -12,10 +12,12 @@ import type {
   CollectResult,
   ConnectionInfo,
   ConnectOptions,
+  DeviceProfile,
   DismissResult,
   EmulateConditionsOpts,
   ExtractOpts,
   FormFieldState,
+  GeolocationOpts,
   HarExportResult,
   InsightMetric,
   InsightResult,
@@ -23,14 +25,20 @@ import type {
   LighthouseResult,
   NavResult,
   PageHandle,
+  PdfOpts,
+  PermissionsOpts,
   ReadDomOpts,
   RouteRule,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
+  StorageOp,
+  StorageResult,
+  StorageState,
   TabInfo,
   TraceOpts,
   TraceStopResult,
+  WaitForTextOpts,
   WaitOpts,
   WaitStrategy,
 } from "../src/core/browser-port.ts";
@@ -99,6 +107,19 @@ class CapturePort implements BrowserPort {
   async setRoutes(_r: RouteRule[]): Promise<void> {}
   async clearRoutes(): Promise<void> {}
   async emulateConditions(_o: EmulateConditionsOpts): Promise<void> {}
+  // P5 stubs — not under test here.
+  async storage(_op: StorageOp): Promise<StorageResult> { return {}; }
+  async saveStorageState(): Promise<{ path: string }> { return { path: "" }; }
+  async restoreStorageState(_s: StorageState): Promise<{ restored: string[]; skipped: string[] }> { return { restored: [], skipped: [] }; }
+  async emulateDevice(_o: DeviceProfile): Promise<void> {}
+  async setGeolocation(_o: GeolocationOpts): Promise<void> {}
+  async grantPermissions(_o: PermissionsOpts): Promise<void> {}
+  async printPdf(_o?: PdfOpts): Promise<{ path: string }> { return { path: "" }; }
+  async startScreencast(): Promise<void> {}
+  async stopScreencast(): Promise<{ path: string }> { return { path: "" }; }
+  async uploadFile(_t: Target, _fp: string): Promise<void> {}
+  async captureDownload(_o?: { timeoutMs?: number }): Promise<{ path: string }> { return { path: "" }; }
+  async waitForText(_o: WaitForTextOpts): Promise<void> {}
 }
 
 describe("screenshot tool (writes via the writePayload seam)", () => {

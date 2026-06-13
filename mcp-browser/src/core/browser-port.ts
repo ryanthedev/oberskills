@@ -260,6 +260,87 @@ export interface BrowserPort {
    * tool barricade (throttle_out_of_range) before reaching the adapter.
    */
   emulateConditions(opts: EmulateConditionsOpts): Promise<void>;
+
+  // --- Phase 5: storage / emulation / capture --------------------------------
+
+  /**
+   * Multiplexed storage access: cookies, localStorage, sessionStorage — get/set/delete.
+   * Communicational cohesion: all ops touch the same storage substrate.
+   * Throws storage_failed, cross_domain_cookie (set without opt-in), storage_state_invalid.
+   */
+  storage(op: StorageOp): Promise<StorageResult>;
+
+  /**
+   * Serialize all cookies + localStorage + sessionStorage to a file via writePayload.
+   * Returns the file path. Saved state contains session credentials — write to a
+   * caller-controlled path; never log contents.
+   */
+  saveStorageState(): Promise<{ path: string }>;
+
+  /**
+   * Restore cookies + localStorage + sessionStorage from a previously-saved state.
+   * BARRICADE: validates with StorageStateSchema; checks origin match.
+   * All-or-nothing: clear existing state first, then restore. On validation failure,
+   * the existing state is NOT cleared. Returns { restored, skipped } counts with
+   * per-item diagnostics (skipped = origin mismatch or unknown store).
+   */
+  restoreStorageState(state: StorageState): Promise<{ restored: string[]; skipped: string[] }>;
+
+  /**
+   * Emulate a device (named preset) or set an explicit viewport.
+   * Throws emulation_failed for unknown device names.
+   */
+  emulateDevice(opts: DeviceProfile): Promise<void>;
+
+  /**
+   * Set geolocation. Throws geolocation_out_of_range for invalid lat/lon.
+   */
+  setGeolocation(opts: GeolocationOpts): Promise<void>;
+
+  /**
+   * Grant (or revoke) browser permissions for the active page origin.
+   * Throws permission_unknown for unrecognized names.
+   */
+  grantPermissions(opts: PermissionsOpts): Promise<void>;
+
+  /**
+   * Export the active page as a PDF file via CDP Page.printToPDF.
+   * Throws pdf_failed on CDP error. Returns the file path.
+   */
+  printPdf(opts?: PdfOpts): Promise<{ path: string }>;
+
+  /**
+   * Start a screencast. Throws screencast_already_running if one is in progress.
+   * NOTE (P5b): Video assembly from CDP frames is deferred. This call arms the
+   * lifecycle state machine; actual video capture is a P5b follow-up.
+   */
+  startScreencast(): Promise<void>;
+
+  /**
+   * Stop the screencast and return the video file path.
+   * Throws no_screencast_running when none was started.
+   * Throws screencast_not_supported until P5b is implemented.
+   */
+  stopScreencast(): Promise<{ path: string }>;
+
+  /**
+   * Upload a file to an <input type="file"> element. The element is resolved via
+   * resolveTarget (reusing P2 Strategy). Throws upload_failed for non-file inputs.
+   */
+  uploadFile(target: Target, filePath: string): Promise<void>;
+
+  /**
+   * Arm download capture for the next download and wait up to timeoutMs.
+   * Throws download_timeout when no download fires within the timeout.
+   * Returns the path to the downloaded file.
+   */
+  captureDownload(opts?: { timeoutMs?: number }): Promise<{ path: string }>;
+
+  /**
+   * Wait for text to appear or disappear in the page body.
+   * Throws wait_for_text_timeout naming appear vs disappear on timeout.
+   */
+  waitForText(opts: WaitForTextOpts): Promise<void>;
 }
 
 // --- Phase 4 option / result types ----------------------------------------
@@ -347,6 +428,100 @@ export type EmulateConditionsOpts = {
   network?: NetworkProfile;
   /** CPU slowdown multiplier (1 = none). Barricade-validated to 1..20. */
   cpuThrottlingRate?: number;
+};
+
+// --- Phase 5 option / result types ----------------------------------------
+
+/** Which browser storage to operate on. */
+export type StorageStore = "cookies" | "localStorage" | "sessionStorage";
+
+/** Which operation to perform on a storage store. */
+export type StorageOperation = "get" | "set" | "delete";
+
+/** Cookie attributes for the set operation (parameter object — keeps top-level ≤7 fields). */
+export type CookieSetAttrs = {
+  value: string;
+  /** Domain the cookie applies to (default: active page's domain). */
+  domain?: string;
+  /** Path the cookie applies to. */
+  path?: string;
+  /** Expiry as Unix timestamp seconds. */
+  expiry?: number;
+  /** HttpOnly flag. */
+  httpOnly?: boolean;
+  /** Secure flag. */
+  secure?: boolean;
+  /** SameSite attribute. */
+  sameSite?: "Strict" | "Lax" | "None";
+};
+
+export type StorageOp =
+  | { store: StorageStore; op: "get"; key: string }
+  | { store: StorageStore; op: "delete"; key: string }
+  | { store: "cookies"; op: "set"; key: string; attrs: CookieSetAttrs; allowCrossDomain?: boolean }
+  | { store: "localStorage" | "sessionStorage"; op: "set"; key: string; value: string };
+
+export type StorageResult = {
+  /** The stored value (get only). null when key absent. */
+  value?: string | null;
+  /** All cookies/entries when no key is specified. */
+  entries?: { key: string; value: string }[];
+};
+
+/** Validated storage state — the type StorageStateSchema produces at the restore boundary. */
+export type StorageState = {
+  origin: string;
+  cookies: {
+    name: string;
+    value: string;
+    domain?: string;
+    path?: string;
+    expires?: number;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: string;
+  }[];
+  localStorage: { key: string; value: string }[];
+  sessionStorage: { key: string; value: string }[];
+};
+
+/** Device emulation: either a named preset or explicit dimensions. */
+export type DeviceProfile =
+  | { preset: string }
+  | { width: number; height: number; deviceScaleFactor?: number; isMobile?: boolean };
+
+export type GeolocationOpts = {
+  /** Degrees: -90..90. */
+  latitude: number;
+  /** Degrees: -180..180. */
+  longitude: number;
+  /** Accuracy in meters (≥0). */
+  accuracy?: number;
+};
+
+export type PermissionsOpts = {
+  /** Permission names to grant. Unknown names are rejected at the barricade. */
+  permissions: string[];
+  /** Origin to grant permissions for (default: active page origin). */
+  origin?: string;
+};
+
+export type PdfOpts = {
+  /** Paper format, e.g. "A4", "Letter". */
+  format?: string;
+  /** Include background graphics. */
+  printBackground?: boolean;
+  /** Landscape orientation. */
+  landscape?: boolean;
+};
+
+export type WaitForTextOpts = {
+  /** The text/substring to wait for. */
+  text: string;
+  /** true: wait for the text to appear (default); false: wait for it to disappear. */
+  appear?: boolean;
+  /** ms before a wait_for_text_timeout err. Default 30000. */
+  timeoutMs?: number;
 };
 
 // --- Phase 3 option / result types ----------------------------------------

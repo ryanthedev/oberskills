@@ -38,7 +38,22 @@ export type BrowserErrorCode =
   | "lighthouse_failed" // lighthouse could not run — structured reason, never a zeroed audit as success
   | "invalid_route_rule" // a RouteRule failed barricade validation (url/status/body)
   | "har_export_failed" // the HAR writer failed to produce a file
-  | "throttle_out_of_range"; // a CPU/network throttle value is outside the defined range
+  | "throttle_out_of_range" // a CPU/network throttle value is outside the defined range
+  // --- Phase 5: storage / emulation / capture ---
+  | "storage_failed" // a storage get/set/delete operation failed (e.g. localStorage on no-origin page)
+  | "cross_domain_cookie" // set a cookie for a domain not matching the active page without opt-in
+  | "storage_state_invalid" // the storage-state file is malformed or zod-validation failed
+  | "storage_state_origin_mismatch" // the storage-state origin does not match the active page
+  | "emulation_failed" // emulate_device / geolocation / permissions failed (unknown device, bad values)
+  | "permission_unknown" // an unrecognized browser permission name was passed
+  | "geolocation_out_of_range" // latitude/longitude outside valid bounds
+  | "pdf_failed" // Page.printToPDF failed
+  | "download_timeout" // a download did not complete within the specified timeout
+  | "upload_failed" // upload to a non-file input or stale ref
+  | "wait_for_text_timeout" // wait_for_text timed out; message names appear vs disappear
+  | "screencast_already_running" // startScreencast called while one is running
+  | "no_screencast_running" // stopScreencast called with no screencast in progress
+  | "screencast_not_supported"; // screencast video assembly deferred (P5b follow-up)
 
 export type BrowserErrorShape = {
   code: BrowserErrorCode;

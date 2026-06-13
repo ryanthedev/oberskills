@@ -28,10 +28,12 @@ import type {
   CollectResult,
   ConnectionInfo,
   ConnectOptions,
+  DeviceProfile,
   DismissResult,
   EmulateConditionsOpts,
   ExtractOpts,
   FormFieldState,
+  GeolocationOpts,
   HarExportResult,
   InsightMetric,
   InsightResult,
@@ -40,14 +42,20 @@ import type {
   NavResult,
   NetworkProfile,
   PageHandle,
+  PdfOpts,
+  PermissionsOpts,
   ReadDomOpts,
   RouteRule,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
+  StorageOp,
+  StorageResult,
+  StorageState,
   TabInfo,
   TraceOpts,
   TraceStopResult,
+  WaitForTextOpts,
   WaitOpts,
   WaitStrategy,
 } from "../../core/browser-port.ts";
@@ -72,6 +80,9 @@ import type {
 } from "../../core/targeting.ts";
 import { buildSnapshot, RefRegistry, type RawAxNode } from "./refs.ts";
 import { executeAction, resolveOnPage } from "./interactions.ts";
+import { executeStorageOp, captureStorageState, restoreState } from "./storage.ts";
+import { emulateDevice, setGeolocation as setGeo, grantPermissions as grantPerms } from "./emulation.ts";
+import { ScreencastController, printPdf, uploadFile, captureDownload, waitForText as waitForTextFn } from "./capture.ts";
 
 const ENV_EXECUTABLE = process.env.BROWSER_MCP_EXECUTABLE_PATH;
 const ENV_CHANNEL = process.env.BROWSER_MCP_CHANNEL;
@@ -655,6 +666,85 @@ export class PuppeteerConnectionManager implements BrowserPort {
     if (opts.cpuThrottlingRate !== undefined) {
       await page.emulateCPUThrottling(opts.cpuThrottlingRate);
     }
+  }
+
+  // --- Phase 5: storage / emulation / capture --------------------------------
+
+  /** Screencast lifecycle controller (P5b: lifecycle only, video deferred). */
+  private screencast: ScreencastController | null = null;
+
+  async storage(op: StorageOp): Promise<StorageResult> {
+    const page = await this.activePage();
+    return executeStorageOp(page, op);
+  }
+
+  async saveStorageState(): Promise<{ path: string }> {
+    const page = await this.activePage();
+    const state = await captureStorageState(page);
+    const json = JSON.stringify(state);
+    const written = await writePayload(Buffer.from(json), { ext: "json" });
+    const path = written.written ? written.path : await forceWrite(Buffer.from(json));
+    return { path };
+  }
+
+  async restoreStorageState(state: StorageState): Promise<{ restored: string[]; skipped: string[] }> {
+    const page = await this.activePage();
+    return restoreState(page, state);
+  }
+
+  async emulateDevice(opts: DeviceProfile): Promise<void> {
+    const page = await this.activePage();
+    await emulateDevice(page, opts);
+  }
+
+  async setGeolocation(opts: GeolocationOpts): Promise<void> {
+    const page = await this.activePage();
+    await setGeo(page, opts);
+  }
+
+  async grantPermissions(opts: PermissionsOpts): Promise<void> {
+    const page = await this.activePage();
+    await grantPerms(page, opts);
+  }
+
+  async printPdf(opts?: PdfOpts): Promise<{ path: string }> {
+    const page = await this.activePage();
+    const pdfBytes = await printPdf(page, opts);
+    const written = await writePayload(pdfBytes, { ext: "pdf" });
+    const path = written.written ? written.path : await forceWrite(pdfBytes);
+    return { path };
+  }
+
+  async startScreencast(): Promise<void> {
+    if (this.screencast === null) this.screencast = new ScreencastController();
+    this.screencast.start();
+  }
+
+  async stopScreencast(): Promise<{ path: string }> {
+    if (this.screencast === null) {
+      throw new BrowserError(
+        "no_screencast_running",
+        "no screencast is currently running",
+        "call browser_screencast_start before stopping",
+      );
+    }
+    return this.screencast.stop();
+  }
+
+  async uploadFile(target: Target, filePath: string): Promise<void> {
+    const page = await this.activePage();
+    const resolved = await resolveOnPage(page, this.refs, target);
+    await uploadFile(page, resolved, filePath);
+  }
+
+  async captureDownload(opts?: { timeoutMs?: number }): Promise<{ path: string }> {
+    const page = await this.activePage();
+    return captureDownload(page, opts?.timeoutMs ?? 30000);
+  }
+
+  async waitForText(opts: WaitForTextOpts): Promise<void> {
+    const page = await this.activePage();
+    await waitForTextFn(page, opts.text, opts.appear ?? true, opts.timeoutMs ?? 30000);
   }
 
   /** Get (or create + start capturing on) the network controller for the active page. */
