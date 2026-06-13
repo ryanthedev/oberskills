@@ -28,6 +28,13 @@ import * as navigate from "./tools/navigate.ts";
 import * as wait from "./tools/wait.ts";
 import * as scroll from "./tools/scroll.ts";
 import * as screenshot from "./tools/screenshot.ts";
+import * as dom from "./tools/dom.ts";
+import * as accessibility from "./tools/accessibility.ts";
+import * as extract from "./tools/extract.ts";
+import * as collect from "./tools/collect.ts";
+import * as evaluate from "./tools/evaluate.ts";
+import * as dismiss from "./tools/dismiss.ts";
+import * as form from "./tools/form.ts";
 
 const INSTRUCTIONS = `Persistent Chrome/CDP control via puppeteer-core, in a hexagonal architecture.
 Phase 1 surface — connection + tabs:
@@ -102,6 +109,13 @@ export const TOOLS: RegisteredTool[] = [
   defineTool(wait),
   defineTool(scroll),
   defineTool(screenshot),
+  defineTool(dom),
+  defineTool(accessibility),
+  defineTool(extract),
+  defineTool(collect),
+  defineTool(evaluate),
+  defineTool(dismiss),
+  defineTool(form),
 ];
 
 /**

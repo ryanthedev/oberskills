@@ -164,4 +164,109 @@ export interface BrowserPort {
    * writes them to disk via the writePayload seam (P3 fills threshold logic).
    */
   screenshot(opts?: { fullPage?: boolean }): Promise<Buffer>;
+
+  // --- Phase 3: read / extract --------------------------------------------
+
+  /**
+   * Return the outer HTML of the active page (full document) or a scoped element.
+   * Throws read_failed when selector matches nothing; no_active_tab when no tab.
+   */
+  readDom(opts?: ReadDomOpts): Promise<string>;
+
+  /**
+   * Return the raw accessibility tree as a JSON string. Uses puppeteer's
+   * accessibility.snapshot with interestingOnly=false for the full tree.
+   */
+  readAccessibility(): Promise<string>;
+
+  /**
+   * Extract structured fields from repeated container elements.
+   * Throws read_failed when the selector matches nothing.
+   */
+  extract(opts: ExtractOpts): Promise<unknown[]>;
+
+  /**
+   * Accordion expand-read-close loop. Clicks each element matching selector,
+   * reads content from readSelector, optionally closes. Falls back to
+   * body-text diff when readSelector matches nothing. Returns array of
+   * per-item results (null where nothing new appeared = "no expandable content").
+   */
+  collect(opts: CollectOpts): Promise<CollectResult>;
+
+  /**
+   * Execute arbitrary JS in the page context. Auto-injects querySelectorDeep /
+   * querySelectorAllDeep helpers via a single named constant. Throws evaluate_failed
+   * on page-side exceptions or non-serializable return values; NEVER evals in the
+   * Node/server process.
+   */
+  evaluate(expression: string): Promise<unknown>;
+
+  /**
+   * Find and dismiss the topmost open dialog/overlay using the scored close-button
+   * heuristic. Throws no_dialog when none is found. Returns info about the dismissed
+   * element.
+   */
+  dismiss(): Promise<DismissResult>;
+
+  /**
+   * Read the current value, checked state, and selectedOptions of a form element
+   * located by selector. Throws read_failed when selector matches nothing.
+   */
+  readForm(selector: string): Promise<FormFieldState>;
 }
+
+// --- Phase 3 option / result types ----------------------------------------
+
+export type ReadDomOpts = {
+  /** CSS selector to scope the read. Absent = full document HTML. */
+  selector?: string;
+};
+
+export type ExtractField = { name: string; selector: string };
+
+export type ExtractOpts = {
+  /** Selector for repeated container elements. */
+  selector: string;
+  /** Named child selectors to extract per container. Absent = textContent. */
+  fields?: ExtractField[];
+  /** Pierce shadow DOM when matching. */
+  pierce?: boolean;
+};
+
+export type CollectOpts = {
+  /** Selector for the clickable toggle/accordion elements. */
+  selector: string;
+  /** Selector to read content from after expanding. */
+  readSelector: string;
+  /** Pierce shadow DOM when matching. */
+  pierce?: boolean;
+  /** Click the element again after reading to close (default false). */
+  closeAfterRead?: boolean;
+  /** Milliseconds to wait after each click (default 300). */
+  delayMs?: number;
+};
+
+export type CollectResult = {
+  /** Per-item expanded content (null = nothing new appeared after expand). */
+  items: (string | null)[];
+  /** True when every item in `items` is null (nothing expanded for any item). */
+  nothingExpandable: boolean;
+};
+
+export type DismissResult = {
+  /** How the dialog was dismissed: click on a close button, or Escape key. */
+  method: "click" | "escape";
+  /** Best description of the element dismissed. */
+  element: string;
+  /** Coordinates of the close button click, if method=click. */
+  coords?: { x: number; y: number };
+};
+
+export type FormFieldState = {
+  /** The current input/textarea value (null for non-value elements). */
+  value: string | null;
+  /** Checkbox/radio checked state (null for non-checkable elements). */
+  checked: boolean | null;
+  /** Selected option texts for <select> (null for non-select elements). */
+  selectedOptions: string[] | null;
+};

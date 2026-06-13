@@ -24,10 +24,16 @@ import puppeteer, {
 import { BrowserError } from "../../core/errors.ts";
 import type {
   BrowserPort,
+  CollectOpts,
+  CollectResult,
   ConnectionInfo,
   ConnectOptions,
+  DismissResult,
+  ExtractOpts,
+  FormFieldState,
   NavResult,
   PageHandle,
+  ReadDomOpts,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
@@ -35,6 +41,13 @@ import type {
   WaitOpts,
   WaitStrategy,
 } from "../../core/browser-port.ts";
+import {
+  FIND_DIALOG_JS,
+  QUERY_SELECTOR_ALL_DEEP_JS,
+  QUERY_SELECTOR_DEEP_JS,
+  QUERY_SELECTOR_SCOPED_JS,
+  TEXT_CONTENT_DEEP_JS,
+} from "./dom-helpers.ts";
 import type {
   FillFormField,
   InteractAction,
@@ -279,6 +292,269 @@ export class PuppeteerConnectionManager implements BrowserPort {
     const page = await this.activePage();
     const data = await page.screenshot({ fullPage: opts?.fullPage ?? false, type: "png" });
     return Buffer.from(data);
+  }
+
+  // --- Phase 3: read / extract --------------------------------------------
+
+  async readDom(opts?: ReadDomOpts): Promise<string> {
+    const page = await this.activePage();
+    if (opts?.selector) {
+      const el = await page.$(opts.selector);
+      if (!el) {
+        throw new BrowserError(
+          "read_failed",
+          `selector matched nothing: ${opts.selector}`,
+          "check the selector or run browser_snapshot to verify the element exists",
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return page.evaluate((node) => (node as any).outerHTML as string, el);
+    }
+    return page.content();
+  }
+
+  async readAccessibility(): Promise<string> {
+    const page = await this.activePage();
+    try {
+      const tree = await page.accessibility.snapshot({ interestingOnly: false });
+      return JSON.stringify(tree, null, 2);
+    } catch (e) {
+      throw new BrowserError(
+        "read_failed",
+        `accessibility snapshot failed: ${e instanceof Error ? e.message : String(e)}`,
+        "retry once the page settles",
+      );
+    }
+  }
+
+  async extract(opts: ExtractOpts): Promise<unknown[]> {
+    const page = await this.activePage();
+
+    const queryFn = opts.pierce
+      ? `${QUERY_SELECTOR_ALL_DEEP_JS}(${JSON.stringify(opts.selector)})`
+      : `Array.from(document.querySelectorAll(${JSON.stringify(opts.selector)}))`;
+
+    if (opts.fields && opts.fields.length > 0) {
+      const fieldEntries = opts.fields
+        .map((f) => `{ name: ${JSON.stringify(f.name)}, selector: ${JSON.stringify(f.selector)} }`)
+        .join(", ");
+      const pierceFlag = opts.pierce ? "true" : "false";
+      const extractBody = `(function() {
+        ${TEXT_CONTENT_DEEP_JS}
+        ${QUERY_SELECTOR_SCOPED_JS}
+        var containers = ${queryFn};
+        if (containers.length === 0) return null;
+        var fieldDefs = [${fieldEntries}];
+        var usePierce = ${pierceFlag};
+        var results = [];
+        for (var i = 0; i < containers.length; i++) {
+          var row = {};
+          for (var j = 0; j < fieldDefs.length; j++) {
+            var child = containers[i].querySelector(fieldDefs[j].selector);
+            if (!child && usePierce) {
+              child = querySelectorScoped(containers[i], fieldDefs[j].selector);
+            }
+            row[fieldDefs[j].name] = child ? deepText(child) : null;
+          }
+          results.push(row);
+        }
+        return results;
+      })()`;
+      const result = await page.evaluate(extractBody);
+      if (result === null) {
+        throw new BrowserError(
+          "read_failed",
+          `selector matched nothing: ${opts.selector}`,
+          "check the selector",
+        );
+      }
+      return result as unknown[];
+    } else {
+      const extractBody = `(function() {
+        ${TEXT_CONTENT_DEEP_JS}
+        var containers = ${queryFn};
+        if (containers.length === 0) return null;
+        var results = [];
+        for (var i = 0; i < containers.length; i++) {
+          results.push(deepText(containers[i]));
+        }
+        return results;
+      })()`;
+      const result = await page.evaluate(extractBody);
+      if (result === null) {
+        throw new BrowserError(
+          "read_failed",
+          `selector matched nothing: ${opts.selector}`,
+          "check the selector",
+        );
+      }
+      return result as unknown[];
+    }
+  }
+
+  async collect(opts: CollectOpts): Promise<CollectResult> {
+    const page = await this.activePage();
+    const delay = opts.delayMs ?? 300;
+    const collectExpr = opts.pierce
+      ? `${QUERY_SELECTOR_ALL_DEEP_JS}(${JSON.stringify(opts.selector)})`
+      : `Array.from(document.querySelectorAll(${JSON.stringify(opts.selector)}))`;
+
+    // Collect center coordinates for all toggle elements
+    const filterFn = `(function() {
+      var elements = ${collectExpr};
+      var coords = [];
+      for (var i = 0; i < elements.length; i++) {
+        var rect = elements[i].getBoundingClientRect();
+        coords.push({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+      }
+      return coords;
+    })()`;
+    const coords = (await page.evaluate(filterFn)) as { x: number; y: number }[];
+
+    if (coords.length === 0) {
+      return { items: [], nothingExpandable: true };
+    }
+
+    const readExprTemplate = opts.pierce
+      ? `(function() {
+          ${TEXT_CONTENT_DEEP_JS}
+          var el = ${QUERY_SELECTOR_DEEP_JS}(${JSON.stringify(opts.readSelector)});
+          return el ? deepText(el) : null;
+        })()`
+      : `(function() {
+          ${TEXT_CONTENT_DEEP_JS}
+          var el = document.querySelector(${JSON.stringify(opts.readSelector)});
+          return el ? deepText(el) : null;
+        })()`;
+
+    const items: (string | null)[] = [];
+    for (const coord of coords) {
+      // Capture body text before click for diff fallback
+      const beforeText = (await page.evaluate("document.body.innerText")) as string;
+
+      // Click the toggle
+      await page.mouse.click(coord.x, coord.y);
+      await new Promise<void>((r) => setTimeout(r, delay));
+
+      // Read from readSelector
+      let text = (await page.evaluate(readExprTemplate)) as string | null;
+
+      // Diff fallback: readSelector matched nothing → compare body text
+      if (text === null || (typeof text === "string" && text.trim() === "")) {
+        const afterText = (await page.evaluate("document.body.innerText")) as string;
+        if (afterText.length > beforeText.length) {
+          const beforeLines = new Set(beforeText.split("\n"));
+          const newLines = afterText
+            .split("\n")
+            .filter((line) => !beforeLines.has(line) && line.trim() !== "");
+          if (newLines.length > 0) {
+            text = newLines.join("\n");
+          } else {
+            text = null;
+          }
+        } else {
+          text = null;
+        }
+      }
+
+      items.push(text);
+
+      // Close if requested
+      if (opts.closeAfterRead) {
+        await page.mouse.click(coord.x, coord.y);
+        await new Promise<void>((r) => setTimeout(r, delay));
+      }
+    }
+
+    const nothingExpandable = items.every((i) => i === null);
+    return { items, nothingExpandable };
+  }
+
+  async evaluate(expression: string): Promise<unknown> {
+    const page = await this.activePage();
+    // expression has already been wrapped by buildEvaluateExpression in the tool layer
+    try {
+      const result = await page.evaluate(expression);
+      // Verify serializability (page.evaluate already serializes, but be explicit)
+      if (result !== undefined && result !== null) {
+        try {
+          JSON.stringify(result);
+        } catch {
+          throw new BrowserError(
+            "evaluate_failed",
+            "expression returned a non-serializable value (cyclic reference or Symbol)",
+            "return a JSON-serializable value (plain objects, arrays, primitives)",
+          );
+        }
+      }
+      return result;
+    } catch (e) {
+      if (e instanceof BrowserError) throw e;
+      // Page-side throw — convert to structured error, do NOT crash the connection
+      throw new BrowserError(
+        "evaluate_failed",
+        `page-side error: ${e instanceof Error ? e.message : String(e)}`,
+        "fix the expression and retry — the connection is still alive",
+      );
+    }
+  }
+
+  async dismiss(): Promise<DismissResult> {
+    const page = await this.activePage();
+    const info = (await page.evaluate(FIND_DIALOG_JS)) as {
+      dismissed: boolean;
+      method: "click" | "escape";
+      element: string;
+      coords: { x: number; y: number } | null;
+    } | null;
+
+    if (info === null) {
+      throw new BrowserError(
+        "no_dialog",
+        "no open dialog or overlay found",
+        "ensure a dialog is open before calling browser_dismiss",
+      );
+    }
+
+    if (info.method === "click" && info.coords) {
+      await page.mouse.click(info.coords.x, info.coords.y);
+      return { method: "click", element: info.element, coords: info.coords };
+    }
+
+    // Escape fallback
+    await page.keyboard.press("Escape");
+    return { method: "escape", element: info.element };
+  }
+
+  async readForm(selector: string): Promise<FormFieldState> {
+    const page = await this.activePage();
+    const el = await page.$(selector);
+    if (!el) {
+      throw new BrowserError(
+        "read_failed",
+        `selector matched nothing: ${selector}`,
+        "check the selector or run browser_snapshot",
+      );
+    }
+    const state = await page.evaluate((node) => {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const el = node as any;
+      const value: string | null = typeof el.value !== "undefined" ? el.value : null;
+      const checked: boolean | null = typeof el.checked !== "undefined" ? el.checked : null;
+      let selectedOptions: string[] | null = null;
+      if (el.selectedOptions) {
+        selectedOptions = Array.from(el.selectedOptions as ArrayLike<any>).map(
+          (o: any) => (o.textContent ?? "").trim() as string,
+        );
+      }
+      return { value, checked, selectedOptions };
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+    }, el);
+    return {
+      value: state.value,
+      checked: state.checked,
+      selectedOptions: state.selectedOptions,
+    };
   }
 
   // --- internals -----------------------------------------------------------

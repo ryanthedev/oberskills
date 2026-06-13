@@ -28,7 +28,7 @@ export async function handler(args: Input): Promise<ToolResult> {
 
   return runPort(async () => {
     const png = await port.screenshot({ fullPage: args.full_page });
-    const written = await writePayload("screenshot", png, "png");
+    const written = await writePayload(png, { ext: "png" });
     const out: ScreenshotOut = { path: written.path, bytes: written.bytes };
     return ok(`screenshot → ${written.path} (${written.bytes} bytes)`, out);
   });

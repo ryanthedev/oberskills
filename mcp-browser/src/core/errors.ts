@@ -27,7 +27,11 @@ export type BrowserErrorCode =
   | "invalid_url" // navigate given an unparseable URL
   | "blocked_url" // navigate given a non-http(s)/internal scheme without opt-in
   | "nav_failed" // navigation reached the adapter but failed
-  | "interaction_failed"; // an interaction reached the adapter but failed
+  | "interaction_failed" // an interaction reached the adapter but failed
+  // --- Phase 3: read / extract ---
+  | "evaluate_failed" // page.evaluate threw or returned a non-serializable value
+  | "no_dialog" // dismiss() called but no open dialog or overlay was found
+  | "read_failed"; // a DOM/form/AX read failed (selector missing, page error, etc.)
 
 export type BrowserErrorShape = {
   code: BrowserErrorCode;

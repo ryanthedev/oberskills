@@ -222,3 +222,94 @@ export type ScreenshotOut = {
   path: string;
   bytes: number;
 };
+
+// ---------------------------------------------------------------------------
+// Phase 3: Read / extract + parity — input schemas + output DTOs
+// ---------------------------------------------------------------------------
+
+export const DomInputSchema = {
+  selector: z.string().optional().describe("CSS selector to scope the DOM read. Absent = full document HTML."),
+};
+
+export const AccessibilityInputSchema = {};
+
+export const ExtractInputSchema = {
+  selector: z.string().describe("CSS selector for repeated container elements to extract from."),
+  fields: z
+    .string()
+    .optional()
+    .describe(
+      'Named child selectors, comma-separated, each as "name:selector". ' +
+      'E.g. "title:h2,price:.price". Absent = textContent of each container.',
+    ),
+  pierce: z.boolean().default(false).describe("Pierce shadow DOM when matching containers and child selectors."),
+};
+
+export const CollectInputSchema = {
+  selector: z.string().describe("CSS selector for clickable accordion/toggle elements."),
+  read_selector: z.string().describe("CSS selector to read expanded content from after each click."),
+  pierce: z.boolean().default(false).describe("Pierce shadow DOM when matching."),
+  close_after_read: z.boolean().default(false).describe("Click each element again after reading to close it."),
+  delay_ms: z.number().int().min(0).default(300).describe("Milliseconds to wait after each expand click."),
+};
+
+export const EvaluateInputSchema = {
+  expression: z
+    .string()
+    .describe(
+      "JavaScript expression or statements to run in the page context. " +
+      "querySelectorDeep and querySelectorAllDeep are auto-injected for shadow DOM access. " +
+      "Runs in the browser sandbox, not the Node process.",
+    ),
+};
+
+export const DismissInputSchema = {};
+
+export const FormInputSchema = {
+  selector: z.string().describe("CSS selector for the form element to read (input, textarea, select, checkbox, radio)."),
+};
+
+// --- Output DTOs ------------------------------------------------------------
+
+export type DomOut = {
+  path: string;
+  bytes: number;
+  inlined_preview?: string;
+  written: boolean;
+};
+
+export type AccessibilityOut = {
+  path: string;
+  bytes: number;
+  inlined_preview?: string;
+  written: boolean;
+};
+
+export type ExtractOut = {
+  path: string;
+  bytes: number;
+  written: boolean;
+  count: number;
+};
+
+export type CollectOut = {
+  items: (string | null)[];
+  nothing_expandable: boolean;
+  count: number;
+};
+
+export type EvaluateOut = {
+  result: unknown;
+};
+
+export type DismissOut = {
+  method: "click" | "escape";
+  element: string;
+  coords?: { x: number; y: number };
+};
+
+export type FormOut = {
+  value: string | null;
+  checked: boolean | null;
+  selected_options: string[] | null;
+};

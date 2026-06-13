@@ -6,10 +6,16 @@ import { BrowserError } from "../src/core/errors.ts";
 import type {
   AxNode,
   BrowserPort,
+  CollectOpts,
+  CollectResult,
   ConnectionInfo,
   ConnectOptions,
+  DismissResult,
+  ExtractOpts,
+  FormFieldState,
   NavResult,
   PageHandle,
+  ReadDomOpts,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
@@ -205,6 +211,76 @@ export class FakePort implements BrowserPort {
 
   async screenshot(_opts?: { fullPage?: boolean }): Promise<Buffer> {
     return Buffer.from("fake-png");
+  }
+
+  // --- Phase 3: read / extract ------------------------------------------------
+
+  /** Canned DOM HTML readDom() returns. */
+  cannedDom = "<html><body>fake</body></html>";
+  /** Throw read_failed when selector is this value. */
+  missingSelector: string | null = null;
+  /** Canned AX JSON readAccessibility() returns. */
+  cannedAxJson = "[]";
+  /** Canned extract results. */
+  cannedExtract: unknown[] = [];
+  /** Canned collect results. */
+  cannedCollect: CollectResult = { items: [], nothingExpandable: true };
+  /** Canned evaluate result. */
+  cannedEvaluate: unknown = null;
+  /** When set, evaluate() throws evaluate_failed with this message. */
+  evaluateError: string | null = null;
+  /** Canned dismiss result. */
+  cannedDismiss: DismissResult | null = { method: "click", element: "BUTTON.close", coords: { x: 100, y: 50 } };
+  /** Canned readForm result. */
+  cannedFormState: FormFieldState = { value: "hello", checked: null, selectedOptions: null };
+  /** Track selectors passed to readDom (for resolveTarget usage assertion). */
+  domReads: (ReadDomOpts | undefined)[] = [];
+  /** Track expression passed to evaluate. */
+  evaluateExpressions: string[] = [];
+
+  async readDom(opts?: ReadDomOpts): Promise<string> {
+    this.domReads.push(opts);
+    if (opts?.selector && opts.selector === this.missingSelector) {
+      throw new BrowserError("read_failed", `selector matched nothing: ${opts.selector}`, "check the selector");
+    }
+    return this.cannedDom;
+  }
+
+  async readAccessibility(): Promise<string> {
+    return this.cannedAxJson;
+  }
+
+  async extract(opts: ExtractOpts): Promise<unknown[]> {
+    if (opts.selector === this.missingSelector) {
+      throw new BrowserError("read_failed", `selector matched nothing: ${opts.selector}`, "check the selector");
+    }
+    return this.cannedExtract;
+  }
+
+  async collect(_opts: CollectOpts): Promise<CollectResult> {
+    return this.cannedCollect;
+  }
+
+  async evaluate(expression: string): Promise<unknown> {
+    this.evaluateExpressions.push(expression);
+    if (this.evaluateError !== null) {
+      throw new BrowserError("evaluate_failed", this.evaluateError, "fix the expression and retry");
+    }
+    return this.cannedEvaluate;
+  }
+
+  async dismiss(): Promise<DismissResult> {
+    if (this.cannedDismiss === null) {
+      throw new BrowserError("no_dialog", "no open dialog or overlay found", "ensure a dialog is open before calling browser_dismiss");
+    }
+    return this.cannedDismiss;
+  }
+
+  async readForm(selector: string): Promise<FormFieldState> {
+    if (selector === this.missingSelector) {
+      throw new BrowserError("read_failed", `selector matched nothing: ${selector}`, "check the selector");
+    }
+    return this.cannedFormState;
   }
 
   /** Every ref ever minted — distinguishes unknown_ref (never seen) from stale_ref (seen, now dead). */

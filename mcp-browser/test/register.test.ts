@@ -22,6 +22,14 @@ describe("register (DW-1.1 / DW-1.6)", () => {
         "browser_wait",
         "browser_scroll",
         "browser_screenshot",
+        // P3 — read / extract + parity
+        "browser_dom",
+        "browser_accessibility",
+        "browser_extract",
+        "browser_collect",
+        "browser_evaluate",
+        "browser_dismiss",
+        "browser_form",
       ].sort(),
     );
     for (const t of TOOLS) {

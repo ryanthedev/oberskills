@@ -8,10 +8,16 @@ import { resetSession, setPort } from "../src/core/session.ts";
 import type {
   AxNode,
   BrowserPort,
+  CollectOpts,
+  CollectResult,
   ConnectionInfo,
   ConnectOptions,
+  DismissResult,
+  ExtractOpts,
+  FormFieldState,
   NavResult,
   PageHandle,
+  ReadDomOpts,
   ScrollOpts,
   SnapshotOpts,
   SnapshotResult,
@@ -66,18 +72,31 @@ class CapturePort implements BrowserPort {
   async screenshot(): Promise<Buffer> {
     return this.png;
   }
+  // P3 stubs — not under test here; CapturePort only tests the screenshot path.
+  async readDom(_o?: ReadDomOpts): Promise<string> { return ""; }
+  async readAccessibility(): Promise<string> { return "[]"; }
+  async extract(_o: ExtractOpts): Promise<unknown[]> { return []; }
+  async collect(_o: CollectOpts): Promise<CollectResult> { return { items: [], nothingExpandable: true }; }
+  async evaluate(_e: string): Promise<unknown> { return null; }
+  async dismiss(): Promise<DismissResult> { return { method: "escape", element: "DIV" }; }
+  async readForm(_s: string): Promise<FormFieldState> { return { value: null, checked: null, selectedOptions: null }; }
 }
 
 describe("screenshot tool (writes via the writePayload seam)", () => {
   afterEach(() => resetSession());
 
-  test("returns { path, bytes } and writes a file", async () => {
-    const png = Buffer.from("PNGDATA-pretend");
+  test("returns { path, bytes } and writes a file (PNG data is always above the threshold)", async () => {
+    // Real PNG data is always large; use a buffer above PAYLOAD_THRESHOLD_BYTES so the
+    // writePayload helper writes to disk and returns a real path. Using a tiny buffer
+    // would be unrealistic and would trigger the inline path (written=false, path="").
+    const { PAYLOAD_THRESHOLD_BYTES } = await import("../src/lib/payload.ts");
+    const png = Buffer.alloc(PAYLOAD_THRESHOLD_BYTES + 1, 0x89); // fake PNG bytes
     setPort(new CapturePort(png));
     const r = await screenshot.handler({ full_page: false });
     expect(r.isError).toBeUndefined();
     const s = structured(r);
     expect(typeof s.path).toBe("string");
+    expect((s.path as string).length).toBeGreaterThan(0);
     expect(s.bytes).toBe(png.length);
     expect(existsSync(s.path as string)).toBe(true);
     rmSync(s.path as string, { force: true });

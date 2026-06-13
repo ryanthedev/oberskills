@@ -433,3 +433,10 @@ Grouped by phase; `~5:1` dirty:clean. Unit = pure logic with a fake `BrowserPort
 - [x] Committed
 Commit: 808bb7f
 Summary: mcp-browser/ Bun+strict-TS server stands; BrowserPort core seam + puppeteer-core adapter (zero puppeteer in core/tools, static-enforced), ConnectionManager (launch+attach, liveness/reuse), tabs tool, BrowserError barricade, writePayload/PAYLOAD_THRESHOLD_BYTES seam, plugin.json 2nd mcpServers entry + dep hook. P2-6 extend BrowserPort and consume getPage()/writePayload — never bypass them.
+
+### Phase 2: Snapshot+refs interaction core (Gate: Full, security-sensitive)
+- [x] BUILD: snapshot→stable-ref model + GoF Strategy targeting + 12 interaction/nav tools; 90 unit + 10 live tests, tsc clean
+- [x] REVIEW: 3-sample security review, 3/3 PASS (all 6 DW + 8 edge cases with evidence)
+- [x] Committed
+Commit: d49689e
+Summary: BrowserPort extended with snapshot/resolveTarget/interact/navigate/wait/scroll/screenshot. Refs = live ElementHandles via SerializedAXNode.elementHandle() (detached→stale_ref; no CDP fallback). resolveTarget is the single Strategy chokepoint (ref→selector→coords) that P3/P5 reuse for element-scoped ops — do not re-implement targeting. Navigate barricade is allowlist-only, pre-adapter (blocks file://, chrome://, javascript:). screenshot writes via the frozen writePayload seam ({path,bytes}); P3 fills the real threshold logic.
