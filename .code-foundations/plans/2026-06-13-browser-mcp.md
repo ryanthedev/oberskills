@@ -1,9 +1,9 @@
 # Plan: Browser skill + chrome-devtools MCP (puppeteer-core)
 
 **Created:** 2026-06-13
-**Status:** in-progress
+**Status:** complete
 **Started:** 2026-06-13
-**Current Phase:** 1
+**Completed:** 2026-06-13
 **Complexity:** complex
 ---
 ## Context
@@ -461,3 +461,10 @@ Summary: Lighthouse runs in-process under bun (no Node child) — DW-4.2 shipped
 - [x] Committed
 Commit: 0fb9de5
 Summary: ~12 P5 tools added; ~40 tools total now registered. storage-state restore is zod-validated, all-or-nothing (clear-then-restore), reports restored/skipped; credentials never logged; origin-check via activePage().url(). emulate_device/geolocation/permissions barricaded. pdf/upload(reuses resolveTarget)/download(typed timeout)/wait_for_text(appear-vs-disappear). screencast video DEFERRED to P5b follow-up (CDP frame assembly unreliable under bun); lifecycle typed-errs ship. All captures route through writePayload; no puppeteer in core/tools. P6 documents the full tool surface.
+
+### Phase 6: Browser skill + evals (Gate: Standard — validate_skill + test_triggers are the gate)
+- [x] BUILD: skills/browser/SKILL.md (snapshot-first, Haiku subagent routing) + 3 references documenting all 40 tools
+- [x] REVIEW: SKIPPED — Standard gate. validate_skill 0 errors/0 warnings (orchestrator re-ran independently), test_triggers 13/13
+- [x] Committed
+Commit: 50f3b05
+Summary: User-facing `browser` skill ships. SKILL.md 102/500 lines, combined frontmatter 1508/1536 chars, no version banner, braced paths only in body. References document all 40 registered tools by group (doc-accuracy verified vs register.ts, 0 phantom). Snapshot→ref→act taught as primary; screenshot/DOM/AX reads routed to a Haiku subagent (artifacts stay out of main context). Dogfood gate green.
