@@ -23,6 +23,7 @@ export type BrowserErrorCode =
   | "no_match" // a selector matched 0 elements
   | "coord_out_of_viewport" // a coordinate target lies outside the layout viewport
   | "wait_timeout" // a wait strategy (navigation/selector/idle) timed out
+  | "missing_selector" // wait strategy=selector called without a selector argument
   | "page_unstable" // snapshot attempted while the document was mid-navigation
   | "invalid_url" // navigate given an unparseable URL
   | "blocked_url" // navigate given a non-http(s)/internal scheme without opt-in

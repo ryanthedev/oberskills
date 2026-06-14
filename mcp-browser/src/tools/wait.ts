@@ -21,7 +21,7 @@ type Input = z.output<z.ZodObject<typeof inputShape>>;
 
 export async function handler(args: Input): Promise<ToolResult> {
   if (args.strategy === "selector" && (!args.selector || args.selector.length === 0)) {
-    return err("wait strategy=selector requires a selector", { code: "wait_timeout" });
+    return err("wait strategy=selector requires a non-empty selector", { code: "missing_selector" });
   }
 
   const port = getPort();

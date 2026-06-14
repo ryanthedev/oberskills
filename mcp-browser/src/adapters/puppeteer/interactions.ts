@@ -13,6 +13,7 @@ import type { ElementHandle, Page } from "puppeteer-core";
 import { BrowserError } from "../../core/errors.ts";
 import { decodeModifiers, targetKind, type InteractAction, type InteractOpts, type ModifierName, type Target } from "../../core/targeting.ts";
 import type { RefRegistry } from "./refs.ts";
+import { QUERY_SELECTOR_ALL_DEEP_JS } from "./dom-helpers.ts";
 
 /** Map our modifier names to puppeteer/CDP KeyInput names ("Ctrl" → "Control"). */
 const MODIFIER_KEY: Record<ModifierName, "Control" | "Alt" | "Meta" | "Shift"> = {
@@ -21,6 +22,25 @@ const MODIFIER_KEY: Record<ModifierName, "Control" | "Alt" | "Meta" | "Shift"> =
   Meta: "Meta",
   Shift: "Shift",
 };
+
+/**
+ * Shadow-DOM piercing $$ — runs QUERY_SELECTOR_ALL_DEEP_JS in the page and
+ * converts the resulting array back into ElementHandles via evaluateHandle +
+ * getProperties (puppeteer-core's bridge for JSHandle arrays).
+ */
+async function resolveDeepAll(page: Page, selector: string): Promise<ElementHandle[]> {
+  const jsHandle = await page.evaluateHandle(
+    `(${QUERY_SELECTOR_ALL_DEEP_JS})(${JSON.stringify(selector)})`,
+  );
+  const props = await jsHandle.getProperties();
+  const handles: ElementHandle[] = [];
+  for (const [, h] of props) {
+    const el = h.asElement();
+    if (el) handles.push(el as ElementHandle);
+  }
+  await jsHandle.dispose();
+  return handles;
+}
 
 /** What a resolved target is, internally: an element handle OR a viewport point. */
 export type ResolvedEl =
@@ -39,7 +59,7 @@ export async function resolveOnPage(page: Page, registry: RefRegistry, t: Target
     case "ref":
       return resolveRef(registry, (t as { ref: string }).ref);
     case "selector":
-      return resolveSelector(page, t as { selector: string; matchText?: string; visible?: boolean; nth?: number });
+      return resolveSelector(page, t as { selector: string; pierce?: boolean; matchText?: string; visible?: boolean; nth?: number });
     case "coords":
       return resolveCoords(page, t as { x: number; y: number });
   }
@@ -69,9 +89,14 @@ async function resolveRef(registry: RefRegistry, ref: string): Promise<ResolvedE
 
 async function resolveSelector(
   page: Page,
-  sel: { selector: string; matchText?: string; visible?: boolean; nth?: number },
+  sel: { selector: string; pierce?: boolean; matchText?: string; visible?: boolean; nth?: number },
 ): Promise<ResolvedEl> {
-  let handles = await page.$$(sel.selector);
+  let handles: ElementHandle[];
+  if (sel.pierce) {
+    handles = await resolveDeepAll(page, sel.selector);
+  } else {
+    handles = await page.$$(sel.selector);
+  }
   if (sel.matchText !== undefined) {
     const wanted = sel.matchText;
     const filtered: ElementHandle[] = [];
@@ -109,8 +134,20 @@ async function resolveSelector(
 
 async function resolveCoords(page: Page, c: { x: number; y: number }): Promise<ResolvedEl> {
   const vp = page.viewport();
-  const width = vp?.width ?? Number.POSITIVE_INFINITY;
-  const height = vp?.height ?? Number.POSITIVE_INFINITY;
+  let width: number;
+  let height: number;
+  if (vp !== null) {
+    width = vp.width;
+    height = vp.height;
+  } else {
+    // headless-new / CDP-attached pages may have no puppeteer viewport set;
+    // fall back to the actual window dimensions from the browser context.
+    // Passed as a string so TypeScript does not try to type-check browser globals
+    // (lib does not include DOM; the string runs in the page context, not Node).
+    const dims = await page.evaluate("({ w: window.innerWidth, h: window.innerHeight })") as { w: number; h: number };
+    width = dims.w;
+    height = dims.h;
+  }
   if (c.x < 0 || c.y < 0 || c.x > width || c.y > height) {
     throw new BrowserError("coord_out_of_viewport", `(${c.x},${c.y}) is outside the viewport`, "scroll the target into view or use a ref");
   }
@@ -181,10 +218,13 @@ async function typeInto(page: Page, r: ResolvedEl, text: string, clearFirst: boo
   await r.handle.type(text);
 }
 
+/** The modifier key for "select all" — Meta on macOS, Control elsewhere. Exported for testing. */
+export const SELECT_ALL_MOD = process.platform === "darwin" ? "Meta" : "Control";
+
 async function selectAllAndDelete(page: Page): Promise<void> {
-  await page.keyboard.down("Control");
+  await page.keyboard.down(SELECT_ALL_MOD);
   await page.keyboard.press("a");
-  await page.keyboard.up("Control");
+  await page.keyboard.up(SELECT_ALL_MOD);
   await page.keyboard.press("Backspace");
 }
 
