@@ -454,3 +454,10 @@ Summary: writePayload seam reconciled to ONE signature `writePayload(data, opts)
 - [x] Committed
 Commit: e163b6c
 Summary: Lighthouse runs in-process under bun (no Node child) — DW-4.2 shipped, not deferred; lighthouse@^13.4.0 dep, import confined to adapter (static boundary blocks it in core/tools). HarPort is a substitutable driven adapter (FakeHarPort in tests); HAR 1.2 hidden behind write(entries)→path, atomic write-then-rename. Interception = RouteRule[] data validated at barricade; bodies size-capped, never executed; tears down on disconnect; clearRoutes() recovers after failed setRoutes(). Trace = start/stop/analyze 3 ops. emulate = network+CPU throttle, out-of-range → defined err. All large outputs route through writePayload. P5/P6 consume these.
+
+### Phase 5: DevTools — storage / emulation / capture (Gate: Full, security-sensitive)
+- [x] BUILD: storage + storage-state (zod, all-or-nothing), device/geo/permissions, pdf/upload/download/wait_for_text; screencast lifecycle (video deferred P5b); 214 unit pass / 0 fail, tsc clean
+- [x] REVIEW: 3-sample security review, 3/3 PASS (all 7 DW + 9 edge cases with evidence)
+- [x] Committed
+Commit: 0fb9de5
+Summary: ~12 P5 tools added; ~40 tools total now registered. storage-state restore is zod-validated, all-or-nothing (clear-then-restore), reports restored/skipped; credentials never logged; origin-check via activePage().url(). emulate_device/geolocation/permissions barricaded. pdf/upload(reuses resolveTarget)/download(typed timeout)/wait_for_text(appear-vs-disappear). screencast video DEFERRED to P5b follow-up (CDP frame assembly unreliable under bun); lifecycle typed-errs ship. All captures route through writePayload; no puppeteer in core/tools. P6 documents the full tool surface.
