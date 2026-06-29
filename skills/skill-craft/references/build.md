@@ -96,13 +96,15 @@ Anti-examples: "Helps with documents", "Processes data", "Does stuff with files"
 
 ## 6. Size and focus
 
-Detailed-but-compact beats comprehensive. SkillsBench (2602.12670) measured focused 2–3-module skills at **+18.8pp** task improvement while comprehensive everything-skills scored **−2.9pp** — worse than no skill. The same study found **curated content +16.2pp vs self-generated −1.3pp**: distill from real failures and authoritative sources rather than letting a model pad the skill from its own priors. (Caveats: single, non-peer-reviewed benchmark run at 8K context — treat as directional; trim and re-test rather than deleting blindly.)
+Detailed-but-compact beats comprehensive. SkillsBench (2602.12670) measured Skill **length** — compact +19.0pp and standard +21.5pp task improvement beat detailed +14.5pp and comprehensive +0.7pp (exhaustive prose goes flat, not negative — just wasted) — and Skill **count**: 1–3 Skills are strongest (+18.0 / +19.0pp), ≥4 falls to +10.1pp (excess content creates overhead and conflicting guidance). Curated Skills lift the fleet mean +16.6pp (33.9%→50.5%); **self-generated Skills actively harm** — −8.1 to −11.5pp below the no-Skills baseline across three configs, while curated Skills add +18.2 to +24.8pp on the same ones. Distill from real failures and authoritative sources; never let a model author its own packs at solve time. (Caveats: single, non-peer-reviewed benchmark — treat as directional; trim and re-test rather than deleting blindly.)
 
 Practical consequences:
 
 - Target ~200 lines of always-relevant core in SKILL.md; push depth into references.
 - Don't encode model-default behavior (formatting niceties, "no magic numbers") — the skill must add non-obvious knowledge to earn its tokens.
 - Every line is a recurring per-session cost once loaded. Cut paragraphs that explain what Claude already knows.
+
+**What high-leverage skills encode.** SkillsBench's five recurring patterns from its highest-Δ tasks (mean +67.0pp): an executable script with calibrated defaults (not just the algorithm described); the canonical data source and its parsing quirk; the exact file-format constraint the verifier inspects; the algorithmic invariant the verifier asserts; and a `description:` frontmatter line specific enough to match on first scan. The throughline: encode the verifier-facing detail an agent cannot infer — not background it already knows.
 
 ## 7. Current-model deltas — what a 2025 skill gets wrong
 
