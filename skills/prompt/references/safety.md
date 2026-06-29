@@ -194,6 +194,7 @@ Design principles:
 | Blanket "allow and don't ask again" permissions | Consent gap enables carry-over to harmful actions (2510.26328) | Per-action approval for sensitive operations |
 | Untrusted tool output in the planning context | Injection reaches the planner | Separate planning from data extraction (§3) |
 | Evaluating defenses on single-turn benchmarks | High single-turn rejection masks multi-step collapse (§2) | Test on multi-step agent tasks with cascade measurement |
+| URL-embedded injection in tool output | Payload rides in a URL fragment, concealed until the agent navigates — 2–3× harder to resist than plain-text, and Claude is *more* exposed (2504.18575) | Strip URL fragments/anchors from untrusted output before navigation; treat any untrusted URL as a tool-call argument behind the schema gate; log navigated URLs |
 
 ## 10. Key numbers
 
@@ -206,3 +207,6 @@ Design principles:
 | Skills with vulnerabilities | 26.1% of 31,132 | 2601.10338 |
 | Script-bundled skill risk | 2.12x (OR, p<0.001) | 2601.10338 |
 | Skill injection vs consent gap | 4 patterns, demonstrated end-to-end | 2510.26328 |
+| URL vs plain-text injection ASR | GPT-4o 61.9% vs 23.8%; Claude-3.7 81.0% vs 26.2% | 2504.18575 |
+| Prompt-only agent-safety ceiling | <70% even with enhanced defense prompts; weaker models gain ~nothing | 2412.14470 |
+| Tool-restriction gate (enumerate then strip before untrusted content) | targeted ASR 45.8% → 7.5% | 2406.13352 |

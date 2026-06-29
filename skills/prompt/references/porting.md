@@ -46,6 +46,8 @@ For models that expose a writable reasoning trace (R1-style open models, o-serie
 
 > **Never port this to Claude.** Prefilled assistant turns return 400 errors on Claude ≥4.6, raw CoT is never returned on Fable 5/Opus 4.8, and instructing the model to echo or reproduce its reasoning triggers `reasoning_extraction` refusals on Fable 5 (claude-models.md).
 
+**Format resistance.** Deeply reasoning-trained open models can refuse prompted format changes outright: AIMO-2 (2504.16891) could not elicit tool-integrated reasoning from DeepSeek-R1 or QwQ-32B via direct instructions OR few-shot examples — the format had to be trained in. When porting to such a model, test format and tool-use behavior empirically; do not assume strong instruction-following extends to format-level changes.
+
 ## 3. Termination scaffolds are model-specific
 
 Canonical numbers (2504.01848, IterativeAgent): removing self-termination / forcing continuation lifted o3-mini from 2.6% to 8.5% and o1 from 13.2% to 24.4% on long-horizon replication tasks — but **hurt Claude 3.5 Sonnet, 21.0% → 16.1%**. "Agents that can quit will quit" is an o-series finding, not a law.

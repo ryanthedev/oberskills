@@ -71,6 +71,7 @@ Current Claude ships a 1M-token window with context awareness, so don't read the
 - **Ensure lexical overlap**: repeat key query terms in relevant knowledge sections; use section headers in the vocabulary of likely questions.
 - **Re-inject at decision points**: for instructions that must hold across a long session, event-driven reminders at decision points beat one-time placement (OpenDev 2603.05344). Placement helps; re-injection works.
 - **Retrieve rather than stuff**: pull relevant chunks near the query instead of trusting raw window size for needle-finding without keyword overlap.
+- **Capability is task-dependent at length**: retrieval and recall scale with context length, but instruction-following over long context (citation, re-ranking, multi-document synthesis) degrades non-linearly — HELMET (2410.02694) measured GPT-4o re-ranking falling 86.9%@8K → 50.0%@128K. Scope compositional sub-tasks into shorter windows; reserve the long window for retrieval and recall.
 
 ## 4. Format selection: structure over prose
 
@@ -131,7 +132,7 @@ Traditional prompt optimization converges toward short generic instructions. Dom
 | No reliable execution feedback | Offline-optimized prompt, frozen — online adaptation degrades without a feedback signal |
 | Shared system prompt across many users | Optimize offline, freeze for deployment |
 
-The two findings compose, not conflict: compress what enters each *inference* (smallest high-signal set); preserve detail in the *artifact* that accumulates domain knowledge.
+The two findings compose, not conflict: compress what enters each *inference* (smallest high-signal set); preserve detail in the *artifact* that accumulates domain knowledge. (The "detailed beats compressed" premise is drawn from prior work ACE cites; ACE's own contribution is the accumulate-and-delta mechanism, not a claim that longer context is universally better.)
 
 ## 7. Optimize agents before topologies
 
@@ -152,7 +153,7 @@ A prompt-optimized single agent beats naive multi-agent debate at equivalent tok
 Three techniques for work that outlives one context window (Anthropic context-engineering guidance):
 
 1. **Compaction** — summarize near the limit and reinitialize. Danger: "overly aggressive compaction can result in the loss of subtle but critical context." Tune for maximum recall first, then precision. Often better: prefer a fresh context plus filesystem state discovery over compaction — current Claude is highly effective at reconstructing state from progress files, test lists, and git logs, given prescriptive restart steps.
-2. **Structured note-taking / agentic memory** — persist notes outside the window and pull them back later. One lesson per file with a one-line summary (snippets.md #16).
+2. **Structured note-taking / agentic memory** — persist notes outside the window and pull them back later. One lesson per file with a one-line summary (snippets.md #16). **Reason before retrieving:** decompose the goal into sub-goals and query memory on those, and key entries by task + situational state, not the raw instruction string — JARVIS-1 (2311.05997) found reasoning-before-retrieval materially improves which past experiences get pulled.
 3. **Subagent isolation** — specialized subagents handle focused tasks in clean context windows and return only a condensed, distilled summary sized per the agent skill's norm; the detailed search context stays isolated in the subagent.
 
 **State reconstruction (multi-turn template).** For long conversations, reconstruct minimal state each turn instead of replaying history: a compact `<conversation_state>` block holding identity, workflow position, collected fields, and pending actions. Token growth stays linear instead of exponential, and early-turn decisions survive verbatim instead of via lossy recall.

@@ -179,6 +179,8 @@ Checks: verifier structurally separate from generator (same prompt + same model 
 
 Premature-stop scaffolds are model-specific: on Claude use context-awareness prompting (snippets.md #10), not termination removal — forcing continuation helps o-series models and hurt Claude (numbers: porting.md).
 
+**Confidence-routed review:** for high-stakes outputs, have the model tag the specific spans it is least confident about, then route only those to an independent verifier. Targeted disclosure directs attention better than an aggregate confidence score (2305.11248, qualitative). This is not self-validation — the flagged spans go to a separate checker, never back to the author.
+
 **Decision:** independent/structural verification + gates = PASS. Self-check only = WARN. No verification on non-trivial output = FAIL.
 
 ## 9. Claude-era checks
