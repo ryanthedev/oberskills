@@ -28,6 +28,8 @@ Pattern catalog and the canonical home of the plugin's multi-agent sizing number
 - Hybrid routing — easy tasks to a single agent, hard tasks to multi-agent — improves accuracy 1–12% while cutting costs **up to 88%** vs always-multi-agent (SAS-vs-MAS 2505.18286).
 - Goal anchoring nearly doubles long-horizon task success: 70% vs 38% for unanchored ReAct (ReCAP 2510.23822).
 - Failure memory (listing tried-and-failed approaches in the replanning prompt) cuts retry loops by 30–50% (ReCAP 2510.23822).
+- **Design worker roles per task, not from a fixed roster.** A manager that reads the task, decomposes it, and generates each worker's role from the sub-tasks resolved 13.94% of SWE-bench issues vs 1.74% for GPT-4 applied directly — an 8× lift (MAGIS 2403.17927).
+- **Delegate only stateless sub-tasks that return a self-contained artifact.** On 175 real tasks, a multi-agent setup that delegated stateful UI traversal scored 4.0% vs 8.6% for a single agent holding the loop — delegated agents lose progress across boundaries (TheAgentCompany 2412.14161). Keep stateful, mid-flow work in one agent; delegate work that emits a file, JSON, or text artifact.
 
 Start with a single agent; add agents only with a specific structural reason. Multi-agent advantages shrink as models get more capable.
 
