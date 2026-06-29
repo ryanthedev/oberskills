@@ -86,6 +86,13 @@ Prefer checks wherever an artifact, file, or tool trace can prove the behavior; 
 - **Artifact-checkable first** (§3), LLM expectations for the rest.
 - **When NOT to assert:** subjective skills (writing style, design quality) get qualitative review plus `compare_outputs` (blind A/B with shuffled sides), not forced assertions. Test the artifacts, not the prose.
 
+**Dimensions by capability (2026 benchmarks).** Match the assertion to the failure mode the skill's capability class is prone to:
+
+- **Tool-using skills** — score tool *selection* and *chaining* separately. TaskBench (2311.18760) found a 15–27pp gap between picking the right tool (node-F1) and ordering dependencies correctly (edge-F1); chaining is the harder, tier-separating failure. Use `trace_includes` for selection, `trace_order` for chaining.
+- **Multi-turn skills** — test instruction retention, inference memory, versioned editing, and self-coherence: frontier models score <50% on these (MultiChallenge 2501.17399) while acing single-turn benchmarks. The per-case binary rubric in §2 is the right grader — judging a whole transcript drops human-alignment to 37.33% vs 93.95% for an instance-level yes/no on the final response.
+- **Long-context skills** — use multi-hop RAG QA with distractor passages, not needle-in-a-haystack: NIAH saturates and barely tracks real tasks (HELMET 2410.02694: ρ=0.63 vs RAG ρ=0.88). Treat NIAH as a sanity check, not a gate.
+- **Tool ablation (distinct from `without_skill`)** — when a skill dispatches an external tool or search, add a config with the tool disabled. If tool-on scores *lower* than direct, that's a retrieval-interference design bug, not a model limit (BrowseComp-ZH 2504.19314: a strong reasoner fell 23.2%→7.6% with search enabled — directional; the two figures are different systems).
+
 ## 5. Pressure evals
 
 Match the test type to the skill type: discipline/process skills → pressure scenarios; technique skills → application/variation/gap tests; pattern skills → recognition + counter-examples; reference skills → retrieval + application.

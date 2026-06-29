@@ -24,7 +24,7 @@ No optimizer — evolutionary, gradient-based, or LLM-driven — can discover ru
 
 **Practical consequence:** spend most of your effort writing a clear, well-structured seed; optimization polishes, it does not rescue.
 
-What makes a good seed: declares inputs and outputs explicitly (a bare DSPy signature beat a hand-written paragraph 82.9% vs 59% on jailbreak detection — 2507.03620); decomposes multi-step tasks into named stages with clear contracts; one constraint per failure mode you can anticipate; no hedging or filler.
+What makes a good seed: declares inputs and outputs explicitly (a bare DSPy signature beat a hand-written paragraph 82.9% vs 59% on jailbreak detection — 2507.03620); decomposes multi-step tasks into named stages with clear contracts; one constraint per failure mode you can anticipate; names implicit non-functional constraints (security, performance, style, deprecation) — requirement misunderstanding causes 43.53% of LLM code errors and non-functional constraints are invisible unless stated (2409.20550); no hedging or filler.
 
 ## 2. Meta-prompting: Claude as the optimizer
 
@@ -38,6 +38,8 @@ The loop:
 4. Re-run the failing input plus inputs that previously worked (regression check).
 
 This is the cheapest optimization method available and the right first step before any framework: it needs one failure example, not a labeled dataset.
+
+**Anchor to a champion.** When iterating, keep the highest-scoring prompt as a fixed champion and branch every candidate from it — mutating only the spans that differ from a lower-scoring variant, never rewriting whole. EvoPrompt (2309.08532): mutating diverging spans only scored 75.55 vs 69.87 for wholesale rewrites; anchoring to the best prompt scored 75.55 vs 69.07 with no anchor.
 
 ## 3. Decompose into modules, optimize each independently
 
