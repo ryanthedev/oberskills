@@ -53,6 +53,8 @@ Wrap each document:
 
 **Quote grounding:** for long-document tasks, ask Claude to quote the relevant passages first, before carrying out the task — quotes in `<quotes>` tags, then the answer in `<info>` tags. This cuts through the noise and anchors the answer in the source.
 
+**Cache-stability ordering.** Brevity is not the cost lever — cache stability is. Keep stable content (instructions, tool definitions, domain rules, reusable strategies) in the cacheable prefix and volatile content (state, retrieved chunks, the query) after it; interleaving volatile material into stable sections invalidates the cached prefix on every call. ACE (2510.04618) served 91.8% of input tokens from KV cache, an 82.6% billed-input reduction (GPT-5.1 API accounting; Claude prompt-caching mechanics differ — the ordering principle holds).
+
 ## 3. Lexical overlap and re-injection
 
 NoLiMa (2502.05167) measured long-context retrieval with **zero lexical overlap** between question and answer: models with six-figure nominal windows degraded severely by 32K tokens, and adding literal matches (multiple-choice framing) raised 32K two-hop accuracy from 25.9% to 87.2%. Lexical overlap, not placement alone, is the dominant variable; literal-match *distractors* actively mislead attention.

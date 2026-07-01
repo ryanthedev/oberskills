@@ -30,6 +30,8 @@ Pattern catalog and the canonical home of the plugin's multi-agent sizing number
 - Failure memory (listing tried-and-failed approaches in the replanning prompt) cuts retry loops by 30–50% (ReCAP 2510.23822).
 - **Design worker roles per task, not from a fixed roster.** A manager that reads the task, decomposes it, and generates each worker's role from the sub-tasks resolved 13.94% of SWE-bench issues vs 1.74% for GPT-4 applied directly — an 8× lift (MAGIS 2403.17927).
 - **Delegate only stateless sub-tasks that return a self-contained artifact.** On 175 real tasks, a multi-agent setup that delegated stateful UI traversal scored 4.0% vs 8.6% for a single agent holding the loop — delegated agents lose progress across boundaries (TheAgentCompany 2412.14161). Keep stateful, mid-flow work in one agent; delegate work that emits a file, JSON, or text artifact.
+- **One agent per data source or modality when sources are dense or conflicting.** FinCon (2407.06567) ran seven single-source analysts — each forbidden from reading the others' sources — feeding one decision-maker, and routed feedback selectively to the agent whose source was implicated rather than broadcasting it (headline gains are human-proxy aggregates, not isolated ablations — directional). Aggregate distilled outputs; don't hand one agent a pile of heterogeneous sources.
+- **On hard tasks, several short focused attempts beat one long attempt at matched compute.** Past a threshold, extra tokens in a single trace stop raising success probability (MRT 2503.07572, Fig 3 — extrapolated from RL-training analysis to dispatch time). Use as the fallback after raised-effort single attempts have failed (SKILL.md §6), not as the default: dispatch 3–5 well-scoped subagents and majority-vote.
 
 Start with a single agent; add agents only with a specific structural reason. Multi-agent advantages shrink as models get more capable.
 
@@ -68,6 +70,7 @@ For work spanning many sessions or context windows (from Anthropic's long-runnin
 - **Session-start sequence** in every later dispatch: run `pwd` → read the git logs and progress files → read the feature list and pick the highest-priority unfinished feature → run `init.sh` and a basic end-to-end verification before new work.
 - **Git as state.** Commits are checkpoints and the recovery mechanism; progress notes are freeform, structured state is JSON.
 - **Prefer fresh context + filesystem state discovery over compaction.** Current models are very effective at discovering state from disk; a fresh session reading `progress.txt`, the feature list, and git logs beats a compacted window carrying degraded history.
+- **Persistent memory is append-only, merged by code.** Represent cross-session state as itemized, IDed entries appended and merged deterministically; never have an agent rewrite the whole memory file as prose — monolithic rewrites collapse accumulated context (evidence, plus the reason-before-retrieve pattern for querying memory: the prompt skill's context reference).
 
 ## 5. Diagnosing an underperforming multi-agent setup
 
@@ -78,3 +81,5 @@ Three structurally distinct defect levels (SAS-vs-MAS 2505.18286); identify the 
 | Node | One agent bottlenecks the pipeline | Redistribute its subtasks, or upgrade that specific agent (model/effort), not all of them |
 | Edge | A downstream agent degrades — overwhelmed by upstream context | Compress at the handoff: 1–2 sentence subtask summaries plus state changes, full goal anchor retained |
 | Path | Small errors compound through the chain | Insert verification checkpoints between stages (validation chain, §1) |
+
+For long tool chains, instrument phase boundaries (search → synthesize → format) with assertions in the harness or verifier so the failing stage gets logged: terminal-only pass/fail can't localize which step broke, and credit assignment over long chains is unsolved even in RL training (Agentic-RL survey 2509.02547 §3.2 — survey framing, not a controlled result).

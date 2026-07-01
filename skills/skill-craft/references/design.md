@@ -27,6 +27,14 @@ Expand the pre-gate from SKILL.md:
 - **Frequency test.** Used fewer than ~5 times → the skill costs more to build and maintain than it saves.
 - **Size-and-relevance test.** Content that is small AND needed on every task belongs in CLAUDE.md (see §7), not behind a triggering decision.
 
+**Complexity contract — state before BUILD.** When skills *hurt*, the agent found the skill and went wrong following it: SkillsBench's negative-delta audit (2602.12670 App F.3) found three repeatable failure patterns with one root cause — no applicability boundary and no fallback. Answer all three questions; the paper proposes dedicated frontmatter for this (expected cost, applicability, fallback path) — until `validate_skill` supports such fields, put boundaries in the description's "Not for:" clause and the body, and record cost hints in the `metadata:` map.
+
+| Question to answer | Failure pattern it prevents (App F.3) |
+|---|---|
+| Where does this skill NOT apply? | A generic recipe activates and displaces a stronger native strategy — state applicability boundaries, not just the preferred procedure |
+| What does it cost (tools/tokens), and which steps are optional? | A principled-but-heavyweight pipeline crowds out a simpler path to a valid answer — mark optional steps and supply a fast path |
+| What's the fallback when the approach fails, and what check detects that? | The skill mandates a brittle framework or solver the agent can't debug — provide debugging fallbacks and validation checks |
+
 ## 2. Artifact decision, expanded
 
 SKILL.md carries the core decision table. Additional mechanics that change the choice:

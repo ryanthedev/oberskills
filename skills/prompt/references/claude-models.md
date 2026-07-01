@@ -29,6 +29,8 @@ Manual `enabled` + `budget_tokens` is deprecated on 4.6 and rejected on newer mo
 - Suppress: "Answer directly without deliberating." or "Extended thinking adds latency and should only be used when it will meaningfully improve answer quality - typically for problems that require multi-step reasoning. When in doubt, respond directly."
 - After tools: "After receiving tool results, carefully reflect on their quality and determine optimal next steps before proceeding."
 
+**Length instructions don't control reasoning length.** "Be concise" / "answer in under N tokens" are unreliable on reasoning models — requesting under-20-token reasoning still produced 350+ tokens (CoT-Valve 2502.09601). Control length structurally instead: lower `effort`, an answer-only output schema, a fixed step count, or a delimiter that terminates the trace. (Compression formats for non-Claude or thinking-off targets: porting.md.)
+
 **Four principles for prompting thinking** (Anthropic, verbatim headings):
 
 1. "Prefer general instructions over prescriptive steps." — "think thoroughly" often produces better reasoning than a hand-written step-by-step plan; Claude's reasoning frequently exceeds what a human would prescribe.

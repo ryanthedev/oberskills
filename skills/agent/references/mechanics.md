@@ -99,7 +99,7 @@ Tools never available inside subagents, even if listed in `tools`: `Agent`, `Ask
 - Ctrl+B backgrounds a running task; `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` disables backgrounding.
 - Completed general-purpose subagents return an agent ID and are resumable via `SendMessage` — but that requires the experimental agent-teams flag and is unavailable in this CLI. To continue a finished subagent's work, re-dispatch fresh and put the resume context (what it found, where it stopped) in the new delegation prompt.
 - Transcripts: `~/.claude/projects/{project}/{sessionId}/subagents/agent-{agentId}.jsonl`.
-- Subagents auto-compact at ~95% of capacity (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` tunes this). Don't rely on it: an oversized delegated job degrades before it compacts — scope the task to fit.
+- Subagents auto-compact at ~95% of capacity (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` tunes this). Don't rely on it: an oversized delegated job degrades before it compacts — scope the task to fit. Instruction-following also degrades non-linearly with raw context length well before compaction, so scope compositional sub-tasks (citation, re-ranking, synthesis) to short windows by design (numbers: the prompt skill's context reference).
 
 ## 8. Gotchas
 
@@ -107,3 +107,4 @@ Tools never available inside subagents, even if listed in `tools`: `Agent`, `Ask
 - **Cache rule.** Switching the MAIN conversation's model invalidates the prompt cache. Subagents are the cache-safe way to mix models: keep the main loop on one model and route cheap subtasks to a cheaper model via dispatch (this is how built-in Explore uses Haiku).
 - **Definition reload.** File-based agent definitions load at session start — editing one on disk requires a restart (`/agents` UI edits apply immediately; for plugins, `/reload-plugins`).
 - **Spawn-bias drift across models.** Recent model generations have oscillated between over-delegating (spawning a subagent where a direct grep suffices) and under-delegating (iterating serially over a fan-out-shaped task). State trigger conditions in both directions when writing orchestration prompts: when to spawn AND when to work directly.
+- **URL-embedded injection.** Claude models follow URL-embedded injections in untrusted tool output at markedly higher rates than plain-text ones — and are more exposed than GPT-4o on this vector. Strip URL fragments/anchors from untrusted output before navigation, treat untrusted URLs as tool-call arguments behind the schema gate, and log navigated URLs (numbers: the prompt skill's safety reference).

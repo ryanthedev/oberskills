@@ -46,7 +46,7 @@ Every prompt needs five structural elements. Missing any one creates unpredictab
 | **OBJECTIVE** | Specific outcome with success criteria | "Help the user with X", "Do your best", no measurable end state |
 | **CONTEXT** | Explains WHY this task matters; sufficient background | Missing domain context; assumes knowledge the model lacks; missing motivation for constraints (#2) |
 | **TASK** | Concrete actions, isolated from governance | Vague verbs ("handle", "process") without specifics; constraints fused into task prose |
-| **CONSTRAINTS** | Behavioral boundaries, declared apart from task | No constraints (unbounded) OR dense restatement of model defaults |
+| **CONSTRAINTS** | Behavioral boundaries, declared apart from task — including implicit non-functional constraints (security, performance, style, deprecation) named explicitly | No constraints (unbounded) OR dense restatement of model defaults; non-functional requirements left implicit — invisible to the model unless stated (numbers: optimization.md §1) |
 | **OUTPUT FORMAT** | Explicit response structure, at the end | "Return everything you find", no format spec, answer field before rationale field |
 
 **Decision:** all 5 present and well-formed = PASS. 1 missing/weak = WARN. 2+ missing = FAIL (rewrite).

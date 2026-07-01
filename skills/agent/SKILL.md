@@ -152,7 +152,7 @@ When a dispatch goes wrong, fix the prompt before the model — prompt engineeri
 | Retry loop | No failure memory | List failed approaches; after 2 failures force a categorically different strategy, then escalate |
 | Silent edit failure | Permission prompt auto-denied (background) or unavailable mid-task | Keep approval-gated edits in the parent |
 | Quit-early / fabricated done | Agent reports completion without evidence | Require evidence per claim in OUTPUT; verify via §5. Don't bolt on forced-continuation scaffolds — they help o-series models and hurt Claude (numbers in the prompt skill's porting reference) |
-| Shallow results on hard task | Model or effort too low | Raise effort first, then tier (§3) |
+| Shallow results on hard task | Model or effort too low | Raise effort first, then tier (§3); if raised single attempts still fail, dispatch 3–5 short scoped attempts and majority-vote (patterns reference §2) |
 | Subagent context overflow | Oversized delegated job | Scope to fit; split the task, not the window |
 
 ## 7. Going deeper
