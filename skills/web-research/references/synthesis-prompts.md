@@ -1,5 +1,12 @@
 # Synthesis Prompts
 
+## Contents
+
+1. [Scan](#scan)
+2. [Brief](#brief)
+3. [Breadth](#breadth)
+4. [Deep](#deep)
+
 ## Scan
 
 No synthesis agent. Return the search results directly with a 2-3 sentence summary.
@@ -14,7 +21,7 @@ Agent(
   prompt="OBJECTIVE: Synthesize research into actionable recommendations.
 
   ORIGINAL QUERY: {query}
-  LOCAL CONTEXT: {from orchestrator}
+  LOCAL CONTEXT: {from planner}
   TIME-SENSITIVE: {yes/no}
   RESEARCH FILES: {list paths}
 
@@ -101,7 +108,7 @@ Agent(
   prompt="OBJECTIVE: Produce a comprehensive research report.
 
   ORIGINAL QUERY: {query}
-  LOCAL CONTEXT: {from orchestrator}
+  LOCAL CONTEXT: {from planner}
   TIME-SENSITIVE: {yes/no}
   EXISTING KNOWLEDGE: {from step 0 hook/local files, or 'none'}
   RESEARCH FILES: {list paths, including cross-pollination file}

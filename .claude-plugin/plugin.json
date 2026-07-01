@@ -1,6 +1,6 @@
 {
   "name": "oberskills",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Discipline plugins for Claude Code — prompt engineering, agent dispatch, writing, search, and browser/DevTools control",
   "author": {
     "name": "r"

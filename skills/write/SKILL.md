@@ -1,12 +1,26 @@
 ---
-description: Edit prose to sound human.
+name: write
+description: >-
+  Edits and reviews prose to remove the AI tells a model cannot see in its own
+  writing — measured detection signals, not intuition: structural rhythm first
+  (sentence-length variance, information density, discourse order), the
+  surface kill-list second (banned phrases, em-dash overuse, hollow openers,
+  hedging), with an optional phased interactive review for longer pieces. Use
+  whenever prose for human readers is being written or edited — blog posts,
+  announcements, docs, emails, READMEs — when text needs humanizing or sounds
+  robotic, and when reviewing someone's writing. Not for: wording prompts or
+  system-prompt text (use oberskills:prompt), converting markdown for
+  platforms like Slack or Notion (use penman), or writing code, comments,
+  docstrings, or API reference docs.
+when_to_use: >-
+  edit this to sound human, humanize this text, make this not sound like AI,
+  this sounds robotic or corporate, review my writing, this reads like ChatGPT
+  wrote it, tighten this prose, remove the AI tells, rewrite or polish this
+  blog post, announcement, draft, or email before it ships. Not for writing a
+  prompt, formatting for Slack or Notion, or code, comments, and docstrings.
 ---
 
-# Skill: write
-
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `write v{version}` before proceeding.
-
----
+# write
 
 ## The Problem
 
@@ -31,7 +45,7 @@ What readers detect in authentic writing is cost: a specific person chose these 
 
 ## Core Rules (always active)
 
-These five rules address the structural signals that the blind-test research identified as hardest to fake and most robust for detection. They beat surface cleanup by a wide margin.
+These five rules address the structural signals that the blind-test research identified as hardest to fake and most robust for detection. They beat surface cleanup by a wide margin. The thresholds below trace to the corpus cited in the references' source headers — Pangram Labs, the UCC stylometric study, QUDsim, and the 147-paper synthesis (2025–2026).
 
 ### 1. Lurch
 
@@ -65,7 +79,7 @@ Ground claims in concrete detail. Replace "many teams experience" with the speci
 
 ## Surface Rules (auto-loaded for EDIT)
 
-On EDIT, silently load `${CLAUDE_PLUGIN_ROOT}/skills/write/references/surface-rules.md` for the kill list, em-dash ban, hollow openers, hedge limit, transition ban, contraction requirement, sycophancy patterns, and adverb fixes.
+On EDIT, silently load `${CLAUDE_SKILL_DIR}/references/surface-rules.md` for the kill list, em-dash ban, hollow openers, hedge limit, transition ban, contraction requirement, sycophancy patterns, and adverb fixes.
 
 These catch the obvious tells. The core rules above catch the structural ones.
 
@@ -73,7 +87,7 @@ These catch the obvious tells. The core rules above catch the structural ones.
 
 ## Deep Craft (load on demand)
 
-For long-form writing, deep edits, or when surface + core isn't enough, load `${CLAUDE_PLUGIN_ROOT}/skills/write/references/deep-craft.md`. Contains: syntactic variety (88.85% F1 detection from grammar alone), rhetoric calibration (r=0.904 correlation with AI detection), verb poverty, discourse flow templating, vocabulary register range, name selection patterns, cliche metaphors, clause-level parallelism.
+For long-form writing, deep edits, or when surface + core isn't enough, load `${CLAUDE_SKILL_DIR}/references/deep-craft.md`. Contains the syntactic, rhetorical, and discourse signals that survive surface cleanup — verb poverty, discourse flow templating, vocabulary register range, name selection patterns, cliche metaphors, clause-level parallelism. Numbers live in the reference.
 
 **When to load:**
 - Pieces over 1000 words
@@ -83,7 +97,9 @@ For long-form writing, deep edits, or when surface + core isn't enough, load `${
 
 ---
 
-## Self-Check (run silently before finalizing)
+## Final Edit Pass
+
+Before returning, apply:
 
 1. Sentence length range — shortest vs longest. Less than 20-word gap? Fix it.
 2. Three consecutive same-length sentences? Break one.
@@ -149,10 +165,10 @@ Be an editor, not a critic. Every violation gets a concrete suggestion or a ques
 
 When context is tight:
 1. Write your draft
-2. Dispatch a subagent with the draft + `${CLAUDE_PLUGIN_ROOT}/skills/write/references/surface-rules.md`
+2. Dispatch a subagent with the draft + `${CLAUDE_SKILL_DIR}/references/surface-rules.md`
 3. Subagent edits and returns revision
 
-For deep edits, also include `${CLAUDE_PLUGIN_ROOT}/skills/write/references/deep-craft.md`.
+For deep edits, also include `${CLAUDE_SKILL_DIR}/references/deep-craft.md`.
 
 ---
 

@@ -4,6 +4,18 @@ Kill the obvious tells. These are the words, phrases, and punctuation patterns t
 
 Sources: Pangram Labs phrase analysis (N=millions), UCC stylometric study, Columbia University creative writing analysis, community-compiled tells from editors/writers, 147-paper synthesis (2025-2026).
 
+## Contents
+
+1. [The Aidiolect](#1-the-aidiolect)
+2. [The ChatGPT Dash](#2-the-chatgpt-dash)
+3. [Hollow Openers](#3-hollow-openers)
+4. [Hedge Limit](#4-hedge-limit)
+5. [Sycophancy](#5-sycophancy)
+6. [Adverb Stuffing and Verb Poverty](#6-adverb-stuffing-and-verb-poverty)
+7. [Transition Crutches](#7-transition-crutches)
+8. [Contractions](#8-contractions)
+9. [Sentence-Initial Conjunctions](#9-sentence-initial-conjunctions)
+
 ---
 
 ## 1. The Aidiolect
