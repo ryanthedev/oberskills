@@ -1,5 +1,24 @@
 ---
-description: Decompose user intent through structured brainstorming before acting on ambiguous or underspecified requests. Classifies ambiguity type, generates competing hypotheses, and selects maximally informative clarifying questions. Use when requirements are unclear, requests could have multiple valid interpretations, or critical details are missing. Triggers on "clarify intent", "understand requirements", "ambiguous request", "underspecified", "what do they actually want".
+name: clarify
+description: >-
+  Decomposes user intent through structured brainstorming before acting on
+  ambiguous or underspecified requests — classifies the ambiguity type,
+  generates competing interpretations, and selects the clarifying question that
+  removes the most uncertainty. Use when requirements are unclear, a request
+  could have multiple valid interpretations, critical details or constraints
+  are missing, or the request contains contradictions. Most requests need no
+  clarification — invoke only when a concrete ambiguity would change the
+  approach. Not for: mechanical or well-specified tasks (renames, typo fixes,
+  version bumps, running tests or commands, any edit with an explicit file and
+  target), details you can determine yourself from the codebase, or full
+  research or planning workflows that own their own scoping.
+when_to_use: >-
+  clarify intent, understand requirements, ambiguous request, underspecified,
+  what do they actually want, this request is vague, multiple valid
+  interpretations, missing critical details, before acting on an unclear ask.
+  Not for already-clear requests — renames, typo fixes, version bumps, running
+  tests or commands, tasks naming an explicit file and change — facts readable
+  from the code, or a full research or planning phase.
 user-invocable: false
 ---
 
@@ -13,7 +32,7 @@ Your output is a conversation with the user: clarifying questions, differential 
 
 ## When to Clarify
 
-LLMs default to assuming rather than asking — even frontier models proceed without clarification in 70% of cases where information is missing. This skill counteracts that bias.
+LLMs default to assuming rather than asking — even frontier models overwhelmingly default to proceeding without clarification when information is missing. This skill counteracts that bias.
 
 **Separate detection from execution.** Checking for ambiguity as a distinct pass — before starting work — outperforms trying to notice gaps while already solving the problem. Treat this as its own reasoning step.
 
@@ -209,7 +228,7 @@ This gives the user a final chance to correct course and documents the shared un
 
 | Pattern | Problem | Instead |
 |---------|---------|---------|
-| Proceeding without checking | 70% default execution bias — the problem this skill counters | Run detection as a separate pass first |
+| Proceeding without checking | Default execution bias — the problem this skill counters | Run detection as a separate pass first |
 | Asking implementation details | Shifts investigation work to the user | Figure it out from the codebase yourself |
 | Rapid-fire question lists | Feels like an interrogation, overwhelms | 1-3 questions max per turn, conversational |
 | Asking what you could read from code | Wastes their time on your job | Read first, ask only about what you can't determine |

@@ -10,6 +10,24 @@ Sources: DependencyAI (2026), QUDsim (2025), Counterfactual Rhetoric (2025), GPT
 - Discourse-level features = 34% of detection signal (largest single category)
 - 76.2% diversity loss from RLHF alignment
 
+## Contents
+
+1. [Syntactic Variety](#syntactic-variety)
+2. [Discourse Flow Templating](#discourse-flow-templating)
+3. [Rhetoric Calibration](#rhetoric-calibration)
+4. [Vocabulary Register Range](#vocabulary-register-range)
+5. [False Certainty](#false-certainty)
+6. [Cowardly Passives](#cowardly-passives)
+7. [List Addiction](#list-addiction)
+8. [Emotional Range](#emotional-range)
+9. [Self-Correction](#self-correction)
+10. [Name Selection](#name-selection)
+11. [Cliche Metaphors](#cliche-metaphors)
+12. [Clause-Level Parallelism](#clause-level-parallelism)
+13. [Over-Explanation](#over-explanation)
+14. [Formatting Tells](#formatting-tells)
+15. [Resumptive Filler](#resumptive-filler)
+
 ---
 
 ## Syntactic Variety

@@ -90,17 +90,17 @@ If the objective can't be stated as an outcome because the user's own intent is 
 
 Two levers, in order: drop `effort` before dropping a model tier. `effort: low` on the same model is the cheap knob and the recommended setting for subagents; a weaker model running longer is not a substitute for a stronger model (a model upgrade beat doubling the token budget in Anthropic's testing). Don't compensate for a too-weak subagent by letting it run more.
 
-Effort semantics: `low` buys terse, direct execution; `medium` buys deliberation over alternatives; `high`+ buys extended reasoning on ambiguity. Defaults by dispatch role: low for bounded workers, medium for analysis and synthesis, high or above only for deciders.
+Effort semantics: `low` buys terse, direct execution; `medium` buys deliberation over alternatives; `high`+ buys extended reasoning on ambiguity. Defaults by dispatch role: low for bounded workers, medium for analysis and synthesis, high or above only for deciders. Official Fable 5 guidance agrees — `high` default, `xhigh` only for capability-sensitive work — and adds that low/medium on Fable often exceed prior-model `xhigh`, so downshift confidently for routine dispatch (verified 2026-07-01).
 
 | Tier (June 2026) | Cost vs Haiku (input) | Dispatch role |
 |---|---|---|
 | `haiku` (Haiku 4.5) | 1x | Read-only discovery: file search, classification, log/screenshot triage. Built-in Explore runs on it. Only 200K-context model — don't hand it huge inputs |
-| `sonnet` (Sonnet 4.6) | 3x | Workhorse workers: extract, analyze, synthesize; parallel research fan-outs; code analysis |
+| `sonnet` (Sonnet 5) | 2x intro → 3x after 2026-08-31 | Workhorse workers: extract, analyze, synthesize; parallel research fan-outs; code analysis. New tokenizer bills ~1.0–1.35× the tokens of 4.6 per input; Sonnet 4.6 stays active as Legacy |
 | `opus` (Opus 4.8) | 5x | Subagents that write code, make decisions, or carry tricky reasoning |
 | `fable` (Fable 5) | 10x | The orchestrator itself; rarely a subagent. Hand it ambiguous, long-horizon work |
 | omit `model` (inherit) | — | Default for writers and deciders, and the safe choice during API incidents |
 
-Ratios from the model catalog (claude-api skill, cached 2026-05); check live pricing there before cost-sensitive choices.
+Ratios re-verified against official pricing 2026-07-01 (Sonnet 5 intro pricing runs to 2026-08-31); check the claude-api skill for live pricing before cost-sensitive choices.
 
 Gotcha: during capacity incidents, an explicit `model: "opus"` dispatch can hang forever at "Initializing…" — the alias resolves to a different capacity pool than your session's. Omitting `model` inherits the parent's pool and avoids it. Diagnose: subagent transcript with zero assistant records.
 
@@ -152,7 +152,7 @@ When a dispatch goes wrong, fix the prompt before the model — prompt engineeri
 | Retry loop | No failure memory | List failed approaches; after 2 failures force a categorically different strategy, then escalate |
 | Silent edit failure | Permission prompt auto-denied (background) or unavailable mid-task | Keep approval-gated edits in the parent |
 | Quit-early / fabricated done | Agent reports completion without evidence | Require evidence per claim in OUTPUT; verify via §5. Don't bolt on forced-continuation scaffolds — they help o-series models and hurt Claude (numbers in the prompt skill's porting reference) |
-| Shallow results on hard task | Model or effort too low | Raise effort first, then tier (§3) |
+| Shallow results on hard task | Model or effort too low | Raise effort first, then tier (§3); if raised single attempts still fail, dispatch 3–5 short scoped attempts and majority-vote (patterns reference §2) |
 | Subagent context overflow | Oversized delegated job | Scope to fit; split the task, not the window |
 
 ## 7. Going deeper

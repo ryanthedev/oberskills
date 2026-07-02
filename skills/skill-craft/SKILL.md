@@ -55,7 +55,7 @@ Create skills through baseline-first evals, or audit existing ones. Judgment wor
 | # | Phase | Load | skill-eval tools | Gate — proceed only when |
 |---|---|---|---|---|
 | 1 | INTAKE | — | — | Problem stated; 3+ natural trigger phrasings collected; pre-gate above passed |
-| 2 | DESIGN | `${CLAUDE_SKILL_DIR}/references/design.md` | — | Artifact type chosen from the table above; file structure and freedom levels planned |
+| 2 | DESIGN | `${CLAUDE_SKILL_DIR}/references/design.md` | — | Artifact type chosen from the table above; file structure and freedom levels planned; complexity contract stated (non-applicability, cost/fast path, fallback) |
 | 3 | BASELINE | `${CLAUDE_SKILL_DIR}/references/eval.md` | `run_eval` (`configurations: ["without_skill"]`, one call per eval id) | `evals.json` with ≥3 evals exists; baseline runs complete; specific failures documented from grading output |
 | 4 | BUILD | `${CLAUDE_SKILL_DIR}/references/build.md` | `validate_skill` | Minimal SKILL.md written that addresses the documented baseline gaps; `validate_skill` returns zero errors |
 | 5 | EVAL | `${CLAUDE_SKILL_DIR}/references/eval.md` | `run_eval`, `aggregate_benchmark`, `test_triggers`, `optimize_description`, `compare_outputs` | with-skill beats baseline on the gap assertions; trigger accuracy passes in both directions; pressure gates pass (discipline skills). Otherwise iterate — max 3 iterations, then redesign |

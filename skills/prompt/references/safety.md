@@ -109,7 +109,7 @@ Claude Code reality: the same stack applies — system prompt, then agent/skill 
 
 If you are fine-tuning a model you control for hierarchical compliance, constrained-RL approaches enforce system compliance as a hard constraint rather than a soft preference (HIPO 2603.16152) — irrelevant when prompting hosted Claude, where the hierarchy is enforced structurally (§3) and at the schema level.
 
-**Schema-level enforcement beats prompt constraints:** an agent that must not write files should have write tools excluded from its tool set, making violations impossible rather than merely discouraged (OpenDev 2603.05344 pattern; maps directly onto Claude Code subagent `tools`/`disallowedTools`).
+**Schema-level enforcement beats prompt constraints:** an agent that must not write files should have write tools excluded from its tool set, making violations impossible rather than merely discouraged (OpenDev 2603.05344 pattern; maps directly onto Claude Code subagent `tools`/`disallowedTools`). Treat the hierarchy as a prerequisite rather than a standalone defense — pair it with the tool-restriction gate (§8) before any subtask that reads untrusted content.
 
 ## 5. Runtime guardrails: LlamaFirewall
 
@@ -176,6 +176,7 @@ Design principles:
 |---|---|---|
 | Agent processes untrusted external data AND has side-effect tools | Dual-LLM (CaMeL) | 3 |
 | Agent processes untrusted data but only reads | Runtime guardrails | 1 |
+| About to run a subtask that fetches untrusted content (web, email, third-party docs) | Enumerate the tools that subtask needs and strip all others before the fetch — tool-restriction gate (numbers: §10) | 2–3 |
 | Fine-tuning a model you control for hierarchical compliance | Constrained-RL approaches (HIPO 2603.16152); irrelevant when prompting hosted Claude | 2 |
 | Adding third-party skills to an agent | Static analysis + LLM review before loading; sandbox scripts (§6) | 1–3 |
 | Coding agent generating code from untrusted input | Static analysis on output (CodeShield pattern) | 1 |

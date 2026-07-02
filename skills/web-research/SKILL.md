@@ -1,14 +1,30 @@
 ---
-description: Parallel web search across multiple angles.
+name: web-research
+description: >-
+  Runs parallel multi-angle web research at four depth modes (scan, brief,
+  breadth, deep): a planner grounds the query in local context and plans search
+  dimensions, parallel search agents pull verbatim extracts with source URLs,
+  one dimension always hunts counter-evidence, and synthesis is grounded back
+  in the local project. Use when researching a topic, library, or tool on the
+  web, comparing options or products, surveying a landscape of approaches, or
+  checking current, version-sensitive, or time-sensitive information. Not for:
+  driving or automating a live browser session (use oberskills:browser),
+  academic literature search across arXiv or Semantic Scholar, or questions
+  about the current repo, project, or files already on disk — read those
+  directly.
+when_to_use: >-
+  research this on the web, look up how to do X, find the best tool or library
+  for Y, compare these options, what are the alternatives to X, survey the
+  landscape of Z, is this still the recommended approach, what is the current
+  or latest way to do this, check whether X supports Y, a version-sensitive
+  lookup. Not for browser automation, arXiv or Semantic Scholar paper search,
+  or anything about this repo or this project — summarizing a README, finding
+  where code lives, reading local files.
 ---
 
-# Skill: web-research
+# web-research
 
-**On load:** Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Display `web-research v{version}` before proceeding.
-
-```
-GROUND IN LOCAL CONTEXT. RETURN ONLY RELEVANT RESULTS WITH SOURCE URLS.
-```
+Parallel, multi-angle web search. Ground results in local context and return only the relevant findings, each one carrying a source URL.
 
 ---
 
@@ -30,9 +46,9 @@ If the user specifies a depth, use it. Otherwise, infer from the query or ask:
 - "Deep dive" / "report" / "I need to make a decision about" / "thorough" → **deep**
 
 **After selecting mode, load the mode's prompts:**
-- scan/brief: `${CLAUDE_PLUGIN_ROOT}/skills/web-research/references/search-prompts.md` + `${CLAUDE_PLUGIN_ROOT}/skills/web-research/references/synthesis-prompts.md`
+- scan/brief: `${CLAUDE_SKILL_DIR}/references/search-prompts.md` + `${CLAUDE_SKILL_DIR}/references/synthesis-prompts.md`
 - breadth: same two files (breadth-specific sections)
-- deep: same two files + `${CLAUDE_PLUGIN_ROOT}/skills/web-research/references/deep-mode.md`
+- deep: same two files + `${CLAUDE_SKILL_DIR}/references/deep-mode.md`
 
 ---
 
@@ -42,17 +58,14 @@ If the user specifies a depth, use it. Otherwise, infer from the query or ask:
 
 Before hitting the web, ground in what's already available.
 
-1. Check local files relevant to the query (package.json, configs, code, docs)
-2. If a PreSearch hook is configured, run it with the query terms (hook can check project-specific memory, knowledge bases, internal docs)
-3. Use results to skip dimensions already covered and focus search on gaps
+1. Check local files relevant to the query (package.json, configs, code, docs).
+2. Use what you find to skip dimensions already covered and focus the search on gaps.
 
-**Hook contract:** PreSearch hook receives the query as input, returns existing knowledge as text. If no hook is configured, skip to Step 1.
-
-**If existing knowledge covers the query:** Present it. Ask if they want fresh web results.
+**If existing knowledge covers the query:** Present it. Ask whether they want fresh web results.
 
 ### Step 1: Plan
 
-Dispatch orchestrator (sonnet). Grounds in local context, plans dimensions based on mode:
+Dispatch planner (sonnet). Grounds in local context, plans dimensions based on mode:
 - scan: 1 focused dimension
 - brief: 2-3 dimensions targeting different angles
 - breadth: 5-8 dimensions covering the landscape
@@ -60,7 +73,7 @@ Dispatch orchestrator (sonnet). Grounds in local context, plans dimensions based
 
 Show the user the plan before dispatching search agents.
 
-See search-prompts.md for the orchestrator prompt template.
+See search-prompts.md for the planner prompt template.
 
 ### Step 2: Search
 
@@ -101,7 +114,7 @@ Spot-check URLs and version numbers after synthesis. See deep-mode.md.
 
 | Agent | Model | Why |
 |-------|-------|-----|
-| Orchestrator | sonnet | Planning doesn't need the strongest model |
+| Planner | sonnet | Planning doesn't need the strongest model |
 | Search agents | sonnet | Extraction quality needs reasoning depth |
 | Cross-pollination | sonnet | Gap-filling is search, not synthesis |
 | Synthesis | (inherit) | Never override the user's model |

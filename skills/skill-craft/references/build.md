@@ -96,11 +96,11 @@ Anti-examples: "Helps with documents", "Processes data", "Does stuff with files"
 
 ## 6. Size and focus
 
-Detailed-but-compact beats comprehensive. SkillsBench (2602.12670) measured Skill **length** — compact +19.0pp and standard +21.5pp task improvement beat detailed +14.5pp and comprehensive +0.7pp (exhaustive prose goes flat, not negative — just wasted) — and Skill **count**: 1–3 Skills are strongest (+18.0 / +19.0pp), ≥4 falls to +10.1pp (excess content creates overhead and conflicting guidance). Curated Skills lift the fleet mean +16.6pp (33.9%→50.5%); **self-generated Skills actively harm** — −8.1 to −11.5pp below the no-Skills baseline across three configs, while curated Skills add +18.2 to +24.8pp on the same ones. Distill from real failures and authoritative sources; never let a model author its own packs at solve time. (Caveats: single, non-peer-reviewed benchmark — treat as directional; trim and re-test rather than deleting blindly.)
+Detailed-but-compact beats comprehensive. SkillsBench (2602.12670) measured Skill **length** — compact +19.0pp and standard +21.5pp task improvement beat detailed +14.5pp and comprehensive +0.7pp (exhaustive prose goes flat, not negative — just wasted) — and Skill **count per task**: 1–3 Skills attached to a task are strongest (+18.0 / +19.0pp), ≥4 falls to +10.1pp (cognitive overhead and conflicting guidance; the unit is Skills mounted on one task, not reference files inside a skill — don't fragment one capability into skills that co-trigger). Curated Skills lift the fleet mean +16.6pp (33.9%→50.5%); **self-generated Skills actively harm** — −8.1 to −11.5pp below the no-Skills baseline across three configs, while curated Skills add +18.2 to +24.8pp on the same ones. Distill from real failures and authoritative sources; never let a model author its own packs at solve time. (Caveats: single, non-peer-reviewed benchmark — treat as directional; trim and re-test rather than deleting blindly.)
 
 Practical consequences:
 
-- Target ~200 lines of always-relevant core in SKILL.md; push depth into references.
+- Target ~200 lines of always-relevant core in SKILL.md; push depth into references. (Calibration: the public-ecosystem median SKILL.md is ~1.2k tokens — SkillsBench Fig 7.)
 - Don't encode model-default behavior (formatting niceties, "no magic numbers") — the skill must add non-obvious knowledge to earn its tokens.
 - Every line is a recurring per-session cost once loaded. Cut paragraphs that explain what Claude already knows.
 
@@ -119,7 +119,7 @@ Audit every skill (new or ported) against these; `oberskills:prompt`'s claude-mo
 
 ## 8. Examples inside skill bodies
 
-Examples teach format, not content. Follow `oberskills:prompt`'s purpose-conditioned example rule — the number and shape of examples depends on what they're for (format anchoring vs boundary-drawing vs edge-case coverage vs worked reasoning); that skill is the single home for the counts. One excellent example beats many mediocre ones; don't implement the same example in five languages.
+Examples teach format, not content. Follow `oberskills:prompt`'s purpose-conditioned example rule — the number and shape of examples depends on what they're for (format anchoring vs boundary-drawing vs edge-case coverage vs worked reasoning); that skill is the single home for the counts. One excellent example beats many mediocre ones; don't implement the same example in five languages. In worked reasoning traces, concise and direct beats verbose labeled sub-steps (OpenMathInstruct-2 2410.01560: 237-token average solutions beat 331-token ones 44.5 vs 40.6 on MATH — math-SFT evidence, directional here).
 
 ## 9. Templates
 

@@ -27,6 +27,8 @@ You (Claude-A) design; fresh instances (Claude-B, spawned by the skill-eval serv
 
 Iteration discipline: after any fix, re-run ALL evals (no partial retests). Max 3 iterations; still failing → the design is wrong, return to DESIGN.
 
+Curation is offline by design: skills an agent authors at solve time land *below* the no-skill baseline even when creator and solver run as separate isolated sessions (SkillsBench; numbers in build.md §6). This loop is the curation step — documented failures in, distilled instructions out, consumed by *future* sessions, never the one that authored them.
+
 ## 2. evals.json — the one hand-authored schema
 
 Everything else in the pipeline is tool output described by the tools themselves; this is the only file you write by hand. The server's TypeScript types are canonical and validate it on load.
@@ -77,13 +79,14 @@ Five typed kinds, evaluated in code against the run's `outputs/` directory and `
 | `trace_order` | Tools were called in subsequence order | `{ "kind": "trace_order", "tools": ["Read", "Edit", "Bash"] }` |
 | `trace_never` | A tool/input never occurred — an invariant | `{ "kind": "trace_never", "tool": "Bash", "input_pattern": "--no-verify" }` |
 
-Prefer checks wherever an artifact, file, or tool trace can prove the behavior; reserve LLM-graded `expectations` for judgment calls. The ladder, weakest-to-strongest dependence on a judge: trigger → trace → artifact → invariant.
+Prefer checks wherever an artifact, file, or tool trace can prove the behavior; reserve LLM-graded `expectations` for judgment calls. The ladder, weakest-to-strongest dependence on a judge: trigger → trace → artifact → invariant. The ladder is load-bearing for iteration, not just grading: optimizing against an unreliable judge signal degrades below baseline in online settings, while execution-grounded feedback drives the gains (ACE 2510.04618: online no-ground-truth 67.3 vs 70.7 base; execution feedback +14.8%).
 
 ## 4. Assertion design
 
 - **Discriminating assertions only.** An assertion both configurations always pass measures nothing — the analyzer flags these; cut or sharpen them.
 - **Near-miss negatives.** Test what the skill should NOT do in adjacent situations, not absurd cases.
 - **Artifact-checkable first** (§3), LLM expectations for the rest.
+- **Breadth over repetition.** More distinct scenarios beat more runs of one scenario (OpenMathInstruct-2 2410.01560: growing unique questions 1K→6.5K at fixed data size gained +10.5% on MATH — SFT domain, directional). Author eval tasks from real observed failures rather than generating N variants of one shape.
 - **When NOT to assert:** subjective skills (writing style, design quality) get qualitative review plus `compare_outputs` (blind A/B with shuffled sides), not forced assertions. Test the artifacts, not the prose.
 
 **Dimensions by capability (2026 benchmarks).** Match the assertion to the failure mode the skill's capability class is prone to:
@@ -92,6 +95,7 @@ Prefer checks wherever an artifact, file, or tool trace can prove the behavior; 
 - **Multi-turn skills** — test instruction retention, inference memory, versioned editing, and self-coherence: frontier models score <50% on these (MultiChallenge 2501.17399) while acing single-turn benchmarks. The per-case binary rubric in §2 is the right grader — judging a whole transcript drops human-alignment to 37.33% vs 93.95% for an instance-level yes/no on the final response.
 - **Long-context skills** — use multi-hop RAG QA with distractor passages, not needle-in-a-haystack: NIAH saturates and barely tracks real tasks (HELMET 2410.02694: ρ=0.63 vs RAG ρ=0.88). Treat NIAH as a sanity check, not a gate.
 - **Tool ablation (distinct from `without_skill`)** — when a skill dispatches an external tool or search, add a config with the tool disabled. If tool-on scores *lower* than direct, that's a retrieval-interference design bug, not a model limit (BrowseComp-ZH 2504.19314: a strong reasoner fell 23.2%→7.6% with search enabled — directional; the two figures are different systems).
+- **Coding-workflow skills** — include at least one task on a real, conventions-dense codebase, not only greenfield fixtures: a 246-task RCT on large familiar repos (~1.1M LOC; 2507.09089) measured experienced devs 19% *slower* with AI assistance while self-reporting speedup. Scope tightly: greenfield and unfamiliar-codebase settings remain consistent with speedups, and a quarter of those devs did speed up — the point is that synthetic-only evals overstate lift where conventions dominate.
 
 ## 5. Pressure evals
 

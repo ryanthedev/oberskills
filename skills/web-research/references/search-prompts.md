@@ -1,6 +1,12 @@
 # Search Prompts
 
-## Orchestrator Prompt
+## Contents
+
+1. [Planner Prompt](#planner-prompt)
+2. [Search Agent: Standard (scan, brief, deep)](#search-agent-standard-scan-brief-deep)
+3. [Search Agent: Breadth (landscape scanning)](#search-agent-breadth-landscape-scanning)
+
+## Planner Prompt
 
 ```
 Agent(
@@ -65,9 +71,9 @@ Agent(
   prompt="OBJECTIVE: Extract precise information for this search dimension.
   Do NOT summarize. Pull exact details, quote sources, preserve specificity.
 
-  SEARCH QUERY: {query from orchestrator}
+  SEARCH QUERY: {query from planner}
   LOCAL CONTEXT: {grounding}
-  TIME-SENSITIVE: {yes/no from orchestrator}
+  TIME-SENSITIVE: {yes/no from planner}
   OUTPUT FILE: {path}
 
   TASK:

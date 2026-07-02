@@ -29,6 +29,8 @@ Manual `enabled` + `budget_tokens` is deprecated on 4.6 and rejected on newer mo
 - Suppress: "Answer directly without deliberating." or "Extended thinking adds latency and should only be used when it will meaningfully improve answer quality - typically for problems that require multi-step reasoning. When in doubt, respond directly."
 - After tools: "After receiving tool results, carefully reflect on their quality and determine optimal next steps before proceeding."
 
+**Length instructions don't control reasoning length.** "Be concise" / "answer in under N tokens" are unreliable on reasoning models — requesting under-20-token reasoning still produced 350+ tokens (CoT-Valve 2502.09601). Control length structurally instead: lower `effort`, an answer-only output schema, a fixed step count, or a delimiter that terminates the trace. (Compression formats for non-Claude or thinking-off targets: porting.md.)
+
 **Four principles for prompting thinking** (Anthropic, verbatim headings):
 
 1. "Prefer general instructions over prescriptive steps." — "think thoroughly" often produces better reasoning than a hand-written step-by-step plan; Claude's reasoning frequently exceeds what a human would prescribe.
@@ -52,7 +54,7 @@ The meta-skill payload. When migrating any prompt written for pre-4.6 models, hu
 
 Re-test after each removal. Anthropic, verbatim: "Skills developed for prior models are often too prescriptive for Claude Fable 5 and can degrade output quality." And: "Capability improvements at this level are also a good prompt to re-evaluate which instructions, tools, and guardrails are still needed."
 
-**Instruction budget.** Frontier models reliably follow roughly 150–200 instructions — and Claude Code's system prompt already uses about 50 of that budget (alexop.dev, via practitioner research). Treat this as a capacity bound your prompt shares with the harness, not a target: every rule you add competes for it, so each must earn its place against the removal test (review.md §6). For skill bodies, detailed-compact beats comprehensive — numbers in skill-craft's build reference (SkillsBench 2602.12670).
+**Instruction budget (community heuristic — not Anthropic guidance).** A practitioner analysis puts frontier models at roughly 150–200 reliably-followed instructions, with Claude Code's system prompt consuming about 50 (humanlayer.dev "Writing a good CLAUDE.md", citing arXiv:2507.11538 — a 2025, pre-Fable, general-LLM paper; the ~50 is the blog's own harness analysis; verified 2026-07-01 as absent from every official prompting page). The direction is sound even though the numbers are soft: treat instruction-following as a capacity bound your prompt shares with the harness, not a target — every rule you add competes for it, so each must earn its place against the removal test (review.md §6). For skill bodies, detailed-compact beats comprehensive — numbers in skill-craft's build reference (SkillsBench 2602.12670).
 
 ## 3. Prefill migration table
 
@@ -72,7 +74,9 @@ In review, any prefill is a breaking bug (review.md §9).
 
 Anthropic, verbatim: "Prompts, skills, or harness instructions that tell the model to echo, transcribe, or explain its internal reasoning as response text can trigger the `reasoning_extraction` refusal category on Claude Fable 5, causing elevated fallbacks to Claude Opus 4.8. Audit existing skills and system prompts for reflection or show-your-thinking instructions when migrating."
 
-Refusals return HTTP 200 with `stop_reason: "refusal"`. If reasoning visibility is needed: read structured `thinking` blocks (adaptive thinking with `display: "summarized"`), or give the agent a send-to-user tool for verbatim mid-task content. In output schemas, ask for brief task-level evidence ("cite the evidence for your verdict"), never a reasoning transcript (design.md §4).
+Refusals return HTTP 200 with `stop_reason: "refusal"`. If reasoning visibility is needed: read structured `thinking` blocks (adaptive thinking with `display: "summarized"`), or give the agent a send-to-user tool for verbatim mid-task content (elicitation: snippets.md #20). In output schemas, ask for brief task-level evidence ("cite the evidence for your verdict"), never a reasoning transcript (design.md §4).
+
+The full classifier picture (verified against the official pages 2026-07-01): `reasoning_extraction` is one of **four** categories — `cyber` (offensive-security techniques), `bio` (lab methods, molecular mechanisms), and `frontier_llm` (the launch material's "distillation") are the others; official pages each list only a 3-of-4 subset. Benign security and life-sciences work can also trigger them — a security-adjacent workspace alone has tripped `cyber`. Configure server- or client-side fallback to Opus 4.8, and know its limit: fallback covers the **main model path only** — tool-embedded or advisor sub-inference calls that trip a classifier fail with a generic "unavailable" error that stays disabled for the rest of the session (claude-code#67306, open as of 2026-07-01).
 
 ## 5. Per-model prompting deltas
 
@@ -82,8 +86,10 @@ Refusals return HTTP 200 with `stop_reason: "refusal"`. If reasoning visibility 
 - **Performs better with intent/why.** Template: "I'm working on [the larger task] for [who it's for]. They need [what the output enables]. With that in mind: [request]."
 - **Don't surface context-budget countdowns** — they trigger wrap-up behavior. Fix: snippets.md #15; long-horizon harnesses: snippets.md #10.
 - **Strong instruction following** — "you can steer most behaviors with a brief instruction rather than enumerating each behavior by name."
-- Common behavior fixes (fabricated progress, unrequested actions, early stopping, dense summaries) are verbatim blocks in snippets.md (#8, #11–#14).
+- Common behavior fixes (fabricated progress, unrequested actions, early stopping, dense summaries) are verbatim blocks in snippets.md (#8, #11–#14, #19–#21).
 - Reasoning echo = refusal hazard (§4). Prompts and skills migrated to Fable 5 get the de-prompting pass (§2) first.
+- **Its failure mode is over-elaboration, not laziness** — at higher effort it surveys options it won't pursue and narrates root causes at length; one brief brevity instruction steers it (snippets.md #12). The de-prompting checklist (§2) is inherited Opus 4.5/4.6-era doctrine and still applies.
+- Dated ops note (2026-07-01): suspended 2026-06-12→06-30 under export controls, globally redeployed 07-01 — field reports predating the suspension rest on ~3 days of usage. No zero-data-retention option; 30-day retention applies.
 
 ### Opus 4.8
 
@@ -93,7 +99,14 @@ Refusals return HTTP 200 with `stop_reason: "refusal"`. If reasoning visibility 
 - **Progress updates:** "If you've added scaffolding to force interim status messages ('After every 3 tool calls, summarize progress'), try removing it."
 - **Review/finding prompts:** it follows "only report high-severity" instructions faithfully, so recall drops. Use the coverage-first stage + downstream filter pattern — verbatim block at snippets.md #18.
 
-### Sonnet 4.6
+### Sonnet 5
+
+- Launched 2026-06-30 (`claude-sonnet-5`). Adaptive thinking **on by default** (`disabled` still accepted, unlike Fable); manual extended-thinking budgets return 400; `temperature`/`top_p`/`top_k` return 400 — new for the Sonnet class.
+- **New tokenizer:** the same input maps to roughly 1.0–1.35× the tokens of Sonnet 4.6 depending on content type — re-baseline token budgets and cost estimates when migrating.
+- Effort defaults `high`; same de-prompting rules as the 4.6 era.
+- **Context-budget countdowns: surface them** and pair with the context-awareness block (snippets.md #10) — the opposite of the Fable rule above. The persistence pattern is per-model, not universal.
+
+### Sonnet 4.6 (Legacy tier since Sonnet 5's launch; still active)
 
 Same 4.6-era rules: no prefill, adaptive thinking over `budget_tokens`, de-prompt aggressive triggers — "more responsive to the system prompt than previous models," so legacy undertriggering fixes now overtrigger.
 

@@ -94,6 +94,8 @@ At the frontier of optimization quality, higher-performing optimizers produce sh
 
 **Practical rule:** if your optimized prompt is significantly longer than your seed, something is wrong — the optimizer is memorizing training examples rather than discovering generalizable instructions.
 
+One scope limit: this rule is about optimizer output on general tasks. For domain-intensive agent tasks, performance-only scoring drifts prompts toward generic brevity and drops domain heuristics — preserve task-specific heuristics and failure notes across iterations (evolving playbooks: context.md §6).
+
 ## 8. Few-shot mechanics: function-vector heads
 
 Across 12 text models, function-vector (FV) heads — attention heads that compute a compact task encoding — drive in-context learning; induction heads (token copying) have minimal causal impact at production scale (2502.14010). In models past ~1B parameters, FV heads dominate overwhelmingly.
