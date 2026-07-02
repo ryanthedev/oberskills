@@ -28,6 +28,9 @@ Ownership note: the when-to-delegate snippet and effort-scaling guidance belong 
 | 16 | Memory notes rule | Agents with memory dirs |
 | 17 | Structured research | Research agents |
 | 18 | Coverage-first review | Review/finding agents with a downstream filter |
+| 19 | State the boundaries | Unrequested actions/fixes |
+| 20 | send_to_user elicitation | Async agents with a send-to-user tool |
+| 21 | Final-summary re-grounding | Long-run summaries full of working shorthand |
 
 ## 1. `<default_to_action>` — S2
 
@@ -144,3 +147,21 @@ Use when: a review/finding agent feeds a downstream filter — instructing "only
 > Report every issue you find, including ones you are uncertain about or consider low-severity. Do not filter for importance or confidence at this stage - a separate verification step will do that. Your goal here is coverage: it is better to surface a finding that later gets filtered out than to silently drop a real bug. For each finding, include your confidence level and an estimated severity so a downstream filter can rank them.
 
 Single-pass alternative (when there is no downstream filter), be concrete about the bar: "report any bugs that could cause incorrect behavior, a test failure, or a misleading result; only omit nits like pure style or naming preferences."
+
+## 19. State the boundaries — S3
+
+Use when: the agent takes unrequested actions (drafting an email nobody asked for, defensive git-branch backups) or applies fixes when the user was only describing a problem.
+
+> When the user is describing a problem, asking a question, or thinking out loud rather than requesting a change, the deliverable is your assessment. Report your findings and stop. Don't apply a fix until they ask for one. Before running a command that changes system state (restarts, deletes, config edits), check that the evidence actually supports that specific action. A signal that pattern-matches to a known failure may have a different cause.
+
+## 20. send_to_user elicitation — S3
+
+Use when: a long or asynchronous agent has a client-side send-to-user tool. Defining the tool is not sufficient — without a system-prompt instruction, Fable 5 rarely calls it.
+
+> Between tool calls, when you have content the user must read verbatim (a partial deliverable, a direct answer to their question), call the send_to_user tool with that content. Use send_to_user only for user-facing content, not for narration or reasoning.
+
+## 21. Final-summary re-grounding — S3
+
+Use when: extended agentic runs end in summaries written in the working shorthand the user never saw.
+
+> Terse shorthand is fine between tool calls (that's you thinking out loud, and brevity there is good). Your final summary is different: it's for a reader who didn't see any of that… Write it as a re-grounding, not a continuation of your working thread: the outcome first, then the one or two things you need from them, each explained as if new… When you write the summary at the end, drop the working shorthand. Write complete sentences. Spell out terms… If you have to choose between short and clear, choose clear.
