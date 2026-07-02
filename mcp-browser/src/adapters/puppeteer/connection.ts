@@ -243,7 +243,7 @@ export class PuppeteerConnectionManager implements BrowserPort {
     if (raw === null) {
       throw new BrowserError("page_unstable", "no accessibility tree (document is empty or mid-navigation)", "navigate to a page, or retry once it settles");
     }
-    return buildSnapshot([raw], this.refs);
+    return buildSnapshot([raw], this.refs, { maxDepth: opts?.maxDepth, maxNodes: opts?.maxNodes });
   }
 
   async resolveTarget(t: Target): Promise<ResolvedTarget> {

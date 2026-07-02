@@ -64,6 +64,10 @@ export async function handler(args: Input): Promise<ToolResult> {
       bytes: written.bytes,
       written: written.written,
       count: results.length,
+      // Correctness fix: below threshold, writePayload computes a full inline
+      // preview (no inlinePreviewChars passed) — carry it forward instead of
+      // silently dropping the data (the DW-1.4 regression).
+      ...(written.written ? {} : { inlined: written.inlinedPreview }),
     };
 
     if (written.written) {

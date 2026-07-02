@@ -248,6 +248,158 @@ describe("evaluate tool (DW-3.4)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// DW-1.3: evaluate + collect route their structured payload through writePayload
+// ---------------------------------------------------------------------------
+
+describe("evaluate spill routing (DW-1.3)", () => {
+  afterEach(() => resetSession());
+
+  test("test_DW_1_3_evaluate_spills_large_result: result >= threshold spills to /tmp, path+preview returned, raw result absent", async () => {
+    const port = await fresh();
+    port.cannedEvaluate = { blob: "x".repeat(PAYLOAD_THRESHOLD_BYTES + 100) };
+    const r = await evaluate.handler({ expression: "bigResult()" });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(true);
+    expect(typeof s.result_path).toBe("string");
+    expect(existsSync(s.result_path as string)).toBe(true);
+    expect(typeof s.preview).toBe("string");
+    expect((s.preview as string).length).toBeLessThanOrEqual(512);
+    expect(s.result).toBeUndefined();
+    rmSync(s.result_path as string, { force: true });
+    // Existing 256-char text summary is unchanged.
+    expect(r.content[0]?.text).toStartWith("evaluate → ");
+    expect(r.content[0]!.text.length).toBeLessThanOrEqual("evaluate → ".length + 256);
+  });
+
+  test("test_DW_1_3_evaluate_inlines_small_result: result below threshold stays inline, written:false", async () => {
+    const port = await fresh();
+    port.cannedEvaluate = { small: "value" };
+    const r = await evaluate.handler({ expression: "smallResult()" });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(false);
+    expect(s.result).toEqual({ small: "value" });
+    expect(s.result_path).toBeUndefined();
+    expect(s.preview).toBeUndefined();
+  });
+
+  test("test_DW_1_3_evaluate_nonserializable_never_leaks_raw_object: cyclic result inlines the descriptor string, never the raw object", async () => {
+    const port = await fresh();
+    const cyclic: Record<string, unknown> = {};
+    cyclic.self = cyclic;
+    port.cannedEvaluate = cyclic;
+    const r = await evaluate.handler({ expression: "cyclicResult()" });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    // Below threshold (the descriptor string is tiny) — inlined, never the raw cyclic object.
+    expect(s.written).toBe(false);
+    expect(s.result).toBe("[non-serializable value]");
+    expect(r.content[0]?.text).toContain("[non-serializable value]");
+  });
+
+  test("evaluate result exactly at PAYLOAD_THRESHOLD_BYTES spills (boundary)", async () => {
+    const port = await fresh();
+    // "x".repeat(n) wrapped in JSON string quotes: 2 extra bytes for the quotes.
+    port.cannedEvaluate = "x".repeat(PAYLOAD_THRESHOLD_BYTES - 2);
+    const r = await evaluate.handler({ expression: "boundary()" });
+    const s = structured(r);
+    expect(s.bytes).toBe(PAYLOAD_THRESHOLD_BYTES);
+    expect(s.written).toBe(true);
+    if (s.written) rmSync(s.result_path as string, { force: true });
+  });
+});
+
+describe("collect spill routing (DW-1.3)", () => {
+  afterEach(() => resetSession());
+
+  const collectArgs = {
+    selector: ".accordion",
+    read_selector: ".content",
+    pierce: false,
+    close_after_read: false,
+    delay_ms: 300,
+  } as const;
+
+  test("test_DW_1_3_collect_spills_large_items: items >= threshold spill to /tmp, path+preview returned, raw items absent", async () => {
+    const port = await fresh();
+    port.cannedCollect = {
+      items: Array.from({ length: 200 }, (_, i) => `section-${i}-` + "y".repeat(30)),
+      nothingExpandable: false,
+    };
+    const r = await collect.handler(collectArgs);
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(true);
+    expect(typeof s.items_path).toBe("string");
+    expect(existsSync(s.items_path as string)).toBe(true);
+    expect(typeof s.preview).toBe("string");
+    expect(s.items).toBeUndefined();
+    // count / nothing_expandable are ALWAYS inline, even when items spill.
+    expect(s.count).toBe(200);
+    expect(s.nothing_expandable).toBe(false);
+    rmSync(s.items_path as string, { force: true });
+  });
+
+  test("test_DW_1_3_collect_inlines_small_items: items below threshold stay inline, written:false", async () => {
+    const port = await fresh();
+    port.cannedCollect = { items: ["a", "b"], nothingExpandable: false };
+    const r = await collect.handler(collectArgs);
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(false);
+    expect(s.items).toEqual(["a", "b"]);
+    expect(s.items_path).toBeUndefined();
+  });
+
+  test("huge all-null items (nothing_expandable) crossing the threshold still spills items while nothing_expandable/count stay inline", async () => {
+    const port = await fresh();
+    port.cannedCollect = { items: new Array(2000).fill(null), nothingExpandable: true };
+    const r = await collect.handler(collectArgs);
+    const s = structured(r);
+    expect(s.written).toBe(true);
+    expect(s.nothing_expandable).toBe(true);
+    expect(s.count).toBe(2000);
+    expect(s.items).toBeUndefined();
+    if (s.written) rmSync(s.items_path as string, { force: true });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DW-1.4: extract correctness fix — inlined field carries full data below threshold
+// ---------------------------------------------------------------------------
+
+describe("extract inlined regression (DW-1.4)", () => {
+  afterEach(() => resetSession());
+
+  test("test_DW_1_4_extract_inlined_below_threshold: small result returns inlined with the full extracted JSON, not count-only", async () => {
+    const port = await fresh();
+    port.cannedExtract = [{ name: "Alice", price: "$10" }, { name: "Bob", price: "$20" }];
+    const r = await extract.handler({ selector: ".item", fields: "name:.name,price:.price", pierce: false });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(false);
+    expect(s.path).toBe("");
+    expect(typeof s.inlined).toBe("string");
+    const parsed = JSON.parse(s.inlined as string) as unknown[];
+    expect(parsed).toEqual(port.cannedExtract);
+  });
+
+  test("test_DW_1_4_extract_no_inlined_above_threshold: large result returns path, inlined absent", async () => {
+    const port = await fresh();
+    port.cannedExtract = Array.from({ length: 200 }, (_, i) => ({ name: `item-${i}`, value: "x".repeat(30) }));
+    const r = await extract.handler({ selector: ".item", pierce: false });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(true);
+    expect(typeof s.path).toBe("string");
+    expect((s.path as string).length).toBeGreaterThan(0);
+    expect(s.inlined).toBeUndefined();
+    rmSync(s.path as string, { force: true });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // DW-3.5: dismiss + form
 // ---------------------------------------------------------------------------
 

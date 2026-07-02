@@ -105,24 +105,55 @@ export class RefRegistry {
   }
 }
 
+/** Optional depth/node caps for buildSnapshot — the token-bounding backstop for huge pages. */
+export type BuildSnapshotOpts = {
+  /** Maximum tree depth to descend (root nodes are depth 1). Absent = unlimited. */
+  maxDepth?: number;
+  /** Maximum number of nodes to emit before truncating. Absent = unlimited. */
+  maxNodes?: number;
+};
+
 /**
  * Walk a raw AX tree, mint a ref per interactive node, register its handle, and
  * emit the compact core AxNode tree (plain data, opaque refs only). Bumps the
  * registry epoch first so a re-snapshot invalidates prior refs. Empty structural
  * containers are pruned to keep the tree compact.
+ *
+ * maxDepth/maxNodes (opts) are enforced in a SINGLE pre-order pass: both checks
+ * run BEFORE a node's children are visited or its ref is minted, so a ref is
+ * NEVER minted for a node whose inclusion wasn't already budgeted — the
+ * tree↔refs consistency invariant holds unconditionally, with no second
+ * trim-and-reconcile pass and no need to unregister "orphaned" refs. `nodeCount`
+ * is computed from the final tree (may be < maxNodes if some budgeted nodes
+ * turned out non-meaningful and were dropped after consuming a slot).
  */
 export async function buildSnapshot(
   raw: RawAxNode[],
   registry: RefRegistry,
-): Promise<{ tree: AxNode[]; refs: string[] }> {
+  opts?: BuildSnapshotOpts,
+): Promise<{ tree: AxNode[]; refs: string[]; nodeCount: number; truncated: boolean }> {
   await registry.newEpoch();
   const refs: string[] = [];
   let seq = 0;
+  let budget = 0;
+  let truncated = false;
+  const maxDepth = opts?.maxDepth;
+  const maxNodes = opts?.maxNodes;
 
-  const convert = async (node: RawAxNode): Promise<AxNode | null> => {
+  const convert = async (node: RawAxNode, depth: number): Promise<AxNode | null> => {
+    if (maxDepth !== undefined && depth > maxDepth) {
+      truncated = true;
+      return null;
+    }
+    if (maxNodes !== undefined && budget >= maxNodes) {
+      truncated = true;
+      return null;
+    }
+    budget += 1;
+
     const children: AxNode[] = [];
     for (const child of node.children ?? []) {
-      const c = await convert(child);
+      const c = await convert(child, depth + 1);
       if (c) children.push(c);
     }
 
@@ -153,8 +184,18 @@ export async function buildSnapshot(
 
   const tree: AxNode[] = [];
   for (const node of raw) {
-    const c = await convert(node);
+    const c = await convert(node, 1);
     if (c) tree.push(c);
   }
-  return { tree, refs };
+  return { tree, refs, nodeCount: countNodes(tree), truncated };
+}
+
+/** Total AxNode entries in a tree (root + all descendants), for node_count reporting. */
+function countNodes(nodes: AxNode[]): number {
+  let n = 0;
+  for (const node of nodes) {
+    n += 1;
+    if (node.children) n += countNodes(node.children);
+  }
+  return n;
 }

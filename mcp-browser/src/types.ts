@@ -90,6 +90,7 @@ export type TabInfoOut = {
 // ref/selector/x individually (no per-tool targeting ladder).
 // ---------------------------------------------------------------------------
 import type { Target } from "./core/targeting.ts";
+import type { AxNode } from "./core/browser-port.ts";
 
 /** Flat target fields shared by every element-targeting tool's inputShape. */
 export const TargetInputFields = {
@@ -134,6 +135,18 @@ export function toTarget(args: {
 
 export const SnapshotInputSchema = {
   interesting_only: z.boolean().default(true).describe("Prune uninteresting nodes for a compact tree (default true)."),
+  max_depth: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe("Maximum tree depth to descend (root nodes are depth 1). Absent = unlimited."),
+  max_nodes: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe("Maximum number of nodes to emit before truncating (sets truncated=true). Absent = unlimited."),
 };
 
 export const ClickInputSchema = {
@@ -223,6 +236,24 @@ export type ScreenshotOut = {
   bytes: number;
 };
 
+/**
+ * browser_snapshot result. Below PAYLOAD_THRESHOLD_BYTES the serialized tree is
+ * inlined (`tree` present, `tree_path`/`tree_preview` absent, written:false); at
+ * or above threshold the tree spills to /tmp (`tree_path` + a tool-sliced
+ * `tree_preview`, `tree` absent, written:true). `refs` and `node_count` are
+ * always inline — refs are the interaction surface, never withheld.
+ */
+export type SnapshotOut = {
+  tree?: AxNode[];
+  tree_path?: string;
+  tree_preview?: string;
+  refs: string[];
+  node_count: number;
+  bytes: number;
+  written: boolean;
+  truncated: boolean;
+};
+
 // ---------------------------------------------------------------------------
 // Phase 3: Read / extract + parity — input schemas + output DTOs
 // ---------------------------------------------------------------------------
@@ -285,21 +316,47 @@ export type AccessibilityOut = {
   written: boolean;
 };
 
+/**
+ * browser_extract result. `inlined` carries the FULL extracted JSON when the
+ * result stayed below the spill threshold (written:false) — the correctness
+ * fix for the bug where sub-threshold extracts silently dropped their own data.
+ * Absent when written:true (the /tmp path is the source of truth instead).
+ */
 export type ExtractOut = {
   path: string;
   bytes: number;
   written: boolean;
   count: number;
+  inlined?: string;
 };
 
+/**
+ * browser_collect result. Below threshold `items` is inlined; at/above
+ * threshold it spills to /tmp (`items_path` + a tool-sliced `preview`).
+ * `nothing_expandable` and `count` are always inline (explicit empty-state,
+ * never withheld).
+ */
 export type CollectOut = {
-  items: (string | null)[];
+  items?: (string | null)[];
+  items_path?: string;
+  preview?: string;
   nothing_expandable: boolean;
   count: number;
+  bytes: number;
+  written: boolean;
 };
 
+/**
+ * browser_evaluate result. Below threshold `result` is inlined (never the raw
+ * value when JSON.stringify fails — the descriptor string is inlined instead);
+ * at/above threshold it spills to /tmp (`result_path` + a tool-sliced `preview`).
+ */
 export type EvaluateOut = {
-  result: unknown;
+  result?: unknown;
+  result_path?: string;
+  preview?: string;
+  bytes: number;
+  written: boolean;
 };
 
 export type DismissOut = {

@@ -7,6 +7,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { RefRegistry, buildSnapshot, isInteractiveRole, type RawAxNode } from "../src/adapters/puppeteer/refs.ts";
+import type { AxNode } from "../src/core/browser-port.ts";
 
 /** Each AX node gets a unique fake handle so we can assert registration. */
 function fakeNode(role: string, name: string, children: RawAxNode[] = []): RawAxNode {
@@ -91,5 +92,117 @@ describe("buildSnapshot (DW-2.1)", () => {
     const reg = new RefRegistry();
     expect(reg.wasIssued("r9-9")).toBe(false);
     expect(reg.isLive("r9-9")).toBe(false);
+  });
+
+  test("nodeCount/truncated default to the full count / false when no opts are given (regression: unchanged current behavior)", async () => {
+    const reg = new RefRegistry();
+    const { tree: out, nodeCount, truncated } = await buildSnapshot(tree(), reg);
+    expect(truncated).toBe(false);
+    // WebArea + 4 children = 5 nodes total.
+    expect(nodeCount).toBe(5);
+    expect(out.length).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DW-1.2: max_depth / max_nodes caps on buildSnapshot
+// ---------------------------------------------------------------------------
+
+/** A flat list of `count` interactive buttons (each top-level, depth 1) — every node is meaningful. */
+function flatInteractiveTree(count: number): RawAxNode[] {
+  const nodes: RawAxNode[] = [];
+  for (let i = 0; i < count; i++) {
+    nodes.push({
+      role: "button",
+      name: `btn-${i}`,
+      elementHandle: async () => ({ id: `button:${i}` }) as unknown as object,
+    });
+  }
+  return nodes;
+}
+
+/** A 3-level-deep tree: WebArea (depth 1) -> group (depth 2) -> button (depth 3). */
+function nestedTree(): RawAxNode[] {
+  return [
+    {
+      role: "WebArea",
+      name: "page",
+      elementHandle: async () => null,
+      children: [
+        {
+          role: "generic",
+          name: "group",
+          elementHandle: async () => null,
+          children: [
+            {
+              role: "button",
+              name: "Deep Submit",
+              elementHandle: async () => ({ id: "deep-button" }) as unknown as object,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
+describe("buildSnapshot max_nodes/max_depth caps (DW-1.2)", () => {
+  test("test_DW_1_2_max_nodes_clips_and_truncates: max_nodes below the node count clips the tree and sets truncated:true", async () => {
+    const reg = new RefRegistry();
+    const raw = flatInteractiveTree(5);
+    const { tree: out, refs, nodeCount, truncated } = await buildSnapshot(raw, reg, { maxNodes: 3 });
+    expect(truncated).toBe(true);
+    expect(nodeCount).toBe(3);
+    expect(out.length).toBe(3);
+    expect(refs.length).toBe(3);
+  });
+
+  test("test_DW_1_2_max_nodes_refs_match_emitted_nodes_exactly: refs list matches only the emitted interactive nodes", async () => {
+    const reg = new RefRegistry();
+    const raw = flatInteractiveTree(5);
+    const { tree: out, refs } = await buildSnapshot(raw, reg, { maxNodes: 3 });
+    const embedded: string[] = [];
+    const walk = (ns: AxNode[]): void => {
+      for (const n of ns) {
+        if (n.ref) embedded.push(n.ref);
+        if (n.children) walk(n.children);
+      }
+    };
+    walk(out);
+    expect([...refs].sort()).toEqual([...embedded].sort());
+    // The two dropped nodes' refs must NOT be live in the registry — no orphaned
+    // refs minted for nodes that never made it into the returned tree.
+    expect(reg.isLive("r1-4")).toBe(false);
+    expect(reg.isLive("r1-5")).toBe(false);
+  });
+
+  test("max_nodes at/above the actual node count does not truncate (regression: unlimited-equivalent)", async () => {
+    const reg = new RefRegistry();
+    const raw = flatInteractiveTree(3);
+    const { truncated, nodeCount } = await buildSnapshot(raw, reg, { maxNodes: 10 });
+    expect(truncated).toBe(false);
+    expect(nodeCount).toBe(3);
+  });
+
+  test("test_DW_1_2_max_depth_stops_descent: max_depth prunes nodes beyond the cutoff depth", async () => {
+    const reg = new RefRegistry();
+    const raw = nestedTree();
+    const { tree: out, refs, truncated } = await buildSnapshot(raw, reg, { maxDepth: 2 });
+    expect(truncated).toBe(true);
+    // WebArea (depth 1) and group (depth 2) survive; the button (depth 3) is pruned.
+    const webArea = out[0]!;
+    expect(webArea.role).toBe("WebArea");
+    const group = webArea.children?.[0];
+    expect(group?.role).toBe("generic");
+    expect(group?.children).toBeUndefined(); // deep button pruned, no dangling empty array
+    expect(refs.length).toBe(0); // the only interactive node was beyond max_depth
+  });
+
+  test("max_depth deep enough to include everything does not truncate (regression: unlimited-equivalent)", async () => {
+    const reg = new RefRegistry();
+    const raw = nestedTree();
+    const { refs, truncated } = await buildSnapshot(raw, reg, { maxDepth: 5 });
+    expect(truncated).toBe(false);
+    expect(refs.length).toBe(1);
   });
 });

@@ -55,11 +55,32 @@ import * as upload from "./tools/upload.ts";
 import * as download from "./tools/download.ts";
 import * as waitForText from "./tools/wait-for-text.ts";
 
-const INSTRUCTIONS = `Persistent Chrome/CDP control via puppeteer-core, in a hexagonal architecture.
-Phase 1 surface — connection + tabs:
-- browser_connect: open the persistent connection (launch-own Chrome via executable_path/channel, or attach to a
-  running Chrome via exactly one of browser_url / ws_endpoint). Run this first.
-- browser_tabs: list / new / select / close tabs over that connection.
+export const INSTRUCTIONS = `Persistent Chrome/CDP control via puppeteer-core, in a hexagonal architecture (40 tools).
+
+Connect & tabs: browser_connect (mode=launch spawns/reuses a Chrome via executable_path/channel; mode=attach
+  connects via exactly one of browser_url / ws_endpoint — run this first), browser_tabs (list/new/select/close).
+
+Snapshot + refs: browser_snapshot returns a compact accessibility tree; every interactive node carries a
+  stable ref id. Pass refs to browser_click/type/hover/select/press_key/drag/scroll/fill_form/upload as the
+  primary target (selector and x/y coordinates are fallbacks). Re-snapshot after navigation or DOM changes —
+  refs from a prior snapshot go stale.
+
+Interact & navigate: browser_click, browser_type, browser_hover, browser_select, browser_press_key,
+  browser_drag, browser_fill_form, browser_scroll, browser_dismiss, browser_navigate, browser_wait,
+  browser_wait_for_text.
+
+Read / extract (large reads spill to /tmp): browser_dom, browser_accessibility, browser_extract,
+  browser_collect, browser_evaluate, browser_form, browser_screenshot, browser_pdf. A result at or above the
+  size threshold is written to /tmp and the tool returns a path instead of the raw content — Read the returned
+  path (ideally in a subagent) rather than loading it into this conversation. Small results are returned inline.
+
+Performance / network: browser_performance_start_trace, browser_performance_stop_trace,
+  browser_analyze_insight, browser_lighthouse_audit, browser_export_har, browser_route, browser_emulate.
+
+Storage / emulation / capture: browser_storage, browser_storage_state_save, browser_storage_state_restore,
+  browser_emulate_device, browser_geolocation, browser_permissions, browser_screencast_start,
+  browser_screencast_stop, browser_upload, browser_download.
+
 All tools return a structured {code,message,suggestion} error (never a thrown exception) on bad input or a lost
 connection; the connection is held across calls for the life of the server process.`;
 

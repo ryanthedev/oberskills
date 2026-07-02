@@ -158,12 +158,17 @@ export class FakePort implements BrowserPort {
   unstableOnce = false;
   /** Canned AX tree snapshot() returns (with refs already stamped on interactive nodes). */
   cannedTree: AxNode[] | null = null;
+  /** Canned truncated flag snapshot() returns (proves the DTO threads through). */
+  cannedTruncated = false;
+  /** Last opts passed to snapshot() — proves max_depth/max_nodes wiring from the tool. */
+  lastSnapshotOpts: SnapshotOpts | undefined = undefined;
   /** Strategy → wait() should reject with wait_timeout. */
   waitTimeoutFor: WaitStrategy | null = null;
   navigated: string[] = [];
   scrolls: ScrollOpts[] = [];
 
-  async snapshot(_opts?: SnapshotOpts): Promise<SnapshotResult> {
+  async snapshot(opts?: SnapshotOpts): Promise<SnapshotResult> {
+    this.lastSnapshotOpts = opts;
     if (this.unstableOnce) {
       this.unstableOnce = false;
       throw new BrowserError("page_unstable", "document is mid-navigation", "retry browser_snapshot once the page settles");
@@ -171,7 +176,7 @@ export class FakePort implements BrowserPort {
     const tree = this.cannedTree ?? defaultCannedTree();
     const refs = collectRefs(tree);
     this.liveRefs = new Set(refs);
-    return { tree, refs };
+    return { tree, refs, nodeCount: countTreeNodes(tree), truncated: this.cannedTruncated };
   }
 
   async resolveTarget(t: Target): Promise<ResolvedTarget> {
@@ -573,6 +578,16 @@ function collectRefs(nodes: AxNode[]): string[] {
   };
   walk(nodes);
   return out;
+}
+
+/** Total AxNode entries in a tree (root + all descendants), for node_count. */
+function countTreeNodes(nodes: AxNode[]): number {
+  let n = 0;
+  for (const node of nodes) {
+    n += 1;
+    if (node.children) n += countTreeNodes(node.children);
+  }
+  return n;
 }
 
 export { INTERACTIVE_ROLES };

@@ -3,12 +3,21 @@
  * Clicks each element matching selector, reads from readSelector, falls back to
  * body-text diff when nothing matches. Returns nothingExpandable=true when every
  * item yielded null (no new content appeared) — explicit, not false success.
+ *
+ * `items` routes through writePayload (the dom.ts idiom): below threshold it is
+ * inlined; at/above threshold it spills to /tmp (path + tool-sliced preview).
+ * `nothing_expandable` and `count` are always inline — the empty-state signal
+ * must never be withheld.
  */
 import { z } from "zod";
 import { getPort } from "../core/session.ts";
 import { ensureAlive, errFromBrowserError, ok, runPort, type ToolModule, type ToolResult } from "../lib/tool.ts";
 import { isBrowserError } from "../core/errors.ts";
+import { writePayload } from "../lib/payload.ts";
 import { CollectInputSchema, type CollectOut } from "../types.ts";
+
+/** Chars of the serialized items JSON to show in the spilled-branch preview. */
+const PREVIEW_CHARS = 512;
 
 export const name = "browser_collect";
 export const title = "Expand accordions and collect content (click-read-close loop)";
@@ -42,10 +51,16 @@ export async function handler(args: Input): Promise<ToolResult> {
       throw e;
     }
 
+    const json = JSON.stringify(result.items);
+    const written = await writePayload(json, { ext: "json" });
     const out: CollectOut = {
-      items: result.items,
       nothing_expandable: result.nothingExpandable,
       count: result.items.length,
+      bytes: written.bytes,
+      written: written.written,
+      ...(written.written
+        ? { items_path: written.path, preview: json.slice(0, PREVIEW_CHARS) }
+        : { items: result.items }),
     };
 
     if (result.nothingExpandable) {

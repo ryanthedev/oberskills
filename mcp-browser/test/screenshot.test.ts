@@ -74,7 +74,7 @@ class CapturePort implements BrowserPort {
     return { tabId: "t" };
   }
   async snapshot(_o?: SnapshotOpts): Promise<SnapshotResult> {
-    return { tree: [] as AxNode[], refs: [] };
+    return { tree: [] as AxNode[], refs: [], nodeCount: 0, truncated: false };
   }
   async resolveTarget(_t: Target): Promise<ResolvedTarget> {
     return { kind: "ref", token: null };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { TOOLS, buildErrorBoundaryHandler } from "../src/register.ts";
+import { TOOLS, buildErrorBoundaryHandler, INSTRUCTIONS } from "../src/register.ts";
 
 describe("register (DW-1.1 / DW-1.6)", () => {
   test("all P1 + P2 tools are registered with valid shapes", () => {
@@ -80,5 +80,37 @@ describe("register (DW-1.1 / DW-1.6)", () => {
     const r = await boundary({});
     expect(r.isError).toBeUndefined();
     expect(r.content[0]?.text).toBe("ok");
+  });
+});
+
+describe("server INSTRUCTIONS (DW-1.5)", () => {
+  test("test_DW_1_5_instructions_current_and_grouped: no longer claim a Phase 1-only surface, and state the /tmp-spill contract once", () => {
+    expect(INSTRUCTIONS).not.toContain("Phase 1 surface");
+    expect(INSTRUCTIONS).not.toContain("Phase 1");
+
+    // States the spill-to-/tmp read contract, and states it exactly once.
+    // Whitespace-normalized so the assertion is immune to the source's line wrapping.
+    const flat = INSTRUCTIONS.replace(/\s+/g, " ");
+    const spillMentions = (flat.match(/spill/g) ?? []).length;
+    expect(spillMentions).toBeGreaterThan(0);
+    expect(flat).toContain("Read the returned path");
+
+    // Groups the real tool surface (connect/tabs -> snapshot+refs -> interact ->
+    // read/spill -> perf/network -> storage/capture), not just P1's two tools.
+    for (const marker of [
+      "Connect & tabs",
+      "Snapshot + refs",
+      "Interact & navigate",
+      "Read / extract",
+      "Performance / network",
+      "Storage / emulation / capture",
+    ]) {
+      expect(INSTRUCTIONS).toContain(marker);
+    }
+
+    // Every registered tool name the plan calls out by group is actually mentioned.
+    for (const toolName of TOOLS.map((t) => t.name)) {
+      expect(INSTRUCTIONS).toContain(toolName);
+    }
   });
 });

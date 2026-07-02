@@ -90,6 +90,10 @@ export type AxNode = {
 export type SnapshotOpts = {
   /** Include only interesting nodes (default true) — keeps the tree compact. */
   interestingOnly?: boolean;
+  /** Maximum tree depth to descend (root nodes are depth 1). Absent = unlimited. */
+  maxDepth?: number;
+  /** Maximum number of nodes to emit before truncating. Absent = unlimited. */
+  maxNodes?: number;
 };
 
 /** A11y snapshot result: the compact tree plus the flat ref list it minted. */
@@ -97,6 +101,10 @@ export type SnapshotResult = {
   tree: AxNode[];
   /** Every ref present in `tree`, in document order. tree↔refs are consistent. */
   refs: string[];
+  /** Count of AxNode entries actually present in `tree` (post depth/node clipping). */
+  nodeCount: number;
+  /** True when maxDepth or maxNodes caused at least one node to be pruned. */
+  truncated: boolean;
 };
 
 export type NavResult = {

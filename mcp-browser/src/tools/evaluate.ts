@@ -3,13 +3,22 @@
  * Auto-injects querySelectorDeep / querySelectorAllDeep via buildEvaluateExpression.
  * Page-side throws surface as evaluate_failed (structured err, not a crash).
  * The expression is NEVER eval'd in the Node process — it's passed to page.evaluate.
+ *
+ * The result routes through writePayload (the dom.ts idiom): below threshold the
+ * result is inlined; at/above threshold it spills to /tmp (path + tool-sliced
+ * preview). A non-serializable/cyclic result NEVER leaks the raw object — the
+ * "[non-serializable value]" descriptor string is inlined instead.
  */
 import { z } from "zod";
 import { getPort } from "../core/session.ts";
 import { ensureAlive, errFromBrowserError, ok, runPort, type ToolModule, type ToolResult } from "../lib/tool.ts";
 import { isBrowserError } from "../core/errors.ts";
 import { buildEvaluateExpression } from "../lib/dom-helpers.ts";
+import { writePayload } from "../lib/payload.ts";
 import { EvaluateInputSchema, type EvaluateOut } from "../types.ts";
+
+/** Chars of the serialized result to show in the spilled-branch preview. */
+const PREVIEW_CHARS = 512;
 
 export const name = "browser_evaluate";
 export const title = "Execute JavaScript in the page context";
@@ -42,18 +51,31 @@ export async function handler(args: Input): Promise<ToolResult> {
 
     // Handle non-serializable or undefined return values gracefully.
     let serialized: string;
+    let resultForOutput: unknown;
     if (result === undefined || result === null) {
       serialized = "null";
+      resultForOutput = null;
     } else {
       try {
         serialized = JSON.stringify(result);
+        resultForOutput = result;
       } catch {
-        // Cyclic or otherwise non-serializable — surface as a safe descriptor.
+        // Cyclic or otherwise non-serializable — surface as a safe descriptor,
+        // NEVER the raw object (it would also fail JSON serialization at the
+        // MCP transport).
         serialized = "[non-serializable value]";
+        resultForOutput = serialized;
       }
     }
 
-    const out: EvaluateOut = { result: result === undefined ? null : result };
+    const written = await writePayload(serialized, { ext: "json" });
+    const out: EvaluateOut = {
+      bytes: written.bytes,
+      written: written.written,
+      ...(written.written
+        ? { result_path: written.path, preview: serialized.slice(0, PREVIEW_CHARS) }
+        : { result: resultForOutput }),
+    };
     return ok(`evaluate → ${serialized.slice(0, 256)}`, out);
   });
 }
