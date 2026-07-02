@@ -66,12 +66,22 @@ type Input = z.output<z.ZodObject<typeof inputShape>>;
 
 export async function handler(args: Input): Promise<ToolResult> {
   const skillPath = resolve(args.skill_path);
-  if (!existsSync(skillPath)) return err(`skill_path does not exist: ${skillPath}`);
+  if (!existsSync(skillPath)) {
+    return err(`skill_path does not exist: ${skillPath}`, {
+      code: "skill_path_missing",
+      suggestion: "Pass an existing skill directory path in skill_path.",
+    });
+  }
 
   const fm = parseSkillDir(skillPath);
   const skillName = fm.name ?? skillPath.split("/").filter(Boolean).pop() ?? "skill";
   const surfaceDescription = args.description ?? fm.description;
-  if (!surfaceDescription) return err("skill has no description and none was provided");
+  if (!surfaceDescription) {
+    return err("skill has no description and none was provided", {
+      code: "missing_description",
+      suggestion: "Add a description to the skill's SKILL.md frontmatter, or pass description explicitly.",
+    });
+  }
   const whenToUse = args.when_to_use ?? fm.when_to_use;
 
   const surface: ListingSurface = { name: skillName, description: surfaceDescription, whenToUse };
@@ -85,7 +95,12 @@ export async function handler(args: Input): Promise<ToolResult> {
     queries = args.queries;
   } else if (args.queries_path) {
     const parsed = TriggerQuerySetSchema.safeParse(JSON.parse(readFileSync(resolve(args.queries_path), "utf8")));
-    if (!parsed.success) return err(`queries_path is not a valid query set: ${parsed.error.message}`);
+    if (!parsed.success) {
+      return err(`queries_path is not a valid query set: ${parsed.error.message}`, {
+        code: "invalid_query_set",
+        suggestion: "Fix queries_path to point at a JSON array of {query, should_trigger} objects.",
+      });
+    }
     queries = parsed.data;
   } else {
     const generated = await generateTriggerQueries({
@@ -95,7 +110,12 @@ export async function handler(args: Input): Promise<ToolResult> {
       model: "sonnet",
       ledger,
     });
-    if (!generated.queries) return err(`query generation failed: ${generated.error}`);
+    if (!generated.queries) {
+      return err(`query generation failed: ${generated.error}`, {
+        code: "query_generation_failed",
+        suggestion: "Retry, or supply queries or queries_path explicitly instead of relying on generation.",
+      });
+    }
     queries = generated.queries;
     generatedQueriesPath = writeJson(wsRoot, `${wsRoot}/trigger-queries.json`, queries);
   }

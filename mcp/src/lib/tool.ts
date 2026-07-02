@@ -2,8 +2,16 @@
  * Shared tool-handler result helpers (penman pattern): every handler returns
  * ok()/err() and is wrapped in try/catch by the registrar. friendlyMessage
  * whitelists what it echoes — never raw env, never unbounded child stderr.
+ *
+ * err()'s optional {code, suggestion} envelope mirrors mcp-browser's
+ * BrowserErrorShape ({code, message, suggestion}): when supplied it is emitted
+ * as structuredContent alongside the unchanged text, so callers get a
+ * machine-readable code and a concrete next step without losing the plain-text
+ * message. The type requires suggestion whenever code is given — it is
+ * structurally impossible to pass one without the other.
  */
 import type { z } from "zod";
+import type { ErrorCode } from "../types.ts";
 
 export type ToolResult = {
   content: { type: "text"; text: string }[];
@@ -32,8 +40,15 @@ export function ok(text: string, structured?: Record<string, unknown>): ToolResu
   };
 }
 
-export function err(text: string): ToolResult {
-  return { isError: true, content: [{ type: "text", text }] };
+/** Concrete next step for the caller — always populated, never empty, whenever a code is given. */
+export type ErrorEnvelope = { code: ErrorCode; suggestion: string };
+
+export function err(text: string, envelope?: ErrorEnvelope): ToolResult {
+  return {
+    isError: true,
+    content: [{ type: "text", text }],
+    ...(envelope ? { structuredContent: { code: envelope.code, message: text, suggestion: envelope.suggestion } } : {}),
+  };
 }
 
 export function friendlyMessage(e: unknown): string {

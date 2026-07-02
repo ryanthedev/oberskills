@@ -37,9 +37,17 @@ type Input = z.output<z.ZodObject<typeof inputShape>>;
 
 export async function handler(args: Input): Promise<ToolResult> {
   const runDir = resolve(args.run_dir);
-  if (!existsSync(runDir)) return err(`run_dir does not exist: ${runDir}`);
+  if (!existsSync(runDir)) {
+    return err(`run_dir does not exist: ${runDir}`, {
+      code: "run_dir_missing",
+      suggestion: "Pass an existing run directory path in run_dir.",
+    });
+  }
   if (!existsSync(join(runDir, "transcript.jsonl")) && !existsSync(join(runDir, "outputs"))) {
-    return err(`run_dir has neither transcript.jsonl nor outputs/: ${runDir}`);
+    return err(`run_dir has neither transcript.jsonl nor outputs/: ${runDir}`, {
+      code: "invalid_run_dir",
+      suggestion: "Point run_dir at a directory produced by run_eval (containing transcript.jsonl or outputs/).",
+    });
   }
 
   const { grading, gradingPath, cost, error } = await gradeRunDir({
@@ -51,7 +59,12 @@ export async function handler(args: Input): Promise<ToolResult> {
     budgetUsd: args.budget_usd,
   });
 
-  if (!grading) return err(`grading failed: ${error}`);
+  if (!grading) {
+    return err(`grading failed: ${error}`, {
+      code: "grading_failed",
+      suggestion: "Check the grader error and retry, or grade with fewer/simpler expectations.",
+    });
+  }
 
   const lines = [
     `graded ${grading.summary.passed}/${grading.summary.total} passed (pass_rate ${grading.summary.pass_rate}) — ${gradingPath}`,

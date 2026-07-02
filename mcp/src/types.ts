@@ -15,6 +15,38 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Structured tool errors (lib/tool.ts's err() envelope). Plain type, not a zod
+// schema — like mcp-browser's BrowserErrorCode, this is only ever emitted by
+// server code, never parsed off disk or the network, so no runtime validation
+// is needed. One code per distinct failure *reason*, not per call site: e.g.
+// every "skill_path does not exist" check across tools/** shares
+// skill_path_missing rather than getting its own per-file code.
+// ---------------------------------------------------------------------------
+
+export type ErrorCode =
+  | "skill_path_missing" // skill_path argument does not point at an existing directory
+  | "missing_description" // skill has no description and none was provided
+  | "invalid_query_set" // queries_path is not a valid {query, should_trigger}[] JSON file
+  | "query_generation_failed" // trigger-query generation call failed or returned nothing
+  | "invalid_holdout_split" // holdout fraction leaves the held-out test split empty
+  | "missing_optimization_state" // action != "start" but no workspace state file exists yet
+  | "corrupt_optimization_state" // workspace state file failed schema validation
+  | "validation_failed" // validate_skill package requested but validation has errors
+  | "evals_path_missing" // evals_path argument does not point at an existing file
+  | "missing_old_skill_path" // configurations includes old_skill but old_skill_path is unset
+  | "invalid_evals_file" // evals_path could not be parsed as a house or official evals file
+  | "unknown_eval_id" // eval_id is not present in the loaded evals file
+  | "invalid_eval_prompt" // composing the eval's prompt (e.g. pressure blocks) failed
+  | "eval_file_missing" // an eval's files[] entry does not exist on disk
+  | "run_dir_missing" // run_dir argument does not point at an existing directory
+  | "invalid_run_dir" // run_dir has neither transcript.jsonl nor outputs/
+  | "grading_failed" // the grader model call failed or returned nothing
+  | "iteration_dir_missing" // iteration_dir argument does not point at an existing directory
+  | "no_graded_runs" // no graded run directories were found under iteration_dir
+  | "output_path_missing" // output_a_path/output_b_path does not point at an existing directory
+  | "judge_failed"; // the comparison judge model call failed or returned nothing
+
+// ---------------------------------------------------------------------------
 // Pressure blocks + rationalization patterns (data files in mcp/data/)
 // ---------------------------------------------------------------------------
 

@@ -79,10 +79,20 @@ function generateMarkdown(b: Benchmark): string {
 
 export async function handler(args: Input): Promise<ToolResult> {
   const iterDir = resolve(args.iteration_dir);
-  if (!existsSync(iterDir)) return err(`iteration_dir does not exist: ${iterDir}`);
+  if (!existsSync(iterDir)) {
+    return err(`iteration_dir does not exist: ${iterDir}`, {
+      code: "iteration_dir_missing",
+      suggestion: "Pass an existing iteration directory path in iteration_dir.",
+    });
+  }
 
   const { runs: walked, notes } = walkIterationDir(iterDir);
-  if (walked.length === 0) return err(`no graded runs found under ${iterDir}`);
+  if (walked.length === 0) {
+    return err(`no graded runs found under ${iterDir}`, {
+      code: "no_graded_runs",
+      suggestion: "Run run_eval or grade_run first so graded runs exist under iteration_dir.",
+    });
+  }
 
   const runs: BenchmarkRun[] = walked.map((w) => {
     const summary = (w.grading.summary ?? {}) as Record<string, unknown>;

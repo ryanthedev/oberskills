@@ -99,8 +99,18 @@ export function resolveComparison(output: ComparisonJudgeOutput, positionsSwappe
 export async function handler(args: Input): Promise<ToolResult> {
   const aPath = resolve(args.output_a_path);
   const bPath = resolve(args.output_b_path);
-  if (!existsSync(aPath)) return err(`output_a_path does not exist: ${aPath}`);
-  if (!existsSync(bPath)) return err(`output_b_path does not exist: ${bPath}`);
+  if (!existsSync(aPath)) {
+    return err(`output_a_path does not exist: ${aPath}`, {
+      code: "output_path_missing",
+      suggestion: "Pass an existing directory path in output_a_path.",
+    });
+  }
+  if (!existsSync(bPath)) {
+    return err(`output_b_path does not exist: ${bPath}`, {
+      code: "output_path_missing",
+      suggestion: "Pass an existing directory path in output_b_path.",
+    });
+  }
 
   const positionsSwapped = Math.random() < 0.5;
   const stage = mkdtempSync(join(tmpdir(), "skill-eval-compare-"));
@@ -132,7 +142,12 @@ export async function handler(args: Input): Promise<ToolResult> {
       ComparisonJudgeOutputSchema,
       180_000,
     );
-    if (!output) return err(`comparison judge failed: ${error}`);
+    if (!output) {
+      return err(`comparison judge failed: ${error}`, {
+        code: "judge_failed",
+        suggestion: "Retry, or lower budget_usd pressure by simplifying assertions.",
+      });
+    }
 
     // De-shuffle + recompute totals/winner in TS.
     const comparison = resolveComparison(output, positionsSwapped);

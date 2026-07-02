@@ -149,11 +149,24 @@ export function statusFromResult(args: {
 
 export async function handler(args: Input): Promise<ToolResult> {
   const skillPath = resolve(args.skill_path);
-  if (!existsSync(skillPath)) return err(`skill_path does not exist: ${skillPath}`);
+  if (!existsSync(skillPath)) {
+    return err(`skill_path does not exist: ${skillPath}`, {
+      code: "skill_path_missing",
+      suggestion: "Pass an existing skill directory path in skill_path.",
+    });
+  }
   const evalsPath = resolve(args.evals_path);
-  if (!existsSync(evalsPath)) return err(`evals_path does not exist: ${evalsPath}`);
+  if (!existsSync(evalsPath)) {
+    return err(`evals_path does not exist: ${evalsPath}`, {
+      code: "evals_path_missing",
+      suggestion: "Pass an existing evals.json path in evals_path.",
+    });
+  }
   if (args.configurations.includes("old_skill") && !args.old_skill_path) {
-    return err("configurations include old_skill but old_skill_path is not set");
+    return err("configurations include old_skill but old_skill_path is not set", {
+      code: "missing_old_skill_path",
+      suggestion: 'Set old_skill_path when configurations includes "old_skill".',
+    });
   }
 
   const fm = parseSkillDir(skillPath);
@@ -163,18 +176,27 @@ export async function handler(args: Input): Promise<ToolResult> {
   try {
     evalsFile = loadEvalsFile(evalsPath, skillName);
   } catch (e) {
-    return err(`could not load evals file: ${e instanceof Error ? e.message : String(e)}`);
+    return err(`could not load evals file: ${e instanceof Error ? e.message : String(e)}`, {
+      code: "invalid_evals_file",
+      suggestion: "Fix evals_path to point at a valid evals.json (house or official Anthropic shape).",
+    });
   }
   const evalDef = evalsFile.evals.find((ev) => ev.id === args.eval_id);
   if (!evalDef) {
-    return err(`no eval with id "${args.eval_id}" — available: ${evalsFile.evals.map((ev) => ev.id).join(", ")}`);
+    return err(`no eval with id "${args.eval_id}" — available: ${evalsFile.evals.map((ev) => ev.id).join(", ")}`, {
+      code: "unknown_eval_id",
+      suggestion: "Pass one of the eval ids listed in the error message.",
+    });
   }
 
   let prompt: string;
   try {
     prompt = composePrompt(evalDef);
   } catch (e) {
-    return err(e instanceof Error ? e.message : String(e));
+    return err(e instanceof Error ? e.message : String(e), {
+      code: "invalid_eval_prompt",
+      suggestion: "Check the eval definition for a malformed prompt or pressure_blocks field.",
+    });
   }
   const isPressure = (evalDef.pressure_blocks?.length ?? 0) >= 3;
 
@@ -183,7 +205,10 @@ export async function handler(args: Input): Promise<ToolResult> {
   for (const f of evalDef.files) {
     const src = isAbsolute(f) ? f : join(dirname(evalsPath), f);
     if (!existsSync(src)) {
-      return err(`eval "${evalDef.id}" declares files[] entry "${f}" but ${src} does not exist`);
+      return err(`eval "${evalDef.id}" declares files[] entry "${f}" but ${src} does not exist`, {
+        code: "eval_file_missing",
+        suggestion: "Fix the eval's files[] entry to point at an existing fixture file.",
+      });
     }
   }
 

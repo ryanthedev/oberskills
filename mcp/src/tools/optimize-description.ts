@@ -198,7 +198,12 @@ async function proposeImprovement(args: {
 
 export async function handler(args: Input): Promise<ToolResult> {
   const skillPath = resolve(args.skill_path);
-  if (!existsSync(skillPath)) return err(`skill_path does not exist: ${skillPath}`);
+  if (!existsSync(skillPath)) {
+    return err(`skill_path does not exist: ${skillPath}`, {
+      code: "skill_path_missing",
+      suggestion: "Pass an existing skill directory path in skill_path.",
+    });
+  }
   const wsRoot = workspaceRoot(skillPath);
   const statePath = join(wsRoot, STATE_FILE);
   const ledger = new CostLedger(args.budget_usd);
@@ -209,14 +214,24 @@ export async function handler(args: Input): Promise<ToolResult> {
   if (args.action === "start") {
     const fm = parseSkillDir(skillPath);
     const skillName = fm.name ?? skillPath.split("/").filter(Boolean).pop() ?? "skill";
-    if (!fm.description) return err("skill has no description to optimize");
+    if (!fm.description) {
+      return err("skill has no description to optimize", {
+        code: "missing_description",
+        suggestion: "Add a description to the skill's SKILL.md frontmatter before optimizing.",
+      });
+    }
 
     let queries: TriggerQuery[];
     if (args.queries && args.queries.length > 0) {
       queries = args.queries;
     } else if (args.queries_path) {
       const parsed = TriggerQuerySetSchema.safeParse(JSON.parse(readFileSync(resolve(args.queries_path), "utf8")));
-      if (!parsed.success) return err(`queries_path is not a valid query set: ${parsed.error.message}`);
+      if (!parsed.success) {
+        return err(`queries_path is not a valid query set: ${parsed.error.message}`, {
+          code: "invalid_query_set",
+          suggestion: "Fix queries_path to point at a JSON array of {query, should_trigger} objects.",
+        });
+      }
       queries = parsed.data;
     } else {
       const generated = await generateTriggerQueries({
@@ -226,7 +241,12 @@ export async function handler(args: Input): Promise<ToolResult> {
         model: args.improve_model,
         ledger,
       });
-      if (!generated.queries) return err(`query generation failed: ${generated.error}`);
+      if (!generated.queries) {
+        return err(`query generation failed: ${generated.error}`, {
+          code: "query_generation_failed",
+          suggestion: "Retry, or supply queries or queries_path explicitly instead of relying on generation.",
+        });
+      }
       queries = generated.queries;
       writeJson(wsRoot, join(wsRoot, "trigger-queries.json"), queries);
     }
@@ -236,6 +256,10 @@ export async function handler(args: Input): Promise<ToolResult> {
       return err(
         `holdout test split is empty (${queries.length} queries at holdout ${args.holdout}) — ` +
           "held-out selection is impossible; provide more queries or raise holdout",
+        {
+          code: "invalid_holdout_split",
+          suggestion: "Provide more queries or lower the holdout fraction so the test split is non-empty.",
+        },
       );
     }
     // An empty stratum in the test split blinds held-out selection on one axis.
@@ -269,10 +293,18 @@ export async function handler(args: Input): Promise<ToolResult> {
     };
   } else {
     if (!existsSync(statePath)) {
-      return err(`no optimization state at ${statePath} — call with action: "start" first`);
+      return err(`no optimization state at ${statePath} — call with action: "start" first`, {
+        code: "missing_optimization_state",
+        suggestion: 'Call optimize_description with action: "start" first.',
+      });
     }
     const parsed = OptimizationStateSchema.safeParse(JSON.parse(readFileSync(statePath, "utf8")));
-    if (!parsed.success) return err(`optimization state is corrupt: ${parsed.error.message}`);
+    if (!parsed.success) {
+      return err(`optimization state is corrupt: ${parsed.error.message}`, {
+        code: "corrupt_optimization_state",
+        suggestion: 'Delete the workspace state file and re-run action: "start" to regenerate it.',
+      });
+    }
     state = parsed.data;
   }
 

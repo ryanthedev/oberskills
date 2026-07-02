@@ -361,7 +361,12 @@ type Input = z.output<z.ZodObject<typeof inputShape>>;
 
 export async function handler(args: Input): Promise<ToolResult> {
   const root = resolve(args.skill_path);
-  if (!existsSync(root)) return err(`skill_path does not exist: ${root}`);
+  if (!existsSync(root)) {
+    return err(`skill_path does not exist: ${root}`, {
+      code: "skill_path_missing",
+      suggestion: "Pass an existing skill directory path in skill_path.",
+    });
+  }
 
   const result = validateSkill(root);
 
@@ -371,6 +376,10 @@ export async function handler(args: Input): Promise<ToolResult> {
       return err(
         `refusing to package: ${result.errors.length} validation error(s):\n` +
           result.errors.map((e) => `- [${e.rule}] ${e.message}`).join("\n"),
+        {
+          code: "validation_failed",
+          suggestion: "Fix the listed validation error(s) and re-run before packaging.",
+        },
       );
     }
     const { path } = packageSkill(root, args.output_dir ?? dirname(root));
