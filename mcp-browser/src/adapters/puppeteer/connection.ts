@@ -324,8 +324,23 @@ export class PuppeteerConnectionManager implements BrowserPort {
     );
   }
 
-  async screenshot(opts?: { fullPage?: boolean }): Promise<Buffer> {
+  async screenshot(opts?: { fullPage?: boolean; selector?: string }): Promise<Buffer> {
     const page = await this.activePage();
+    if (opts?.selector) {
+      // Element-scoped capture: fewer pixels than the page → fewer image tokens.
+      // Takes precedence over fullPage (element bounds define the frame). Mirrors
+      // readDom's selector idiom and its read_failed error on no match.
+      const el = await page.$(opts.selector);
+      if (!el) {
+        throw new BrowserError(
+          "read_failed",
+          `selector matched nothing: ${opts.selector}`,
+          "check the selector or run browser_snapshot to verify the element exists",
+        );
+      }
+      const data = await el.screenshot({ type: "png" });
+      return Buffer.from(data);
+    }
     const data = await page.screenshot({ fullPage: opts?.fullPage ?? false, type: "png" });
     return Buffer.from(data);
   }

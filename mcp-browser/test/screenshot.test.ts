@@ -87,7 +87,9 @@ class CapturePort implements BrowserPort {
   async wait(_s: WaitStrategy, _o?: WaitOpts): Promise<void> {}
   async scroll(_o: ScrollOpts): Promise<void> {}
   // capture hook the screenshot tool calls (P2-added port method):
-  async screenshot(): Promise<Buffer> {
+  lastScreenshotOpts?: { fullPage?: boolean; selector?: string };
+  async screenshot(opts?: { fullPage?: boolean; selector?: string }): Promise<Buffer> {
+    this.lastScreenshotOpts = opts;
     return this.png;
   }
   // P3 stubs — not under test here; CapturePort only tests the screenshot path.
@@ -122,6 +124,20 @@ class CapturePort implements BrowserPort {
   async waitForText(_o: WaitForTextOpts): Promise<void> {}
 }
 
+/**
+ * Build a byte buffer that is a decodable PNG for the purpose of pngDimensions:
+ * valid 8-byte signature + width/height uint32s at offsets 16/20, padded to `size`
+ * so it also crosses PAYLOAD_THRESHOLD_BYTES and writes to disk.
+ */
+function fakePng(width: number, height: number, size: number): Buffer {
+  const buf = Buffer.alloc(Math.max(size, 24), 0);
+  const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  for (let i = 0; i < sig.length; i++) buf[i] = sig[i]!;
+  buf.writeUInt32BE(width, 16);
+  buf.writeUInt32BE(height, 20);
+  return buf;
+}
+
 describe("screenshot tool (writes via the writePayload seam)", () => {
   afterEach(() => resetSession());
 
@@ -140,6 +156,43 @@ describe("screenshot tool (writes via the writePayload seam)", () => {
     expect(s.bytes).toBe(png.length);
     expect(existsSync(s.path as string)).toBe(true);
     rmSync(s.path as string, { force: true });
+  });
+
+  test("parses width/height from the PNG header into the result and text summary", async () => {
+    const { PAYLOAD_THRESHOLD_BYTES } = await import("../src/lib/payload.ts");
+    const png = fakePng(1280, 720, PAYLOAD_THRESHOLD_BYTES + 1);
+    setPort(new CapturePort(png));
+    const r = await screenshot.handler({ full_page: false });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.width).toBe(1280);
+    expect(s.height).toBe(720);
+    expect(r.content[0]?.text).toContain("1280×720px");
+    rmSync(s.path as string, { force: true });
+  });
+
+  test("omits width/height when the bytes are not a decodable PNG", async () => {
+    const { PAYLOAD_THRESHOLD_BYTES } = await import("../src/lib/payload.ts");
+    const notPng = Buffer.alloc(PAYLOAD_THRESHOLD_BYTES + 1, 0x00); // no PNG signature
+    setPort(new CapturePort(notPng));
+    const r = await screenshot.handler({ full_page: false });
+    const s = structured(r);
+    expect(s.width).toBeUndefined();
+    expect(s.height).toBeUndefined();
+    rmSync(s.path as string, { force: true });
+  });
+
+  test("forwards selector to the port (element-scoped capture)", async () => {
+    const png = fakePng(200, 100, 8);
+    const port = new CapturePort(png);
+    setPort(port);
+    const r = await screenshot.handler({ full_page: true, selector: "#main .card" });
+    expect(r.isError).toBeUndefined();
+    expect(port.lastScreenshotOpts?.selector).toBe("#main .card");
+    // full_page is still forwarded; the adapter decides selector takes precedence.
+    expect(port.lastScreenshotOpts?.fullPage).toBe(true);
+    const s = structured(r);
+    if (typeof s.path === "string" && s.path.length > 0) rmSync(s.path, { force: true });
   });
 
   test("a dead connection returns connection_lost", async () => {

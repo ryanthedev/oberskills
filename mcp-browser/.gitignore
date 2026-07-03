@@ -1,2 +1,4 @@
-node_modules/
+# Match the dir and the plugin-install symlink (…/oberskills-inline/…/node_modules).
+# A trailing slash would match only a real directory, not the symlink.
+node_modules
 *.log

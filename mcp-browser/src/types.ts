@@ -222,6 +222,14 @@ export const ScrollInputSchema = {
 
 export const ScreenshotInputSchema = {
   full_page: z.boolean().default(false).describe("Capture the full scrollable page rather than the viewport."),
+  selector: z
+    .string()
+    .optional()
+    .describe(
+      "CSS selector to scope the capture to a single element. Far fewer pixels than a full page, so far " +
+        "fewer image tokens when the file is read. When set, full_page is ignored. Errors read_failed if " +
+        "nothing matches.",
+    ),
 };
 
 // --- structured result DTOs ------------------------------------------------
@@ -234,6 +242,14 @@ export type NavResultOut = {
 export type ScreenshotOut = {
   path: string;
   bytes: number;
+  /**
+   * PNG pixel dimensions, read from the image header when parseable (absent if not
+   * a decodable PNG). Image token cost is dimension-driven, not byte-driven —
+   * roughly (width × height) / 750 tokens — so these let a caller judge the read
+   * cost and decide whether to route the Read through a subagent.
+   */
+  width?: number;
+  height?: number;
 };
 
 /**

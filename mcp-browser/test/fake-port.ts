@@ -236,7 +236,9 @@ export class FakePort implements BrowserPort {
     this.scrolls.push(opts);
   }
 
-  async screenshot(_opts?: { fullPage?: boolean }): Promise<Buffer> {
+  lastScreenshotOpts?: { fullPage?: boolean; selector?: string };
+  async screenshot(opts?: { fullPage?: boolean; selector?: string }): Promise<Buffer> {
+    this.lastScreenshotOpts = opts;
     return Buffer.from("fake-png");
   }
 

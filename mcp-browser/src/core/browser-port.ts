@@ -171,8 +171,11 @@ export interface BrowserPort {
   /**
    * Capture a PNG screenshot of the active page. Returns raw bytes; the tool
    * writes them to disk via the writePayload seam (P3 fills threshold logic).
+   * `selector` scopes the capture to a single element (fewer pixels → fewer image
+   * tokens); when present it takes precedence over `fullPage`. A selector that
+   * matches nothing throws read_failed.
    */
-  screenshot(opts?: { fullPage?: boolean }): Promise<Buffer>;
+  screenshot(opts?: { fullPage?: boolean; selector?: string }): Promise<Buffer>;
 
   // --- Phase 3: read / extract --------------------------------------------
 
