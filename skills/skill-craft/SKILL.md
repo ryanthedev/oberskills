@@ -4,14 +4,13 @@ description: Create, evaluate, and review Claude Code skills and reusable agent 
 when_to_use: Trigger on "create a skill", "write a skill for", "review this skill", "skill evals", "benchmark the skill", "trigger eval", "optimize the description", "package the skill", "should this be a skill or a hook".
 argument-hint: "[create <topic> | review <path>]"
 allowed-tools:
-  # Enumeration may be simplified to the wildcard mcp__plugin_oberskills_skill-eval__* once verified (ruling R9).
-  - mcp__plugin_oberskills_skill-eval__validate_skill
-  - mcp__plugin_oberskills_skill-eval__test_triggers
-  - mcp__plugin_oberskills_skill-eval__optimize_description
-  - mcp__plugin_oberskills_skill-eval__run_eval
-  - mcp__plugin_oberskills_skill-eval__grade_run
-  - mcp__plugin_oberskills_skill-eval__aggregate_benchmark
-  - mcp__plugin_oberskills_skill-eval__compare_outputs
+  - skill-eval:validate_skill
+  - skill-eval:test_triggers
+  - skill-eval:optimize_description
+  - skill-eval:run_eval
+  - skill-eval:grade_run
+  - skill-eval:aggregate_benchmark
+  - skill-eval:compare_outputs
 ---
 
 # skill-craft
@@ -23,9 +22,9 @@ Create skills through baseline-first evals, or audit existing ones. Judgment wor
 | Intent | Mode | Load |
 |---|---|---|
 | Build something new ("create/write a skill for X") | CREATE | Pipeline below; references per phase |
-| Audit an existing skill (path to a SKILL.md or skill directory) | REVIEW | `${CLAUDE_SKILL_DIR}/references/review-skill.md` |
+| Audit an existing skill (path to a SKILL.md or skill directory) | REVIEW | `references/review-skill.md` in this skill directory |
 | Audit the prompt body wording inside an agent definition, or a dispatch brief | Redirect | Invoke `oberskills:prompt` REVIEW (the file as an artifact — structure, frontmatter, evals — stays here) |
-| Improve an existing skill | CREATE from phase 3 (BASELINE), with an `old_skill` snapshot as the baseline config | `${CLAUDE_SKILL_DIR}/references/eval.md` |
+| Improve an existing skill | CREATE from phase 3 (BASELINE), with an `old_skill` snapshot as the baseline config | `references/eval.md` in this skill directory |
 | Unclear or ambiguous request | Ask, or invoke `oberskills:clarify` for structured decomposition | — |
 
 ## Should this exist? (pre-gate)
@@ -33,7 +32,7 @@ Create skills through baseline-first evals, or audit existing ones. Judgment wor
 - Can Claude already do this well? Run the task once without a skill. No documented failure means don't build — if you didn't watch an agent fail without the skill, you don't know whether the skill teaches the right thing.
 - If you can't write three evals for it, don't build it.
 - Will it be used 5+ times? One-off → just do the task.
-- Always-relevant and small? → CLAUDE.md, not a skill (passive inline context beats skill retrieval for content needed on every task — Vercel eval; details in `${CLAUDE_SKILL_DIR}/references/design.md`).
+- Always-relevant and small? → CLAUDE.md, not a skill (passive inline context beats skill retrieval for content needed on every task — Vercel eval; details in `references/design.md` in this skill directory).
 
 ## What to build
 
@@ -43,22 +42,22 @@ Create skills through baseline-first evals, or audit existing ones. Judgment wor
 | User-controlled side-effect macro (deploy, release, publish) | Skill + `disable-model-invocation: true` | You don't want Claude deciding to deploy because the code looks ready; also removes the description from context |
 | Background conventions Claude applies, user never invokes | Skill + `user-invocable: false` | Reference-content archetype |
 | Work that floods the main context (logs, search results, bulk reads) | **Subagent** | Isolation: explores with tens of thousands of tokens, returns a distilled summary (sizing norm: the `oberskills:agent` skill) |
-| Guaranteed enforcement on every event (block a tool call, gate a commit) | **Hook** | Prose can't guarantee execution; hooks run in the harness. Measured: a forced-eval hook reached near-perfect activation where description-level fixes plateaued — numbers in `${CLAUDE_SKILL_DIR}/references/design.md` (Spence) |
+| Guaranteed enforcement on every event (block a tool call, gate a commit) | **Hook** | Prose can't guarantee execution; hooks run in the harness. Measured: a forced-eval hook reached near-perfect activation where description-level fixes plateaued — numbers in `references/design.md` in this skill directory (Spence) |
 | Deterministic, repeated computation | **Script bundled in a skill** | Executed, not loaded — only output costs tokens |
 | Always-relevant, small project facts | **CLAUDE.md** | Passive context is consistently available; no triggering decision to miss |
 | Both reusable instructions AND isolation | Skill + `context: fork` (+ `agent:`) — task content with an actionable prompt only | Guideline-only forked skills return nothing useful |
 
-`.claude/commands/*.md` files are legacy: same frontmatter, no supporting files. New artifacts get a skill directory. Full decision detail: `${CLAUDE_SKILL_DIR}/references/design.md`.
+`.claude/commands/*.md` files are legacy: same frontmatter, no supporting files. New artifacts get a skill directory. Full decision detail: `references/design.md` in this skill directory.
 
 ## CREATE pipeline
 
 | # | Phase | Load | skill-eval tools | Gate — proceed only when |
 |---|---|---|---|---|
 | 1 | INTAKE | — | — | Problem stated; 3+ natural trigger phrasings collected; pre-gate above passed |
-| 2 | DESIGN | `${CLAUDE_SKILL_DIR}/references/design.md` | — | Artifact type chosen from the table above; file structure and freedom levels planned; complexity contract stated (non-applicability, cost/fast path, fallback) |
-| 3 | BASELINE | `${CLAUDE_SKILL_DIR}/references/eval.md` | `run_eval` (`configurations: ["without_skill"]`, one call per eval id) | `evals.json` with ≥3 evals exists; baseline runs complete; specific failures documented from grading output |
-| 4 | BUILD | `${CLAUDE_SKILL_DIR}/references/build.md` | `validate_skill` | Minimal SKILL.md written that addresses the documented baseline gaps; `validate_skill` returns zero errors |
-| 5 | EVAL | `${CLAUDE_SKILL_DIR}/references/eval.md` | `run_eval`, `aggregate_benchmark`, `test_triggers`, `optimize_description`, `compare_outputs` | with-skill beats baseline on the gap assertions; trigger accuracy passes in both directions; pressure gates pass (discipline skills). Otherwise iterate — max 3 iterations, then redesign |
+| 2 | DESIGN | `references/design.md` in this skill directory | — | Artifact type chosen from the table above; file structure and freedom levels planned; complexity contract stated (non-applicability, cost/fast path, fallback) |
+| 3 | BASELINE | `references/eval.md` in this skill directory | `run_eval` (`configurations: ["without_skill"]`, one call per eval id) | `evals.json` with ≥3 evals exists; baseline runs complete; specific failures documented from grading output |
+| 4 | BUILD | `references/build.md` in this skill directory | `validate_skill` | Minimal SKILL.md written that addresses the documented baseline gaps; `validate_skill` returns zero errors |
+| 5 | EVAL | `references/eval.md` in this skill directory | `run_eval`, `aggregate_benchmark`, `test_triggers`, `optimize_description`, `compare_outputs` | with-skill beats baseline on the gap assertions; trigger accuracy passes in both directions; pressure gates pass (discipline skills). Otherwise iterate — max 3 iterations, then redesign |
 | 6 | SHIP | — | `validate_skill` (`package: true` if a `.skill` file is wanted) | Zero errors; warnings resolved or explicitly justified to the user; user checkpoint passed |
 
 Write the skill *after* the baseline. The baseline failures are the spec.
@@ -83,11 +82,11 @@ When this summary and the tool disagree, trust the tool.
 - Third person, always — the description is injected into the system prompt.
 - Capability nouns are fine; **never process steps** — a workflow summary becomes a shortcut Claude follows instead of reading the body.
 - The exclusion clause lists *near-misses* (tasks that share keywords but belong elsewhere), not absurd negatives.
-- Measure, don't guess: `test_triggers`. Full doctrine and when to deviate: `${CLAUDE_SKILL_DIR}/references/build.md`.
+- Measure, don't guess: `test_triggers`. Full doctrine and when to deviate: `references/build.md` in this skill directory.
 
 ## skill-eval tool quick reference
 
-Tools are exposed as `mcp__plugin_oberskills_skill-eval__<tool>`; short names below.
+Tools are exposed as `skill-eval:<tool>` (or the host-exposed `mcp__...<tool>` name); short names below.
 
 | Tool | Use at | Does |
 |---|---|---|
@@ -99,7 +98,11 @@ Tools are exposed as `mcp__plugin_oberskills_skill-eval__<tool>`; short names be
 | `aggregate_benchmark` | EVAL | Stats, named-config delta, ship gates, notes → `benchmark.json` + `benchmark.md` |
 | `compare_outputs` | EVAL (subjective skills) | Blind A/B judgment with shuffled sides |
 
-If these tools are missing, the server isn't running: tell the user to run `/reload-plugins` (dependencies install via the plugin's SessionStart hook on next session start).
+If these tools are missing, the server isn't running. Claude Code users can run `/reload-plugins` after the SessionStart dependency install. Codex/local users should run `bun install` in the plugin's `mcp/` directory, then restart or reinstall the plugin session.
+
+## Compatibility
+
+Claude Code names and mechanics remain supported where the host exposes them. On Codex or another host, use the equivalent `skill-eval:<tool>` MCP name, and use the host's available subagent/delegation surface when a workflow says to dispatch an analyzer or behavioral-test agent.
 
 ## Core authoring rules
 
@@ -119,13 +122,13 @@ If these tools are missing, the server isn't running: tell the user to run `/rel
 | `oberskills:clarify` | Ambiguous intake |
 | skill-eval MCP server | All checkable steps (table above). Server owns validation rules, pressure-block language, trigger-probe mechanics, grading schema, verdict computation, workspace layout |
 
-Analyzer agent prompt (dispatched during EVAL, see `${CLAUDE_SKILL_DIR}/references/eval.md`): `${CLAUDE_SKILL_DIR}/agents/analyzer.md`.
+Analyzer agent prompt (dispatched during EVAL, see `references/eval.md` in this skill directory): `agents/analyzer.md` in this skill directory.
 
 ## References
 
 | File | Load when |
 |---|---|
-| `${CLAUDE_SKILL_DIR}/references/design.md` | DESIGN phase: artifact choice, invocation control, structure, disclosure, routers |
-| `${CLAUDE_SKILL_DIR}/references/build.md` | BUILD phase: frontmatter, naming, description doctrines, writing rules, model deltas, templates |
-| `${CLAUDE_SKILL_DIR}/references/eval.md` | BASELINE/EVAL phases: evals.json authoring, checks, pressure evals, trigger evals, interpretation, ship gates |
-| `${CLAUDE_SKILL_DIR}/references/review-skill.md` | REVIEW mode: audit dimensions, behavioral test, verdict |
+| `references/design.md` in this skill directory | DESIGN phase: artifact choice, invocation control, structure, disclosure, routers |
+| `references/build.md` in this skill directory | BUILD phase: frontmatter, naming, description doctrines, writing rules, model deltas, templates |
+| `references/eval.md` in this skill directory | BASELINE/EVAL phases: evals.json authoring, checks, pressure evals, trigger evals, interpretation, ship gates |
+| `references/review-skill.md` in this skill directory | REVIEW mode: audit dimensions, behavioral test, verdict |

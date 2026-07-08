@@ -79,7 +79,7 @@ Ground claims in concrete detail. Replace "many teams experience" with the speci
 
 ## Surface Rules (auto-loaded for EDIT)
 
-On EDIT, silently load `${CLAUDE_SKILL_DIR}/references/surface-rules.md` for the kill list, em-dash ban, hollow openers, hedge limit, transition ban, contraction requirement, sycophancy patterns, and adverb fixes.
+On EDIT, silently load `references/surface-rules.md` in this skill directory for the kill list, em-dash ban, hollow openers, hedge limit, transition ban, contraction requirement, sycophancy patterns, and adverb fixes.
 
 These catch the obvious tells. The core rules above catch the structural ones.
 
@@ -87,7 +87,7 @@ These catch the obvious tells. The core rules above catch the structural ones.
 
 ## Deep Craft (load on demand)
 
-For long-form writing, deep edits, or when surface + core isn't enough, load `${CLAUDE_SKILL_DIR}/references/deep-craft.md`. Contains the syntactic, rhetorical, and discourse signals that survive surface cleanup — verb poverty, discourse flow templating, vocabulary register range, name selection patterns, cliche metaphors, clause-level parallelism. Numbers live in the reference.
+For long-form writing, deep edits, or when surface + core isn't enough, load `references/deep-craft.md` in this skill directory. Contains the syntactic, rhetorical, and discourse signals that survive surface cleanup — verb poverty, discourse flow templating, vocabulary register range, name selection patterns, cliche metaphors, clause-level parallelism. Numbers live in the reference.
 
 **When to load:**
 - Pieces over 1000 words
@@ -165,10 +165,10 @@ Be an editor, not a critic. Every violation gets a concrete suggestion or a ques
 
 When context is tight:
 1. Write your draft
-2. Dispatch a subagent with the draft + `${CLAUDE_SKILL_DIR}/references/surface-rules.md`
+2. Dispatch a subagent with the draft + `references/surface-rules.md` in this skill directory
 3. Subagent edits and returns revision
 
-For deep edits, also include `${CLAUDE_SKILL_DIR}/references/deep-craft.md`.
+For deep edits, also include `references/deep-craft.md` in this skill directory.
 
 ---
 

@@ -78,6 +78,10 @@ const TIME_SENSITIVE_RE =
   /\b(as of (january|february|march|april|may|june|july|august|september|october|november|december|\d{4})|at the time of writing|in the coming (weeks|months))\b/i;
 const CITATION_CONTEXT_RE = /https?:\/\/|arxiv|\b\d{4}\.\d{4,5}\b|fetched|accessed|published/i;
 
+function hasExplicitSkillRelativeBasis(line: string): boolean {
+  return /\b(skill directory|this skill|sibling)\b/i.test(line);
+}
+
 // ---------------------------------------------------------------------------
 // Core
 // ---------------------------------------------------------------------------
@@ -244,11 +248,16 @@ export function validateSkill(skillPath: string): ValidationResult {
           find("time-sensitive", "time-sensitive phrasing will go stale (citation-context dates are exempt)", skillMd, lineNo),
         );
       }
-      if (/(^|[\s(`'"])references\//.test(line) && !line.includes("${CLAUDE_SKILL_DIR}") && !line.includes("${CLAUDE_PLUGIN_ROOT}")) {
+      if (
+        /(^|[\s(`'"])references\//.test(line) &&
+        !line.includes("${CLAUDE_SKILL_DIR}") &&
+        !line.includes("${CLAUDE_PLUGIN_ROOT}") &&
+        !hasExplicitSkillRelativeBasis(line)
+      ) {
         warnings.push(
           find(
             "bare-relative-path",
-            "bare relative references/ path — use ${CLAUDE_SKILL_DIR}/references/<file> so links resolve from any cwd",
+            "bare relative references/ path — make the resolution basis explicit so links resolve from any cwd",
             skillMd,
             lineNo,
           ),

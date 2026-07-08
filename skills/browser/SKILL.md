@@ -48,12 +48,14 @@ browser_snapshot          → verify the new state
 A `stale_ref` error means the page changed; take a new snapshot. Selector/coordinate
 targeting is the fallback when a ref is unavailable.
 
-## Screenshot, DOM, and AX — always route to a subagent
+## Screenshot, DOM, and AX — route to a subagent when available
 
 Screenshots, DOM trees, and accessibility trees are large (50 KB–5 MB).
-Loading them directly bloats the main context. Dispatch a Haiku subagent that
-reads the file path and returns a text summary — the artifact never enters this
-conversation.
+Loading them directly bloats the main context. Use the host's subagent tool
+when available: dispatch a small reviewer that reads the file path and returns
+a text summary, so the artifact never enters this conversation. If the host has
+no subagent surface, summarize inline only when the artifact is small enough;
+otherwise use local deterministic tools or ask how to proceed.
 
 ```
 Dispatch Agent:
@@ -69,7 +71,7 @@ Dispatch Agent:
 
 Tools that produce large artifacts: `browser_screenshot`, `browser_dom`,
 `browser_accessibility`, `browser_export_har`, `browser_performance_stop_trace`,
-`browser_pdf`. Always pass the returned path to a subagent for reading.
+`browser_pdf`. Pass the returned path to a subagent for reading when available.
 
 ## Navigation and waiting
 
@@ -84,19 +86,19 @@ planning work in that group.
 
 | Group | Reference |
 |---|---|
-| Snapshot + refs interaction · Navigation · Read + extract | `${CLAUDE_SKILL_DIR}/references/interaction.md` |
-| Performance · Lighthouse · HAR · Network routing · Throttling | `${CLAUDE_SKILL_DIR}/references/perf-network.md` |
-| Storage · Device emulation · Geolocation · Capture (PDF / screencast / upload / download) | `${CLAUDE_SKILL_DIR}/references/storage-capture.md` |
+| Snapshot + refs interaction · Navigation · Read + extract | `references/interaction.md` in this skill directory |
+| Performance · Lighthouse · HAR · Network routing · Throttling | `references/perf-network.md` in this skill directory |
+| Storage · Device emulation · Geolocation · Capture (PDF / screencast / upload / download) | `references/storage-capture.md` in this skill directory |
 
 ## Payload discipline
 
 | Artifact | Where it lives | In main context? |
 |---|---|---|
-| Screenshot PNG | file path from `browser_screenshot` | No — subagent only |
-| DOM HTML | file path from `browser_dom` | No — subagent only |
-| AX tree JSON | file path from `browser_accessibility` | No — subagent only |
-| HAR file | file path from `browser_export_har` | No — subagent only |
+| Screenshot PNG | file path from `browser_screenshot` | Prefer subagent; inline only if small enough |
+| DOM HTML | file path from `browser_dom` | Prefer subagent; inline only if small enough |
+| AX tree JSON | file path from `browser_accessibility` | Prefer subagent; inline only if small enough |
+| HAR file | file path from `browser_export_har` | Prefer subagent; inline only if small enough |
 | Performance trace | file path from `browser_performance_stop_trace` | No — analyze via `browser_analyze_insight` |
-| PDF | file path from `browser_pdf` | No — subagent only |
+| PDF | file path from `browser_pdf` | Prefer subagent; inline only if small enough |
 | Subagent text summary | returned text | Yes |
 | Direct tool output (small) | inlined in result | Yes |

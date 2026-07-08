@@ -21,7 +21,17 @@ when_to_use: >-
 
 Guidance for writing `Agent` tool calls (the Task tool was renamed Agent in v2.1.63; `Task(...)` still works as an alias). A subagent is a context-isolation tool: it spends tokens in its own window and returns a distilled summary, so your window stays clean. That isolation is also the failure surface — the delegation prompt is the only channel in, and the return summary is the only channel out. Keep both channels precise.
 
-Platform mechanics: `${CLAUDE_SKILL_DIR}/references/mechanics.md` · Orchestration patterns: `${CLAUDE_SKILL_DIR}/references/patterns.md` · Verifier dispatch: `${CLAUDE_SKILL_DIR}/references/verifier-dispatch.md`
+Platform mechanics: `references/mechanics.md` in this skill directory · Orchestration patterns: `references/patterns.md` in this skill directory · Verifier dispatch: `references/verifier-dispatch.md` in this skill directory
+
+## Host Mapping
+
+Use the host's available subagent or delegation tool when present. If no such tool is available, work inline and state that the host has no subagent surface.
+
+| Concept | Claude Code | Codex/other hosts |
+|---|---|---|
+| Spawn work | `Agent(...)` / Task tool | Host-provided subagent/delegation tool, when available |
+| Wait or follow up | Agent return / resume | Host-provided wait or message operation, when available |
+| No delegation surface | Work inline | Work inline |
 
 ## 1. The dispatch gate
 
@@ -116,7 +126,7 @@ Size the fan-out to the task — overinvestment is the classic failure (Anthropi
 | Direct comparison | 2–4 | 10–15 |
 | Complex decomposable research | up to 10, clearly divided | — |
 
-Default ceiling 3–5 parallel agents; coordination overhead beats returns past about 3 when agents interact or refine each other's work — fully independent, non-overlapping fan-outs tolerate up to ~10 (distinction and sizing evidence in `${CLAUDE_SKILL_DIR}/references/patterns.md`).
+Default ceiling 3–5 parallel agents; coordination overhead beats returns past about 3 when agents interact or refine each other's work — fully independent, non-overlapping fan-outs tolerate up to ~10 (distinction and sizing evidence in `references/patterns.md` in this skill directory).
 
 - Spawn all independent agents in the same turn; request parallelism concretely ("use three subagents, one per module") — the model is conservative about parallelism unless told.
 - Agents must be independent. If outputs feed each other, run them sequentially from here.
@@ -134,7 +144,7 @@ Never have the producing agent validate its own output — models catch fewer th
 
 Ask for coverage, not pre-filtered findings: report every issue including low-severity or uncertain ones, with confidence and severity per finding — a separate step filters. Cap verify→revise at two rounds, then escalate to the user.
 
-Template and evidence: `${CLAUDE_SKILL_DIR}/references/verifier-dispatch.md`.
+Template and evidence: `references/verifier-dispatch.md` in this skill directory.
 
 ## 6. Failure modes
 
@@ -157,8 +167,8 @@ When a dispatch goes wrong, fix the prompt before the model — prompt engineeri
 
 ## 7. Going deeper
 
-- `${CLAUDE_SKILL_DIR}/references/mechanics.md` — Agent tool, built-ins, the canonical subagent frontmatter field table, schema-level boundaries, forks, resume, gotchas.
-- `${CLAUDE_SKILL_DIR}/references/patterns.md` — orchestration pattern catalog, multi-agent sizing evidence, topology selection, long-run harness patterns, defect diagnosis.
-- `${CLAUDE_SKILL_DIR}/references/verifier-dispatch.md` — debiased verification rules, evidence, and a copyable verifier dispatch template.
+- `references/mechanics.md` in this skill directory — Agent tool, built-ins, the canonical subagent frontmatter field table, schema-level boundaries, forks, resume, gotchas.
+- `references/patterns.md` in this skill directory — orchestration pattern catalog, multi-agent sizing evidence, topology selection, long-run harness patterns, defect diagnosis.
+- `references/verifier-dispatch.md` in this skill directory — debiased verification rules, evidence, and a copyable verifier dispatch template.
 
 Authoring a reusable subagent `.md` definition — file structure, frontmatter, and evals → `Skill(oberskills:skill-craft)`; its prompt body → `Skill(oberskills:prompt)`.

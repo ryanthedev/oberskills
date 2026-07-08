@@ -6,7 +6,8 @@ description: >-
   users will run elsewhere. Two modes: design and adversarial review. Covers
   Claude model behavior and migration, de-prompting, few-shot design,
   output-schema ordering, context engineering, prompt security, optimization,
-  and a verbatim behavior-snippet library. Use when writing, improving,
+  non-Claude/Codex target review via references/porting.md in this skill
+  directory, and a verbatim behavior-snippet library. Use when writing, improving,
   debugging, reviewing, or migrating any prompt. Not for: creating, reviewing,
   or testing skill files (use skill-craft); routine subagent delegation
   prompts (use agent).
@@ -25,8 +26,8 @@ Detect mode from the request. Default to DESIGN.
 
 | Mode | Signals | Loads | Output |
 |---|---|---|---|
-| **DESIGN** (default) | write, create, draft, fix, improve, migrate, "prompt for X" | `${CLAUDE_SKILL_DIR}/references/design.md` + ≤2 topic modules | The prompt + ≤3-line rationale |
-| **REVIEW** | review, audit, analyze, critique, evaluate, "what's wrong with" | `${CLAUDE_SKILL_DIR}/references/review.md` + ≤2 topic modules | Verdict table + ranked fixes |
+| **DESIGN** (default) | write, create, draft, fix, improve, migrate, "prompt for X" | `references/design.md` in this skill directory + ≤2 topic modules | The prompt + ≤3-line rationale |
+| **REVIEW** | review, audit, analyze, critique, evaluate, "what's wrong with" | `references/review.md` in this skill directory + ≤2 topic modules | Verdict table + ranked fixes |
 
 **REVIEW framing rule.** Frame every review as a search for defects ("find what would fail"), never as confirmation ("check this is correct" / "verify this works"). When dispatching a fresh-context reviewer, pass the artifact with zero authorship or intent framing — no "I wrote this", no "we think it's solid". Confirmatory framing collapses defect detection (evidence in review.md).
 
@@ -81,12 +82,12 @@ Load the mode file always; load at most 2 topic modules (pick the 2 most relevan
 
 | Signal in request | Load |
 |---|---|
-| Target model behavior, migration from older prompts, effort/thinking steering, "Fable/Opus/Sonnet/Haiku" | `${CLAUDE_SKILL_DIR}/references/claude-models.md` |
-| Need a standard behavior block (action defaults, parallel tools, anti-overengineering, progress audits, markdown control) | `${CLAUDE_SKILL_DIR}/references/snippets.md` |
-| "long context", "RAG", retrieval, memory, token limits, context assembly, multi-document | `${CLAUDE_SKILL_DIR}/references/context.md` |
-| "optimize", "DSPy", "GEPA", eval/benchmark, accuracy plateau, example curation at scale | `${CLAUDE_SKILL_DIR}/references/optimization.md` |
-| "injection", untrusted input/tools, jailbreak, security, third-party data | `${CLAUDE_SKILL_DIR}/references/safety.md` |
-| Target is NOT a current Claude model, or thinking is off | `${CLAUDE_SKILL_DIR}/references/porting.md` |
+| Target model behavior, migration from older prompts, effort/thinking steering, "Fable/Opus/Sonnet/Haiku" | `references/claude-models.md` in this skill directory |
+| Need a standard behavior block (action defaults, parallel tools, anti-overengineering, progress audits, markdown control) | `references/snippets.md` in this skill directory |
+| "long context", "RAG", retrieval, memory, token limits, context assembly, multi-document | `references/context.md` in this skill directory |
+| "optimize", "DSPy", "GEPA", eval/benchmark, accuracy plateau, example curation at scale | `references/optimization.md` in this skill directory |
+| "injection", untrusted input/tools, jailbreak, security, third-party data | `references/safety.md` in this skill directory |
+| Target is NOT a current Claude model, or thinking is off | `references/porting.md` in this skill directory |
 
 ## DESIGN workflow
 

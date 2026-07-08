@@ -1,5 +1,23 @@
 import { describe, expect, test } from "bun:test";
-import { TOOLS, buildErrorBoundaryHandler, INSTRUCTIONS } from "../src/register.ts";
+import { afterEach } from "bun:test";
+import { readFileSync } from "node:fs";
+import { TOOLS, buildErrorBoundaryHandler, INSTRUCTIONS, readVersion } from "../src/register.ts";
+
+// Read from the manifest rather than hardcoding, so a release bump doesn't
+// require touching this test.
+const codexVersion = JSON.parse(
+  readFileSync(new URL("../../.codex-plugin/plugin.json", import.meta.url), "utf8"),
+).version as string;
+
+const originalClaudePluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+
+afterEach(() => {
+  if (originalClaudePluginRoot === undefined) {
+    delete process.env.CLAUDE_PLUGIN_ROOT;
+  } else {
+    process.env.CLAUDE_PLUGIN_ROOT = originalClaudePluginRoot;
+  }
+});
 
 describe("register (DW-1.1 / DW-1.6)", () => {
   test("all P1 + P2 tools are registered with valid shapes", () => {
@@ -80,6 +98,14 @@ describe("register (DW-1.1 / DW-1.6)", () => {
     const r = await boundary({});
     expect(r.isError).toBeUndefined();
     expect(r.content[0]?.text).toBe("ok");
+  });
+});
+
+describe("register manifest version", () => {
+  test("falls back to the Codex plugin manifest outside Claude Code", () => {
+    delete process.env.CLAUDE_PLUGIN_ROOT;
+
+    expect(readVersion()).toBe(codexVersion);
   });
 });
 

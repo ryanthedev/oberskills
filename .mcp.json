@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "skill-eval": {
+      "command": "bash",
+      "args": ["./scripts/start-skill-eval-mcp.sh"]
+    },
+    "mcp-browser": {
+      "command": "bash",
+      "args": ["./scripts/start-browser-mcp.sh"]
+    }
+  }
+}

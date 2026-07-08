@@ -46,9 +46,9 @@ If the user specifies a depth, use it. Otherwise, infer from the query or ask:
 - "Deep dive" / "report" / "I need to make a decision about" / "thorough" → **deep**
 
 **After selecting mode, load the mode's prompts:**
-- scan/brief: `${CLAUDE_SKILL_DIR}/references/search-prompts.md` + `${CLAUDE_SKILL_DIR}/references/synthesis-prompts.md`
+- scan/brief: `references/search-prompts.md` in this skill directory + `references/synthesis-prompts.md` in this skill directory
 - breadth: same two files (breadth-specific sections)
-- deep: same two files + `${CLAUDE_SKILL_DIR}/references/deep-mode.md`
+- deep: same two files + `references/deep-mode.md` in this skill directory
 
 ---
 
@@ -65,7 +65,7 @@ Before hitting the web, ground in what's already available.
 
 ### Step 1: Plan
 
-Dispatch planner (sonnet). Grounds in local context, plans dimensions based on mode:
+Dispatch planner (sonnet) with the host's subagent/delegation tool when available; otherwise plan inline. Grounds in local context, plans dimensions based on mode:
 - scan: 1 focused dimension
 - brief: 2-3 dimensions targeting different angles
 - breadth: 5-8 dimensions covering the landscape
@@ -77,7 +77,7 @@ See search-prompts.md for the planner prompt template.
 
 ### Step 2: Search
 
-Dispatch search agents in parallel. Each writes to `~/.local/state/web-research/{timestamp}-{query-slug}-{dimension}.md`
+Dispatch search agents in parallel with the host's subagent/delegation tool when available; otherwise run the searches inline and keep artifacts small. Each writes to `~/.local/state/web-research/{timestamp}-{query-slug}-{dimension}.md`
 
 If a search returns nothing, reformulate the query and retry once. If still nothing, report the gap.
 

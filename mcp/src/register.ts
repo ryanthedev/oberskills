@@ -45,15 +45,16 @@ exhausted). run_eval and optimize_description calls can take minutes - raise MCP
 if your client enforces a short tool timeout.`;
 
 /**
- * Server version comes from the plugin manifest (single version source of truth):
- * $CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json, with an import.meta-relative
- * fallback for running outside Claude Code (tests, manual bun run).
+ * Server version comes from the plugin manifest (single version source of truth).
+ * Prefer Claude's runtime root when present, then fall back to the Codex manifest
+ * and finally the Claude manifest for tests/manual runs from the source tree.
  */
-function readVersion(): string {
+export function readVersion(): string {
   const candidates: (string | URL)[] = [];
   if (process.env.CLAUDE_PLUGIN_ROOT) {
     candidates.push(join(process.env.CLAUDE_PLUGIN_ROOT, ".claude-plugin", "plugin.json"));
   }
+  candidates.push(new URL("../../.codex-plugin/plugin.json", import.meta.url));
   candidates.push(new URL("../../.claude-plugin/plugin.json", import.meta.url));
   for (const candidate of candidates) {
     try {

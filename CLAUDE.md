@@ -12,14 +12,17 @@ This is a Claude Code plugin containing reusable skills and commands — workflo
 oberskills/
 ├── .claude-plugin/
 │   └── plugin.json          # Manifest: name, version, mcpServers (skill-eval), SessionStart dep hook
+├── .codex-plugin/
+│   └── plugin.json          # Codex manifest: shared skills + .mcp.json companion
+├── .mcp.json                # Codex MCP wrapper launch config
 ├── skills/                  # Skills (skills/<name>/SKILL.md + references/ — the current format)
 │   ├── prompt/              # Claude-first prompt design + review; 8 reference files
 │   ├── agent/               # Subagent dispatch guidance; 3 reference files
 │   ├── skill-craft/         # Skill creation/eval/review; references/ + agents/analyzer.md
-│   ├── shot/                # (legacy command format: commands/shot.md + these support files)
-│   ├── web-research/        # (legacy command format)
-│   └── write/               # (legacy command format)
-├── commands/                # Legacy flat command files (migrate to skills/ when refreshed)
+│   ├── shot/                # Screenshot capture skill + support files
+│   ├── web-research/
+│   └── write/
+├── commands/                # Legacy flat command shims kept for Claude compatibility
 │   ├── shot.md
 │   ├── web-research.md
 │   ├── write.md
@@ -34,11 +37,18 @@ oberskills/
 ## Conventions
 
 - **Skills format**: new/refreshed components are skills (`skills/<name>/SKILL.md`), not flat commands — Claude Code merged commands into skills; the directory name defines the command name. Frontmatter includes `name` (matches directory), `description` (third person, what + when, exclusion clause), `when_to_use` (trigger phrases). `description` + `when_to_use` ≤ 1,536 chars combined.
-- **Paths**: only the braced forms `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` are substituted, and only in harness-loaded content (SKILL.md bodies, configs, hooks) — never rely on substitution inside `references/*.md` (use skill-name phrasing there).
+- **Paths**: shared `SKILL.md` bodies should use host-neutral wording such as `references/design.md` in this skill directory. Keep `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` only in Claude-specific manifests, hooks, commands, or explicitly labeled Claude-only sections. Never rely on substitution inside `references/*.md` (use skill-name phrasing there).
 - **Evidence discipline**: every number in a skill traces to a source; each canonical number lives in exactly one file, others point to it. No anti-rationalization tables or self-assessed compliance constructs in skill bodies (binding decision; `validate_skill` lints for them).
 - **No version banners**: skills do not read or display the plugin version. `plugin.json` is the single version source.
 - **MCP server code**: Bun + strict TypeScript; `bunx tsc --noEmit` and `bun test` must pass clean; no `console.log` in `src/` (stdout is the MCP transport — stderr only).
 - Dogfood gate: `validate_skill` over `skills/{prompt,agent,skill-craft}` must report zero errors and zero warnings.
+
+## Dual-host support
+
+- Preserve both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`; do not add Codex hooks.
+- Keep Claude-specific model/mechanics references labeled, and keep shared `SKILL.md` bodies portable.
+- Do not introduce Claude-only substitutions into shared skill bodies unless the section is explicitly Claude-only.
+- Run both MCP package suites after manifest or server changes: `cd mcp && bunx tsc --noEmit && bun test`, then `cd ../mcp-browser && bunx tsc --noEmit && bun test`.
 
 ## Working on the MCP server
 
@@ -67,7 +77,7 @@ Changes to `plugin.json` (mcpServers/hooks) need `/reload-plugins` or a restart 
 | **agent** | skill | Subagent dispatch: delegate-vs-inline, delegation contract, model/effort, verifier dispatch |
 | **skill-craft** | skill | Skill creation/eval/review, orchestrating the skill-eval MCP tools |
 | **skill-eval** | MCP server | validate_skill, test_triggers, optimize_description, run_eval, grade_run, aggregate_benchmark, compare_outputs |
-| **shot** | command | Screenshot intake + haiku analysis subagent |
-| **web-research** | command | Multi-angle parallel web search with extraction |
-| **write** | command | Human-sounding writing (Strunk + AI-pattern detection) |
-| **clarify** | command | Intent decomposition for ambiguous requests |
+| **shot** | skill + legacy command shim | Screenshot intake + visual summary |
+| **web-research** | skill | Multi-angle parallel web search with extraction |
+| **write** | skill | Human-sounding writing (Strunk + AI-pattern detection) |
+| **clarify** | skill | Intent decomposition for ambiguous requests |

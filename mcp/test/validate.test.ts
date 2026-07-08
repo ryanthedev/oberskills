@@ -244,14 +244,18 @@ describe("validate_skill rules", () => {
     expect(rules(r2.warnings)).toContain("substitution-vars-in-references");
   });
 
-  test("bare relative references/ path in SKILL.md warns; braced var does not", () => {
+  test("bare relative references/ path in SKILL.md warns unless resolution basis is explicit", () => {
     const bare = GOOD + "\nRead references/deep.md for more.\n";
     const r1 = run(makeSkill("good-skill", bare, { "references/deep.md": "x\n" }));
     expect(rules(r1.warnings)).toContain("bare-relative-path");
 
-    const braced = GOOD + "\nRead ${CLAUDE_SKILL_DIR}/references/deep.md for more.\n";
-    const r2 = run(makeSkill("good-skill", braced, { "references/deep.md": "x\n" }));
+    const explicit = GOOD + "\nLoad references/design.md in this skill directory.\n";
+    const r2 = run(makeSkill("good-skill", explicit, { "references/design.md": "x\n" }));
     expect(rules(r2.warnings)).not.toContain("bare-relative-path");
+
+    const braced = GOOD + "\nRead ${CLAUDE_SKILL_DIR}/references/deep.md for more.\n";
+    const r3 = run(makeSkill("good-skill", braced, { "references/deep.md": "x\n" }));
+    expect(rules(r3.warnings)).not.toContain("bare-relative-path");
   });
 
   test("time-sensitive phrasing warns, but citation-context dates are exempt", () => {

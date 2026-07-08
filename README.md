@@ -1,8 +1,10 @@
 # oberskills
 
-Skills that make Claude Code better at the things it's worst at: writing like a person, searching the web without hallucinating URLs, building skills that actually work, and not embarrassing itself when dispatching agents.
+Skills that make Claude Code and Codex better at the things they are worst at: writing like a person, searching the web without hallucinating URLs, building skills that actually work, and not embarrassing themselves when dispatching agents.
 
 As of v2.0.0 the three meta-skills — `prompt`, `agent`, `skill-craft` — are full skills (`skills/<name>/SKILL.md`) rebuilt on a 2026 research pass (Anthropic platform docs, ~100 arXiv papers, practitioner practice), and the skill-eval pipeline is a Bun/TypeScript MCP server instead of Python scripts.
+
+This repo keeps one shared source tree for both hosts. Claude Code uses `.claude-plugin/plugin.json`; Codex uses `.codex-plugin/plugin.json` and `.mcp.json`.
 
 ## Skills
 
@@ -32,7 +34,16 @@ Bun/TS server bundled with the plugin (`mcp/`), spawning real headless Claude se
 | `aggregate_benchmark` | Mean/stddev/min/max + deltas across configurations, gate evaluation |
 | `compare_outputs` | Blind A/B comparison of two outputs |
 
-Dependencies install automatically via a SessionStart hook into `${CLAUDE_PLUGIN_DATA}` (requires `bun` on PATH). After install or update, run `/reload-plugins` once. Optional: allow `mcp__plugin_oberskills_skill-eval__*` in settings to skip permission prompts.
+On Claude Code, dependencies install automatically via a SessionStart hook into `${CLAUDE_PLUGIN_DATA}` (requires `bun` on PATH). After install or update, run `/reload-plugins` once. Optional: allow `mcp__plugin_oberskills_skill-eval__*` in settings to skip permission prompts.
+
+On Codex/local installs, the MCP wrapper scripts install package dependencies into the plugin directory on first start. To prewarm that step manually, run:
+
+```bash
+cd mcp && bun install
+cd ../mcp-browser && bun install
+```
+
+For local development, this repo directory is the plugin directory. `skill-eval` still uses the Anthropic Agent SDK until a Codex-native eval runner exists.
 
 ### write
 
@@ -73,6 +84,8 @@ shot ──── capture → haiku analyzer → summary
 
 ## Install
 
+### Claude Code
+
 ```bash
 /plugin marketplace add ryanthedev/rtd-claude-inn
 /plugin install oberskills@rtd
@@ -81,9 +94,27 @@ shot ──── capture → haiku analyzer → summary
 
 Then `/reload-plugins` (or restart) so the `skill-eval` MCP server connects.
 
+### Codex Local Development
+
+The MCP wrappers install dependencies on first start. To prewarm both MCP packages manually:
+
+```bash
+cd mcp && bun install
+cd ../mcp-browser && bun install
+```
+
+Codex installs plugins from a configured marketplace. For local development, create or use a marketplace root with an entry whose `source.path` points at `./plugins/oberskills`, place this repo at that path, then run:
+
+```bash
+codex plugin marketplace add <path-to-marketplace-root>
+codex plugin add oberskills@<marketplace-name>
+```
+
+MCP dependencies are installed in the plugin directory Codex launches. Browser MCP also requires Chrome or Chromium availability.
+
 ## Version
 
-**2.0.0**
+**2.7.0**
 
 ---
 
