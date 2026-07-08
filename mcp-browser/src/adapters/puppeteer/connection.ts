@@ -125,6 +125,14 @@ export class PuppeteerConnectionManager implements BrowserPort {
           ...(executablePath ? { executablePath } : {}),
           ...(channel && !executablePath ? { channel } : {}),
           args: ["--no-first-run", "--no-default-browser-check"],
+          // Puppeteer injects --enable-automation by default, which paints the
+          // "Chrome is being controlled by automated test software" infobar (and
+          // sets navigator.webdriver). Drop it so controlled Chrome looks normal.
+          ignoreDefaultArgs: ["--enable-automation"],
+          // Puppeteer otherwise pins each page to an 800x600 viewport, leaving a
+          // grey margin around the page in a larger headed window. null lets the
+          // page fill the actual window; emulate-device still overrides per-page.
+          defaultViewport: null,
         });
         this.owned = true;
       } else {
