@@ -1,0 +1,34 @@
+{
+  "name": "oberskills",
+  "version": "2.7.1",
+  "description": "Discipline plugins for Codex: prompt engineering, skill authoring, writing, research, and browser control",
+  "author": {
+    "name": "r"
+  },
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflow",
+    "agents",
+    "prompt-engineering",
+    "web-search",
+    "browser-automation",
+    "writing",
+    "humanization"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "oberskills",
+    "shortDescription": "Workflow skills for Codex",
+    "longDescription": "Skills and MCP tools for prompt design, skill authoring, writing, research workflows, and browser automation in Codex.",
+    "developerName": "r",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Review this prompt for failure modes.",
+      "Help port this skill to Codex.",
+      "Use the browser tools on this app."
+    ]
+  }
+}
