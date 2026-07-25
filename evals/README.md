@@ -41,6 +41,22 @@ re-grade the run directory afterwards with `grade_run`; no re-spawning is needed
 
 Both sets are regression tests for the 2026-07-24 Opus 5 guidance sweep, written so
 that assertions discriminate between the current skill and its pre-sweep snapshot.
-The `max_tokens`-shares-the-thinking-cap assertion in the prompt set is the cleanest
-separator measured so far: every run that read the current skill caught it, and every
-run that did not, missed it.
+
+Two clean separators measured so far, both current-skill 3/3 (or 2/2) against
+pre-sweep 0/0:
+
+- prompt — `max_tokens` shares the thinking cap on Opus 5. Every run that read the
+  current skill caught the truncation risk; runs that did not, missed it, and one
+  recommended *lowering* `max_tokens`.
+- agent — the orchestrator tier. Every pre-sweep run reaches for Fable 5, which the
+  old tier table called "the orchestrator itself"; no current-skill run mentions it.
+
+Known non-discriminating assertions, kept as regression coverage rather than as
+evidence of lift: deterministic-checks-first, no-intent-framing, no self-verify in
+worker briefs, and low/medium effort for mechanical workers. That guidance predates
+the sweep, so both configurations pass.
+
+Known gap: no eval yet demonstrates the Opus 5 delegation cap changing behavior. In
+`opus5-fanout-dispatch-plan` every run lands on 4-8 workers unaided, so the cap is
+never the binding constraint and its rationale never surfaces. Testing it needs a
+scenario that actively pulls toward over-spawning.
