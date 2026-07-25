@@ -18,7 +18,8 @@ Platform facts for dispatching subagents and writing reusable agent definition f
 - In v2.1.63 the Task tool was renamed **Agent**. Existing `Task(...)` references in settings and agent definitions still work as aliases.
 - Each Agent call accepts a per-invocation `model` parameter (aliases `sonnet`/`opus`/`haiku`/`fable`, full IDs, or `inherit`).
 - Model resolution order: 1) `CLAUDE_CODE_SUBAGENT_MODEL` env var → 2) per-invocation `model` parameter → 3) the definition's `model` frontmatter → 4) the main conversation's model.
-- `Agent(agent_type)` allowlist syntax in a `tools:` list restricts which subagent types can be spawned — but only when that agent runs as the main thread via `claude --agent`. Subagents cannot spawn subagents, so the syntax has no effect inside subagent definitions.
+- `Agent(agent_type)` allowlist syntax in a `tools:` list restricts which subagent types can be spawned.
+- Harness caps (2.1.220 defaults, all env-overridable): nesting depth 3 (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`), 20 concurrent subagents (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`), 200 per session (`CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION`). Exceeding the depth cap returns "Subagent nesting limit reached (depth N of 3)". These are ceilings, not targets — §4 of the skill body sizes fan-outs far below them.
 - Disable specific agent types session-wide with `"permissions": {"deny": ["Agent(Explore)", "Agent(my-custom-agent)"]}` or `--disallowedTools "Agent(Explore)"`.
 
 ## 2. Built-in subagents
@@ -51,7 +52,7 @@ This is the plugin-canonical copy of the field list — other oberskills files p
 | `mcpServers` | Name references to configured servers, or inline definitions scoped to this subagent only. **Ignored for plugin subagents** |
 | `hooks` | Lifecycle hooks scoped to the subagent (`Stop` auto-converts to `SubagentStop`). **Ignored for plugin subagents** |
 | `memory` | `user` (`~/.claude/agent-memory/<name>/`), `project` (`.claude/agent-memory/<name>/`, recommended), `local`. Injects the first 200 lines / 25KB of MEMORY.md; auto-enables Read/Write/Edit |
-| `background` | `true` = always run as a background task (don't use in this setup — see §7) |
+| `background` | `true` = always run as a background task. Background is already the per-call default (§7); set this only to force it for a definition |
 | `isolation` | `worktree` = run in a temp git worktree off the default branch; auto-cleanup if no changes. The only valid value |
 | `color` | `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan` |
 | `initialPrompt` | Auto-submitted first user turn when the agent runs as the main session agent (`--agent` / `agent` setting) |
@@ -84,7 +85,9 @@ A non-fork subagent receives:
 
 It does NOT receive: your conversation history, skills you invoked, or files you've read. The delegation prompt is the only channel in.
 
-Tools never available inside subagents, even if listed in `tools`: `Agent`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode` (unless `permissionMode: plan`), `ScheduleWakeup`, `WaitForMcpServers`. A delegated task that needs mid-task user input will fail — keep it in the parent.
+The harness-level tool filter for a spawned agent strips only the MCP resource tools (`ListMcpResources`, `ReadMcpResource`, `ReadMcpResourceDir`) and `StructuredOutput`; everything else is resolved against the definition's `tools`/`disallowedTools`. `Agent` is not in that strip list, and the depth cap above only fires at depth 3 — so nesting is permitted by the harness, contrary to older guidance that subagents can never spawn subagents (2.1.220 binary; not yet confirmed end-to-end by dispatch).
+
+Interaction tools (`AskUserQuestion`, `EnterPlanMode`/`ExitPlanMode`, `ScheduleWakeup`) declare `requiresUserInteraction`, which routes them through the permission dialog path — reliable only where a dialog host exists. Treat a delegated task that needs mid-task user input as unreliable and keep it in the parent.
 
 ## 6. Forks
 
@@ -95,8 +98,11 @@ Tools never available inside subagents, even if listed in `tools`: `Agent`, `Ask
 
 ## 7. Background, resume, transcripts, compaction
 
-- Background subagents run with the permissions already granted in the session and **auto-deny any tool call that would otherwise prompt** — a delegated edit that would normally prompt silently fails while the subagent reports as if it succeeded. Avoid background subagents unless every permission the task needs is pre-granted; otherwise dispatch foreground.
-- Ctrl+B backgrounds a running task; `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` disables backgrounding.
+- **Background is the default** for Agent dispatches; `run_in_background: false` forces a synchronous run. Verified against the 2.1.220 binary: the tool schema reads "Agents run in the background by default; you will be notified when one completes."
+- **Background does NOT mean prompts are auto-denied.** Permission handling keys off whether the spawning context has a dialog host, not off async-ness. In the subagent context builder, `shouldAvoidPermissionPrompts` is set only when the caller passes `canShowPermissionPrompts: false`, or when the agent's mode isn't `bubble` *and* the parent has no `requestDialog` *and* the agent is async. Interactive sessions always have a `requestDialog`, so a background subagent's prompt surfaces to you (queued behind automated checks via `awaitAutomatedChecksBeforeDialog`). Custom async agents are spawned with `canShowPermissionPrompts: f ?? true`.
+- Auto-deny still applies where there is no dialog host — headless `-p`/SDK runs, workflow agents (which stub `setToolPermissionContext`), and `dontAsk` mode. The denial carries `decisionReason: {type: "asyncAgent", reason: "Permission prompts are not available in this context"}`, and a `PermissionRequest` hook is the only way to answer it. In those contexts, pre-grant every permission the task needs.
+- `permissionMode: "bubble"` routes a subagent's permission requests to the parent. Built-in `worker` and the `fork` subagent type ship with it.
+- Ctrl+B backgrounds a running task; `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` disables backgrounding and removes `run_in_background` from the tool schema. In-process teammates cannot spawn background agents at all — only synchronous subagents.
 - Completed general-purpose subagents return an agent ID and are resumable via `SendMessage` — but that requires the experimental agent-teams flag and is unavailable in this CLI. To continue a finished subagent's work, re-dispatch fresh and put the resume context (what it found, where it stopped) in the new delegation prompt.
 - Transcripts: `~/.claude/projects/{project}/{sessionId}/subagents/agent-{agentId}.jsonl`.
 - Subagents auto-compact at ~95% of capacity (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` tunes this). Don't rely on it: an oversized delegated job degrades before it compacts — scope the task to fit. Instruction-following also degrades non-linearly with raw context length well before compaction, so scope compositional sub-tasks (citation, re-ranking, synthesis) to short windows by design (numbers: the prompt skill's context reference).

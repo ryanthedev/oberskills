@@ -41,14 +41,24 @@ Agents cost roughly 4x the tokens of working inline; multi-agent fan-outs cost r
 |---|---|---|
 | Needs back-and-forth, or phases share heavy context (plan → implement → test on one artifact) | Inline | State dies at each subagent boundary; coupled work loses it |
 | Quick targeted change; latency matters | Inline | Subagents start cold and re-gather context |
-| Edit that may hit a permission prompt, or task may need the user | Inline | `AskUserQuestion` is unavailable in subagents; the call fails (silently auto-denied in background runs) |
+| Task needs mid-task user input | Inline | A subagent has no reliable user channel; where no dialog host exists the request is auto-denied |
 | Side question about content already in this conversation | `/btw` | Full context, no tool cost |
 | Side task that needs your full conversation context | Fork | Inherits the whole conversation and reuses the parent prompt cache — cheaper than re-briefing a fresh subagent |
 | Self-contained task producing verbose output you won't reference again (test runs, log digs, doc fetches, codebase searches) | One subagent | The single most valuable use: tens of thousands of tokens explored, only the distilled summary returned |
 | Independent items to process the same way (many files, many candidates, research angles) | Parallel fan-out, same turn | Independence is the requirement; see §4 for sizing |
 | Output needs checking | Separate verifier subagent | Producers can't grade their own work; see §5 |
 
-Subagents cannot spawn subagents — chain follow-ups from this conversation. Background subagents auto-deny permission prompts and can report success after silently failing edits — avoid them unless every needed permission is pre-granted.
+Once you've decided to delegate, pick the dispatch mode:
+
+| Mode | Use when |
+|---|---|
+| Background (the default) | You don't need the result before your next action. You're notified on completion; a permission prompt from the subagent surfaces in your session rather than being denied |
+| `run_in_background: false` | The result gates your very next step — or the run has no dialog host (headless `-p`/SDK, workflow agents, in-process teammates), where a prompt is auto-denied instead |
+| `subagent_type: "fork"` | The task needs your conversation, not a briefing (§1 gate row) |
+| `isolation: "worktree"` | Parallel agents writing to the same repo. Costs a temp worktree per agent; skip it for read-only work |
+| `isolation: "remote"` | Long detached work in a cloud environment. Always background; availability is gated |
+
+Where prompts *can't* surface, pre-grant every permission the task needs — otherwise a delegated edit fails while the subagent reports success.
 
 Spawn-bias drifts across model generations — state trigger conditions in both directions: when a task fans out across independent items, delegate rather than iterating serially; AND when a single read or a sequential edit means just doing it.
 
@@ -170,7 +180,7 @@ When a dispatch goes wrong, fix the prompt before the model — prompt engineeri
 | Goal drift in chains | No anchor; drift sets in within 10–15 steps | Goal-anchor block in every chained dispatch (§2) |
 | Lost state at handoff | 42% of multi-agent failures are handoff context loss (VulnBot) | Summarize state + original goal + tried-and-failed at every handoff |
 | Retry loop | No failure memory | List failed approaches; after 2 failures force a categorically different strategy, then escalate |
-| Silent edit failure | Permission prompt auto-denied (background) or unavailable mid-task | Keep approval-gated edits in the parent |
+| Silent edit failure | Permission prompt auto-denied where no dialog host exists (headless, SDK, workflow agent, teammate) | Pre-grant the permissions, or keep approval-gated edits in the parent |
 | Quit-early / fabricated done | Agent reports completion without evidence | Require evidence per claim in OUTPUT; verify via §5. Don't bolt on forced-continuation scaffolds — they help o-series models and hurt Claude (numbers in the prompt skill's porting reference) |
 | Shallow results on hard task | Model or effort too low | Raise effort first, then tier (§3); if raised single attempts still fail, dispatch 3–5 short scoped attempts and majority-vote (patterns reference §2) |
 | Subagent context overflow | Oversized delegated job | Scope to fit; split the task, not the window |
