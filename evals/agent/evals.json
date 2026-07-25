@@ -1,0 +1,25 @@
+{
+  "skill_name": "agent",
+  "evals": [
+    {
+      "id": "opus5-fanout-dispatch-plan",
+      "prompt": "I need to plan out a fan-out and I want subagents to do it. We've got 40 route files that all need the same auth-middleware swap — routes-manifest.txt in this directory lists them. It's mechanical work but not a pure sed, because the handler signatures differ between files. Plan the dispatch for me: how many agents to spawn and how to slice the work between them, what model and effort each agent gets, what each agent's brief contains, and how we check the result before any of it merges. We run the orchestrator on Opus 5. Last month a job about this size blew way past what I expected to pay, so cost is a real constraint here. Write the plan to outputs/dispatch-plan.md.",
+      "files": ["fixtures/routes-manifest.txt"],
+      "expected_output": "A dispatch plan that batches the 40 files across a small number of agents rather than one-per-file, picks a cheap tier and low/medium effort for mechanical workers, runs deterministic checks before any LLM review, commissions an independent verifier without intent framing, and does not tell worker agents to double-check their own work.",
+      "expectations": [
+        "Batched the 40 files across a small number of agents (roughly ten or fewer) rather than spawning one agent per file, and stated a concrete cap or ceiling on the spawn count",
+        "Justified keeping the spawn count low partly on the grounds that the current Opus generation reaches for subagents more readily than its predecessor, rather than only on generic coordination-overhead grounds",
+        "Explained the cost overrun as more tokens consumed per task rather than as a change in the per-token price, and named conciseness instructions and the effort setting as the levers that control it",
+        "Assigned `low` or `medium` effort to the mechanical worker agents rather than `high`, `xhigh`, or `max`",
+        "Specified that deterministic checks (tests, typecheck, lint, or build) run and produce raw output BEFORE any LLM-based review of the result",
+        "Specified that the verification dispatch is given the artifact, the check results, and the acceptance criteria WITHOUT plan context, progress narrative, or any statement of what the change was meant to accomplish",
+        "Did NOT instruct the worker agents to double-check, re-verify, or self-review their own output as a standing step in their brief",
+        "Did NOT make Fable 5 the default orchestrator or default worker tier for this mechanical migration"
+      ],
+      "checks": [
+        { "kind": "artifact_exists", "path": "outputs/dispatch-plan.md" },
+        { "kind": "trace_includes", "tool": "Read", "input_pattern": "routes-manifest" }
+      ]
+    }
+  ]
+}

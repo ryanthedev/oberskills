@@ -1,0 +1,8 @@
+{
+  "model": "claude-opus-5",
+  "max_tokens": 4096,
+  "effort": "xhigh",
+  "thinking": { "type": "disabled" },
+  "system_prompt_file": "system-prompt.md",
+  "tools": ["search_tickets", "read_account", "post_reply"]
+}

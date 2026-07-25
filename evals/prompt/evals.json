@@ -1,0 +1,25 @@
+{
+  "skill_name": "prompt",
+  "evals": [
+    {
+      "id": "opus5-migration-review",
+      "prompt": "We're moving our support-triage agent off Opus 4.8 onto Opus 5 (claude-opus-5) next week and staging is already unhappy. Two concrete problems: (1) a chunk of our API calls now come back as 400s and nobody knows why — the exact same request body worked fine on 4.8; (2) we dropped effort from xhigh down to low specifically to make the responses shorter and cheaper, and the replies came back just as long as before. The live files are agent-config.json and system-prompt.md in this directory. Go through both and tell us what to change for Opus 5. Write your findings to outputs/review.md — for each change, what to change and why it matters on Opus 5 specifically. Then write the corrected system prompt to outputs/system-prompt.md.",
+      "files": ["fixtures/agent-config.json", "fixtures/system-prompt.md"],
+      "expected_output": "A review that fixes the disabled-thinking/xhigh 400, deletes the self-verification scaffolding, explains that effort is not a length lever and adds an explicit length instruction, and raises max_tokens because thinking and response now share the cap.",
+      "expectations": [
+        "Identified that `thinking: {\"type\": \"disabled\"}` combined with effort `xhigh` is rejected on Opus 5, and named this as the cause of the 400s",
+        "Removed the self-verification instructions (\"double-check your answer\", \"re-verify your categorization\", \"run a verification pass over your own output\") from the corrected system prompt, on the grounds that Opus 5 verifies its own work unprompted — rather than keeping, softening, or rewording them",
+        "Stated that the `effort` parameter controls how much the model thinks rather than how much it says, so lowering effort does not reliably shorten the visible response, and addressed the length complaint with an explicit length or conciseness instruction in the prompt instead",
+        "Flagged that `max_tokens: 4096` is now too low because on Opus 5 thinking is on by default and shares the max_tokens cap with the response text, and recommended raising it",
+        "Recommended removing the \"you tend to under-delegate, so prefer delegation\" instruction rather than preserving it, because Opus 5 over-delegates rather than under-delegates",
+        "The corrected outputs/system-prompt.md preserves the domain rules that have nothing to do with the model migration — the billing/provisioning/bug/other categorization, and the rule not to promise refunds or credits but escalate them to a human"
+      ],
+      "checks": [
+        { "kind": "artifact_exists", "path": "outputs/review.md" },
+        { "kind": "artifact_exists", "path": "outputs/system-prompt.md" },
+        { "kind": "artifact_matches", "path": "outputs/review.md", "pattern": "400" },
+        { "kind": "trace_includes", "tool": "Read", "input_pattern": "agent-config\\.json" }
+      ]
+    }
+  ]
+}
