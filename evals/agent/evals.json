@@ -9,16 +9,16 @@
       "expectations": [
         "Batched the 40 files across a small number of agents (roughly ten or fewer) rather than spawning one agent per file, and stated a concrete cap or ceiling on the spawn count",
         "Justified keeping the spawn count low partly on the grounds that the current Opus generation reaches for subagents more readily than its predecessor, rather than only on generic coordination-overhead grounds",
-        "Explained the cost overrun as more tokens consumed per task rather than as a change in the per-token price, and named conciseness instructions and the effort setting as the levers that control it",
-        "Assigned `low` or `medium` effort to the mechanical worker agents rather than `high`, `xhigh`, or `max`",
-        "Specified that deterministic checks (tests, typecheck, lint, or build) run and produce raw output BEFORE any LLM-based review of the result",
-        "Specified that the verification dispatch is given the artifact, the check results, and the acceptance criteria WITHOUT plan context, progress narrative, or any statement of what the change was meant to accomplish",
-        "Did NOT instruct the worker agents to double-check, re-verify, or self-review their own output as a standing step in their brief",
-        "Did NOT make Fable 5 the default orchestrator or default worker tier for this mechanical migration"
+        "Explained the cost overrun as more tokens consumed per task rather than as a change in the per-token price, and named conciseness instructions and the effort setting as the levers that control it"
       ],
       "checks": [
         { "kind": "artifact_exists", "path": "outputs/dispatch-plan.md" },
-        { "kind": "trace_includes", "tool": "Read", "input_pattern": "routes-manifest" }
+        { "kind": "trace_includes", "tool": "Read", "input_pattern": "routes-manifest" },
+        { "kind": "artifact_matches", "path": "outputs/dispatch-plan.md", "pattern": "(?<![\\s\\S])(?![\\s\\S]*[Ff]able)" },
+        { "kind": "artifact_matches", "path": "outputs/dispatch-plan.md", "pattern": "(?<![\\s\\S])(?![\\s\\S]*([Dd]ouble-check|[Rr]e-verify|verify your own|[Ss]elf-review))" },
+        { "kind": "artifact_matches", "path": "outputs/dispatch-plan.md", "pattern": "[Ee]ffort[^\\n]{0,25}(low|medium)" },
+        { "kind": "artifact_matches", "path": "outputs/dispatch-plan.md", "pattern": "[Dd]eterministic" },
+        { "kind": "artifact_matches", "path": "outputs/dispatch-plan.md", "pattern": "([Nn]o intent framing|not include[\\s\\S]{0,250}framing|zero context about what)" }
       ]
     }
   ]

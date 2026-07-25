@@ -22,6 +22,48 @@ run_eval
 Results land in `skills/<skill>-workspace/iteration-N/` (gitignored). Follow with
 `aggregate_benchmark` over the iteration dir.
 
+## Cost policy
+
+A regression run should cost **under $2 per eval**. The first full session on these
+sets cost about $19, and most of it bought nothing — a third went to a
+`without_skill` config that only re-measured what the base model already does, and
+the rest went to LLM graders that timed out and returned no verdict at all.
+
+Defaults for a regression run:
+
+| Lever | Setting | Why |
+|---|---|---|
+| `configurations` | `["with_skill", "old_skill"]` | `without_skill` measures the base model, not the change. Add it only when establishing a first baseline. |
+| `runs` | 2 | Enough to catch a flip. Three runs bought no extra signal here. |
+| `expectations` | 3 or fewer | Graders fail past roughly four assertions across two artifacts. |
+| `checks` | as many as possible | Free, deterministic, and they cannot time out. |
+| `grader_model` | `haiku` at 3 assertions | Only fails when the assertion count is high. |
+
+The rule that keeps it cheap: **anything provable by a regex or a tool trace belongs
+in `checks`, not `expectations`.** Both separators these sets have found — `max_tokens`
+raised in the prompt set, Fable absent in the agent set — are regex checks. They were
+originally paid LLM assertions, which is exactly the mistake to avoid. Reserve the
+grader for genuine judgment: whether a stated *rationale* is the right one, whether a
+near-miss negative was respected.
+
+Checks can also be replayed offline against artifacts from previous runs, which costs
+nothing and verifies a new assertion discriminates before spending on a live run.
+
+## Gotcha: negative assertions and the multiline flag
+
+Patterns are compiled multiline, so `^` matches at every line start. A whole-file
+negative written as `^(?![\s\S]*Fable)` therefore passes trivially — it succeeds at
+any line after the last occurrence. Pin position 0 with a lookbehind instead:
+
+```
+(?<![\s\S])(?![\s\S]*[Ff]able)
+```
+
+The broken form reported 6/6 passing on files that plainly contained the word; the
+fixed form correctly separates 3 from 3. JS regex has no `\A`, and there is no
+`artifact_not_matches` check kind, so this is the way to express "file must not
+contain X".
+
 To measure a *change* rather than the skill's existence, snapshot the pre-change
 skill and pass it as `old_skill`:
 

@@ -7,17 +7,17 @@
       "files": ["fixtures/agent-config.json", "fixtures/system-prompt.md"],
       "expected_output": "A review that fixes the disabled-thinking/xhigh 400, deletes the self-verification scaffolding, explains that effort is not a length lever and adds an explicit length instruction, and raises max_tokens because thinking and response now share the cap.",
       "expectations": [
-        "Identified that `thinking: {\"type\": \"disabled\"}` combined with effort `xhigh` is rejected on Opus 5, and named this as the cause of the 400s",
-        "Removed the self-verification instructions (\"double-check your answer\", \"re-verify your categorization\", \"run a verification pass over your own output\") from the corrected system prompt, on the grounds that Opus 5 verifies its own work unprompted — rather than keeping, softening, or rewording them",
         "Stated that the `effort` parameter controls how much the model thinks rather than how much it says, so lowering effort does not reliably shorten the visible response, and addressed the length complaint with an explicit length or conciseness instruction in the prompt instead",
-        "Flagged that `max_tokens: 4096` is now too low because on Opus 5 thinking is on by default and shares the max_tokens cap with the response text, and recommended raising it",
-        "Recommended removing the \"you tend to under-delegate, so prefer delegation\" instruction rather than preserving it, because Opus 5 over-delegates rather than under-delegates",
+        "Gave Opus 5's unprompted self-verification as the reason for dropping the double-check instructions — not merely response length, tidiness, or generic prompt hygiene",
         "The corrected outputs/system-prompt.md preserves the domain rules that have nothing to do with the model migration — the billing/provisioning/bug/other categorization, and the rule not to promise refunds or credits but escalate them to a human"
       ],
       "checks": [
         { "kind": "artifact_exists", "path": "outputs/review.md" },
         { "kind": "artifact_exists", "path": "outputs/system-prompt.md" },
         { "kind": "artifact_matches", "path": "outputs/review.md", "pattern": "400" },
+        { "kind": "artifact_matches", "path": "outputs/review.md", "pattern": "max_tokens[\\s\\S]{0,90}?(8192|12288|16000|16384|32000|32768|64000|65536)" },
+        { "kind": "artifact_matches", "path": "outputs/system-prompt.md", "pattern": "(?<![\\s\\S])(?![\\s\\S]*([Dd]ouble-check|[Rr]e-verify|verification pass))" },
+        { "kind": "artifact_matches", "path": "outputs/system-prompt.md", "pattern": "(?<![\\s\\S])(?![\\s\\S]*under-delegate)" },
         { "kind": "trace_includes", "tool": "Read", "input_pattern": "agent-config\\.json" }
       ]
     }
