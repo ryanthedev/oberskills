@@ -1,6 +1,6 @@
 {
   "name": "oberskills",
-  "version": "2.7.1",
+  "version": "2.8.0",
   "description": "Discipline plugins for Codex: prompt engineering, skill authoring, writing, research, and browser control",
   "author": {
     "name": "r"
