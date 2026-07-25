@@ -52,7 +52,7 @@ Detect mode from the request. Default to DESIGN.
 
 Examples steer format, tone, and structure — they rarely raise capability on tasks the model already does well. Add them in response to observed failures, vary their surface formatting, wrap them in `<example>` tags. (Evidence and caveats: design.md.)
 
-**6. Reasoning is a dial, not an incantation.** On current Claude, adaptive thinking decides when and how much to think; steer with `effort` and brief nudges ("think carefully before responding" / "answer directly"), not hand-written step plans — general instructions beat prescriptive ones. Never instruct Claude to echo, transcribe, or explain its internal reasoning in the response: on Fable 5 this triggers `reasoning_extraction` refusals. Manual CoT/CoD belongs only off-Claude or with thinking off (porting.md).
+**6. Reasoning is a dial, not an incantation.** On current Claude, adaptive thinking decides when and how much to think; steer with `effort` and brief nudges ("think carefully before responding" / "answer directly"), not hand-written step plans — general instructions beat prescriptive ones. `effort` sets thinking depth, not output length: on Opus 5 the two come apart, so lowering effort does not reliably shorten the visible response — prompt for length instead (claude-models.md §5). Never instruct Claude to echo, transcribe, or explain its internal reasoning in the response: on Fable 5 this triggers `reasoning_extraction` refusals. Manual CoT/CoD belongs only off-Claude or with thinking off (porting.md).
 
 **7. Prefill is dead.** Prefilled assistant turns return 400 errors on Claude ≥4.6. Migrate: structured outputs or a tool with an enum field for format forcing; "Respond directly without preamble…" for preamble killing; a user-message "your previous response was interrupted…" for continuations. Any prefill found in review is a breaking bug (migration table: claude-models.md).
 
@@ -73,6 +73,9 @@ Examples steer format, tone, and structure — they rarely raise capability on t
 | Confident false claims about unread material | No grounding/investigation gate | snippets.md `<investigate_before_answering>` |
 | Unrequested actions, overengineering, scope creep | Missing scope constraints | snippets.md anti-overengineering block |
 | Slow/expensive; verbose interim summaries | Effort too high; legacy progress-update scaffolds | #6; claude-models.md |
+| Output still long after lowering `effort` (Opus 5) | Effort controls thinking, not response length | snippets.md #22 (conciseness) |
+| Redundant re-checking; tokens burned re-verifying | Carried-over verification instructions | claude-models.md §5, Opus 5 |
+| 400 when disabling thinking (Opus 5) | `disabled` + `xhigh`/`max` is rejected | claude-models.md §1 |
 
 Crisis shortcut: get 3 failing + 3 working examples; the pattern emerges in 5 minutes; intervene for THAT failure only.
 

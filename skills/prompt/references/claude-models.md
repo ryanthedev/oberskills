@@ -14,6 +14,8 @@ How to prompt current Claude models and migrate prompts written for older ones. 
 
 Adaptive thinking replaces extended thinking: Claude dynamically decides when and how much to think, calibrated by the `effort` parameter and query complexity. "In internal evaluations, adaptive thinking reliably drives better performance than extended thinking." On Fable 5 it is always on and cannot be disabled; raw CoT is never returned (`display` defaults to `"omitted"`; set `"summarized"` for readable summaries).
 
+**Thinking defaults are per-model, and Opus 5 flipped them.** Omitting `thinking` runs adaptive on Opus 5 and Sonnet 5, but runs *without* thinking on Opus 4.8/4.7. Two consequences on Opus 5: `max_tokens` now caps thinking + response text together, so raise it on any route that never set `thinking`; and `{"type": "disabled"}` is accepted only at effort `high` or below — pairing it with `xhigh`/`max` is a 400, validated per request. Prefer thinking on at `low` effort over disabling it (§5, Opus 5).
+
 Migration snippet — replace token budgets with:
 
 ```json
@@ -36,7 +38,7 @@ Manual `enabled` + `budget_tokens` is deprecated on 4.6 and rejected on newer mo
 1. "Prefer general instructions over prescriptive steps." — "think thoroughly" often produces better reasoning than a hand-written step-by-step plan; Claude's reasoning frequently exceeds what a human would prescribe.
 2. "Multishot examples work with thinking." — use `<thinking>` tags inside few-shot examples to show the reasoning pattern.
 3. "Manual CoT as a fallback." — only when thinking is off; use `<thinking>`/`<answer>` tags to separate reasoning from output (depth: porting.md).
-4. "Ask Claude to self-check." — "Before you finish, verify your answer against [test criteria]." Catches errors reliably for coding and math. (For anything high-stakes this supplements, never replaces, an external verifier — SKILL.md #8.)
+4. "Ask Claude to self-check." — "Before you finish, verify your answer against [test criteria]." Catches errors reliably for coding and math. (For anything high-stakes this supplements, never replaces, an external verifier — SKILL.md #8.) **Carve out Opus 5:** it self-verifies unprompted, and Anthropic says adding these instructions "cause over-verification… removing them reduces wasted tokens with no loss in quality" (§5). A prompt library that applies self-check uniformly needs an exception, not a global rule.
 
 Quirk: with thinking disabled, Claude Opus 4.5 is particularly sensitive to the word "think" and its variants — prefer "consider", "evaluate", "reason through".
 
@@ -76,7 +78,7 @@ Anthropic, verbatim: "Prompts, skills, or harness instructions that tell the mod
 
 Refusals return HTTP 200 with `stop_reason: "refusal"`. If reasoning visibility is needed: read structured `thinking` blocks (adaptive thinking with `display: "summarized"`), or give the agent a send-to-user tool for verbatim mid-task content (elicitation: snippets.md #20). In output schemas, ask for brief task-level evidence ("cite the evidence for your verdict"), never a reasoning transcript (design.md §4).
 
-The full classifier picture (verified against the official pages 2026-07-01): `reasoning_extraction` is one of **four** categories — `cyber` (offensive-security techniques), `bio` (lab methods, molecular mechanisms), and `frontier_llm` (the launch material's "distillation") are the others; official pages each list only a 3-of-4 subset. Benign security and life-sciences work can also trigger them — a security-adjacent workspace alone has tripped `cyber`. Configure server- or client-side fallback to Opus 4.8, and know its limit: fallback covers the **main model path only** — tool-embedded or advisor sub-inference calls that trip a classifier fail with a generic "unavailable" error that stays disabled for the rest of the session (claude-code#67306, open as of 2026-07-01).
+The full classifier picture (verified against the official pages 2026-07-01): `reasoning_extraction` is one of **four** categories — `cyber` (offensive-security techniques), `bio` (lab methods, molecular mechanisms), and `frontier_llm` (the launch material's "distillation") are the others; official pages each list only a 3-of-4 subset. Benign security and life-sciences work can also trigger them — a security-adjacent workspace alone has tripped `cyber`. Opus 5 ships elevated cybersecurity safeguards too and can return `stop_reason: "refusal"`, so this is no longer a Fable-only concern: check `stop_reason` before reading `content` on both. Configure a fallback — and on Opus 5 prefer `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) over pinning a model, since it routes by refusal category and removes the migration you'd owe when a pinned fallback is deprecated. Know the limit: fallback covers the **main model path only** — tool-embedded or advisor sub-inference calls that trip a classifier fail with a generic "unavailable" error that stays disabled for the rest of the session (claude-code#67306, open as of 2026-07-01).
 
 ## 5. Per-model prompting deltas
 
@@ -90,6 +92,20 @@ The full classifier picture (verified against the official pages 2026-07-01): `r
 - Reasoning echo = refusal hazard (§4). Prompts and skills migrated to Fable 5 get the de-prompting pass (§2) first.
 - **Its failure mode is over-elaboration, not laziness** — at higher effort it surveys options it won't pursue and narrates root causes at length; one brief brevity instruction steers it (snippets.md #12). The de-prompting checklist (§2) is inherited Opus 4.5/4.6-era doctrine and still applies.
 - Dated ops note (2026-07-01): suspended 2026-06-12→06-30 under export controls, globally redeployed 07-01 — field reports predating the suspension rest on ~3 days of usage. No zero-data-retention option; 30-day retention applies.
+
+### Opus 5
+
+Launched 2026-07-24 (`claude-opus-5`), same $5/$25 per MTok as Opus 4.8. Start from the fact that most prompts need nothing — verbatim: "It performs well out of the box on existing Claude Opus 4.8 prompts." What follows is the short list that does need tuning. Model-tier and cost consequences: the agent skill's SKILL.md §3.
+
+- **Verbosity is a prompting problem, not an effort problem** (verbatim): "The effort parameter controls how much the model thinks rather than how much it says: lowering effort can reduce thinking volume without reliably shortening the visible response." Conciseness block: snippets.md #22. Files it writes to disk run long on a *separate* axis — instruct length there too. Practitioners hit this hardest: one launch-day review named it "Claude Slop."
+- **Delete verification and self-check scaffolding** (verbatim): it "verifies its own work without being told to… instructions like these cause over-verification on Claude Opus 5, and removing them reduces wasted tokens with no loss in quality." Same for "double-check your answer" / "re-verify before responding." This is a delete, not a rewrite, and it applies to harness-level verification steps as well as prompt text.
+- **Narrates more, and narrates its own corrections more.** Cadence block: snippets.md #23; correction filter: snippets.md #24. To tune narration *up* instead, positive examples of the wanted style beat don't-do instructions.
+- **Expands task scope** — adds unrequested steps or applies its own judgment about what the task should be. Scope block: snippets.md #25.
+- **Delegates to subagents more readily — the reverse of Opus 4.8.** Any "delegate more" guidance written for 4.8 should come out, and cost-sensitive harnesses want an explicit cap (agent skill SKILL.md §4).
+- **Effort carries more weight here than on any earlier Opus, and the evidence points downward.** Anthropic: `low` and `medium` "produce strong quality at a fraction of the tokens and latency," with `high` the default and `xhigh` for demanding coding/agentic work. An independent week-long practitioner test agrees from the other direction — "the more time you give it to think, the more likely it is to do the more annoying behaviors" — and settled on medium/low (Every, 2026-07-24; single team, unreplicated). Re-sweep effort rather than porting 4.8 defaults. At `xhigh`/`max`, start `max_tokens` at 64K.
+- **Thinking-off routes need care** — see §1 for the effort cap, and snippets.md #26 for the two visible artifacts (tool calls emitted as plain text, XML tag leakage) plus the counterintuitive fixes.
+- **Migration hazard specific to skills and harnesses.** One launch-day practitioner report found Opus 5 "breaks backward compatibility. If you're using it with existing skills and workflows, watch out. It will often stop early or otherwise miss your instructions" (Every, 2026-07-24 — single source, launch-day, not reproduced and not acknowledged by Anthropic). Treat it as a debugging hint, not an established fact: if a skill that worked on 4.8 misbehaves, suspect carried-over verification and scope scaffolding first (§2).
+- **Not the strongest reviewer for correctness-critical code.** CodeRabbit's own launch-day benchmark measured 55.2% issue coverage vs 61.1% for their production baseline, ~4× the nitpick volume, and named "logic errors, race conditions, and API misuse" as weak areas — concluding it "is not the best general-purpose code reviewer we tested." One vendor's harness on one suite, so weight it accordingly, but don't make Opus 5 the sole reviewer on concurrency- or correctness-heavy changes (agent skill `references/verifier-dispatch.md`).
 
 ### Opus 4.8
 

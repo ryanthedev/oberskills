@@ -2,7 +2,7 @@
 
 Copy-paste-ready behavior blocks from Anthropic's current prompting docs. DESIGN mode pulls these instead of writing its own; REVIEW mode cites entries as fixes. Ellipses (`…`) mark abridgments in the source extraction — fetch the source page when you need the full block.
 
-Sources: **S2** = Prompting best practices (platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) · **S3** = Prompting Claude Fable 5 (…/prompting-claude-fable-5) · **S4** = Prompting Claude Opus 4.8 (…/prompting-claude-opus-4-8).
+Sources: **S2** = Prompting best practices (platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) · **S3** = Prompting Claude Fable 5 (…/prompting-claude-fable-5) · **S4** = Prompting Claude Opus 4.8 (…/prompting-claude-opus-4-8) · **S5** = Prompting Claude Opus 5 (…/prompting-claude-opus-5, fetched 2026-07-24).
 
 Ownership note: the when-to-delegate snippet and effort-scaling guidance belong to the agent skill — not duplicated here.
 
@@ -31,6 +31,11 @@ Ownership note: the when-to-delegate snippet and effort-scaling guidance belong 
 | 19 | State the boundaries | Unrequested actions/fixes |
 | 20 | send_to_user elicitation | Async agents with a send-to-user tool |
 | 21 | Final-summary re-grounding | Long-run summaries full of working shorthand |
+| 22 | Conciseness | Opus 5 default verbosity ("Claude Slop") |
+| 23 | Narration cadence | Opus 5 over-narrating between tool calls |
+| 24 | Correction materiality filter | Opus 5 narrating its own self-corrections |
+| 25 | Scope discipline | Opus 5 expanding a narrow task |
+| 26 | Thinking-off artifact fix | Routes that must keep thinking disabled |
 
 ## 1. `<default_to_action>` — S2
 
@@ -165,3 +170,43 @@ Use when: a long or asynchronous agent has a client-side send-to-user tool. Defi
 Use when: extended agentic runs end in summaries written in the working shorthand the user never saw.
 
 > Terse shorthand is fine between tool calls (that's you thinking out loud, and brevity there is good). Your final summary is different: it's for a reader who didn't see any of that… Write it as a re-grounding, not a continuation of your working thread: the outcome first, then the one or two things you need from them, each explained as if new… When you write the summary at the end, drop the working shorthand. Write complete sentences. Spell out terms… If you have to choose between short and clear, choose clear.
+
+## 22. Conciseness — S5
+
+Use when: Opus 5's default user-facing responses run longer than wanted. Note the lever: `effort` shapes how much the model *thinks*, not how much it *says*, so lowering effort does not reliably shorten visible output — prompt for it.
+
+> Keep responses focused, brief, and concise. Keep disclaimers and caveats short, and spend most of the response on the main answer. When asked to explain something, give a high-level summary unless an in-depth explanation is specifically requested.
+
+For a long system prompt, repeat a short reminder near the end:
+
+> `<tone_preference>` Keep outputs reasonably concise. `</tone_preference>`
+
+Written deliverables are a separate axis — files Opus 5 writes to disk run long too:
+
+> Match the length of written documents to what the task needs: cover the substance, but do not pad with filler sections, redundant summaries, or boilerplate.
+
+## 23. Narration cadence — S5
+
+Use when: Opus 5 announces what it is about to do and produces long per-message output during agentic work. To tune narration *up* or restyle it, positive examples of the wanted style beat instructions about what not to do.
+
+> Before your first tool call, say in one sentence what you're about to do. While working, give a brief update only when you find something important or change direction. When you finish, lead with the outcome: your first sentence should answer 'what happened' or 'what did you find,' with supporting detail after it for readers who want it.
+
+## 24. Correction materiality filter — S5
+
+Use when: Opus 5 narrates corrections to its own earlier statements more than prior models do — undesirable in user-facing products.
+
+> Only correct an earlier statement when the error would change the user's code, conclusions, or decisions. State corrections plainly and briefly, then continue the task. For slips that change nothing for the user, make the fix and move on without noting it.
+
+## 25. Scope discipline — S5
+
+Use when: Opus 5 adds steps that weren't requested or applies its own judgment about what the task should be.
+
+> Deliver what was asked, at the scope intended. Make routine judgment calls yourself, and check in only when different readings of the request would lead to materially different work. If the request seems mistaken or a better approach exists, say so in a sentence and continue with the task as asked rather than quietly narrowing, widening, or transforming it. Finish the whole task, and stop short of actions that are clearly beyond what was asked.
+
+## 26. Thinking-off artifact fix — S5
+
+Use when: a route must keep `thinking: {"type": "disabled"}` on Opus 5. Two artifacts appear: tool calls written into visible text instead of a `tool_use` block (the call silently never runs), and internal XML tags leaking into the response. Prefer thinking on at `low` effort — Anthropic: "for most tasks, thinking enabled at `low` effort performs better than thinking disabled at similar cost." If you cannot:
+
+> When you use a tool, you may say a brief sentence first. If no tool can express what the user asked for, say so instead of guessing. Do not include internal or system XML tags in your response.
+
+Two counterintuitive rules: delete any instruction telling the model not to think or not to reason (it *increases* tag leakage), and do not name thinking tags specifically — "Instructions that call out thinking tags by name are less effective than the general form."

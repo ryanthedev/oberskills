@@ -43,7 +43,7 @@ This is the plugin-canonical copy of the field list — other oberskills files p
 | `description` | When Claude should delegate to this subagent. Include "use proactively" to encourage automatic delegation |
 | `tools` | Allowlist. **Trap: omitting `tools` inherits ALL tools, not none.** To preload skills, use the `skills` field rather than listing `Skill` here |
 | `disallowedTools` | Denylist. If both are set, `disallowedTools` is applied first, then `tools` is resolved against the remaining pool |
-| `model` | `sonnet`, `opus`, `haiku`, `fable`, a full model ID (e.g. `claude-opus-4-8`), or `inherit`. Defaults to `inherit` |
+| `model` | `sonnet`, `opus`, `haiku`, `fable`, a full model ID (e.g. `claude-opus-5`), or `inherit`. Defaults to `inherit`. Aliases track the latest model per tier, so pin a full ID when a definition must not follow a tier upgrade |
 | `effort` | `low` / `medium` / `high` / `xhigh` / `max`; overrides the session effort per subagent |
 | `permissionMode` | `default`, `acceptEdits`, `auto`, `dontAsk`, `bypassPermissions`, `plan`. **Ignored for plugin subagents** |
 | `maxTurns` | Maximum agentic turns |
@@ -103,7 +103,7 @@ Tools never available inside subagents, even if listed in `tools`: `Agent`, `Ask
 
 ## 8. Gotchas
 
-- **Opus-endpoint hang.** During capacity incidents (529s), a dispatch with explicit `model: "opus"` can hang forever at "Initializing…": the alias resolves to the standard `claude-opus-4-8` endpoint, a different capacity pool from the session's variant, and the client silently retries indefinitely. Fix: omit the `model` param so the subagent inherits the parent's pool. Diagnosis: the subagent transcript contains zero `"type":"assistant"` records.
+- **Opus-endpoint hang.** During capacity incidents (529s), a dispatch with explicit `model: "opus"` can hang forever at "Initializing…": the alias resolves to the standard current-Opus endpoint (`claude-opus-5` since 2026-07-24), a different capacity pool from the session's variant, and the client silently retries indefinitely. Fix: omit the `model` param so the subagent inherits the parent's pool. Diagnosis: the subagent transcript contains zero `"type":"assistant"` records.
 - **Cache rule.** Switching the MAIN conversation's model invalidates the prompt cache. Subagents are the cache-safe way to mix models: keep the main loop on one model and route cheap subtasks to a cheaper model via dispatch (this is how built-in Explore uses Haiku).
 - **Definition reload.** File-based agent definitions load at session start — editing one on disk requires a restart (`/agents` UI edits apply immediately; for plugins, `/reload-plugins`).
 - **Spawn-bias drift across models.** Recent model generations have oscillated between over-delegating (spawning a subagent where a direct grep suffices) and under-delegating (iterating serially over a fan-out-shaped task). State trigger conditions in both directions when writing orchestration prompts: when to spawn AND when to work directly.

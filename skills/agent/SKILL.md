@@ -102,15 +102,21 @@ Two levers, in order: drop `effort` before dropping a model tier. `effort: low` 
 
 Effort semantics: `low` buys terse, direct execution; `medium` buys deliberation over alternatives; `high`+ buys extended reasoning on ambiguity. Defaults by dispatch role: low for bounded workers, medium for analysis and synthesis, high or above only for deciders. Official Fable 5 guidance agrees — `high` default, `xhigh` only for capability-sensitive work — and adds that low/medium on Fable often exceed prior-model `xhigh`, so downshift confidently for routine dispatch (verified 2026-07-01).
 
-| Tier (June 2026) | Cost vs Haiku (input) | Dispatch role |
+**On Opus 5, re-sweep instead of porting defaults** (verified 2026-07-24). Anthropic: the full `low`→`max` ladder is available, `high` is the default, `xhigh` for demanding coding and agentic work, and `low`/`medium` "produce strong quality at a fraction of the tokens and latency" — it "converts additional effort into better results more reliably than any earlier Opus model," so the setting carries more weight in both directions. Two independent signals push *down* rather than up: those official low/medium numbers, and a week-long practitioner test finding "the more time you give it to think, the more likely it is to do the more annoying behaviors" (Every, 2026-07-24 — one team, launch-day, unreplicated). At `xhigh`/`max` set `max_tokens` to at least 64K, since thinking and response text share that cap. Behavioral deltas that follow from effort choices: the prompt skill's claude-models.md §5.
+
+| Tier (July 2026) | Cost vs Haiku (input) | Dispatch role |
 |---|---|---|
 | `haiku` (Haiku 4.5) | 1x | Read-only discovery: file search, classification, log/screenshot triage. Built-in Explore runs on it. Only 200K-context model — don't hand it huge inputs |
 | `sonnet` (Sonnet 5) | 2x intro → 3x after 2026-08-31 | Workhorse workers: extract, analyze, synthesize; parallel research fan-outs; code analysis. New tokenizer bills ~1.0–1.35× the tokens of 4.6 per input; Sonnet 4.6 stays active as Legacy |
-| `opus` (Opus 4.8) | 5x | Subagents that write code, make decisions, or carry tricky reasoning |
-| `fable` (Fable 5) | 10x | The orchestrator itself; rarely a subagent. Hand it ambiguous, long-horizon work |
+| `opus` (Opus 5) | 5x | Subagents that write code, make decisions, or carry tricky reasoning — and now the default orchestrator too (see below) |
+| `fable` (Fable 5) | 10x | Reserve for work Opus 5 has actually failed. Rarely a subagent |
 | omit `model` (inherit) | — | Default for writers and deciders, and the safe choice during API incidents |
 
-Ratios re-verified against official pricing 2026-07-01 (Sonnet 5 intro pricing runs to 2026-08-31); check the claude-api skill for live pricing before cost-sensitive choices.
+Aliases resolve to the latest model in each tier (`claude --help`: "an alias for the latest model"), so `opus` tracks Opus 5 from its 2026-07-24 launch. Ratios re-verified against official pricing 2026-07-24: Opus 5 is $5/$25 per MTok, unchanged from Opus 4.8, so the 5x row is unmoved (Sonnet 5 intro pricing runs to 2026-08-31). Check the claude-api skill for live pricing before cost-sensitive choices.
+
+**The table prices tokens, not tasks — and Opus 5 spends more tokens per task.** Its per-token rate matches Opus 4.8, but it emits more output for the same job, so bills rise on a flat price. Launch-day measurements: ~50% more input and ~65% more output tokens per review call than a baseline model (CodeRabbit's own benchmark), and 1.5–2.5× the output tokens overall, reported as 21% more end-to-end cost at the cheapest effort setting up to 80% more at high effort (The New Stack, secondhand — the article body was paywalled). Both are single-source and launch-day. The practical consequence is not "avoid Opus 5" but "the conciseness and effort levers are cost levers here" — see the prompt skill's snippets.md #22 and the effort note below.
+
+**Orchestrator default moves from Fable to Opus 5 — narrowly.** Anthropic positions Opus 5 as "frontier intelligence at half the cost of Claude Fable 5." Independent-but-vendor-coordinated evaluation (Artificial Analysis, run "with Anthropic support" pre-release) puts Opus 5 at max effort first on its Intelligence Index at 61 vs Fable 5's 60 — but the *same* tracker ranks Opus 5 at `high` effort fifth at 59, and Vals AI has Fable 5 ahead by 0.33 points. So the honest reading is a tie at the top that Opus 5 wins only at max effort, at half the price. Start ambiguous long-horizon work on Opus 5 and escalate to Fable on observed failure; Opus 5 also has no zero-data-retention restriction, which Fable does. Expect this to move — Opus 5 shipped 2026-07-24 and no cold third-party eval existed yet.
 
 Gotcha: during capacity incidents, an explicit `model: "opus"` dispatch can hang forever at "Initializing…" — the alias resolves to a different capacity pool than your session's. Omitting `model` inherits the parent's pool and avoids it. Diagnose: subagent transcript with zero assistant records.
 
@@ -128,6 +134,8 @@ Size the fan-out to the task — overinvestment is the classic failure (Anthropi
 
 Default ceiling 3–5 parallel agents; coordination overhead beats returns past about 3 when agents interact or refine each other's work — fully independent, non-overlapping fan-outs tolerate up to ~10 (distinction and sizing evidence in `references/patterns.md` in this skill directory).
 
+**Opus 5 reaches for subagents more readily than Opus 4.8 did — cap it.** Anthropic's own guidance is that delegation "multiplies cost and time when applied to small tasks" and that harnesses should "give explicit guidance on which scenarios warrant delegation, or set deterministic caps on how many agents can be launched." This reverses the Opus 4.8 problem, which was *under*-delegation: any "delegate more" instruction written for 4.8 should be deleted rather than kept alongside a cap. Verbatim cap block: "Delegate to a subagent only for large tasks that are genuinely independent and parallelizable, such as a wide multi-file investigation. Do not delegate work you can finish yourself in a handful of tool calls, and do not use subagents to verify or double-check your own work. If one subagent can complete the task, use one rather than several, and keep spawn counts low."
+
 - Spawn all independent agents in the same turn; request parallelism concretely ("use three subagents, one per module") — the model is conservative about parallelism unless told.
 - Agents must be independent. If outputs feed each other, run them sequentially from here.
 - Never give parallel agents overlapping write scopes.
@@ -140,7 +148,9 @@ Never have the producing agent validate its own output — models catch fewer th
 
 1. **Deterministic checks first.** Tests, typecheck, lint, and builds run before any LLM judgment, and their results go to the verifier as raw output.
 2. **No intent framing.** The verifier dispatch carries no plan context, no "this implements X", no progress narrative — conclusion framing can collapse defect detection almost entirely. Hand it the artifact, the checks, and the acceptance criteria. Nothing else.
-3. **Verifier may be a weaker model.** Checking is easier than producing; downgrade one tier (opus producer → sonnet verifier).
+3. **Verifier may be a weaker model.** Checking is easier than producing; downgrade one tier (opus producer → sonnet verifier). Opus 5 is a weak fit for *sole* review of correctness-critical code: CodeRabbit's launch-day benchmark measured 55.2% issue coverage vs 61.1% for their production baseline, ~4× the nitpick volume, and named logic errors, race conditions, and API misuse as weak areas (one vendor, one suite, 2026-07-24). Pair it with deterministic checks, or use a different model for concurrency-heavy diffs.
+
+**Reconciling this with the Opus 5 delegation cap (§4).** Anthropic's cap block says "do not use subagents to verify or double-check your own work," which reads like it contradicts this section. It doesn't: the target is *reflexive* verification scaffolding inside a working loop — an agent spawning a checker because the prompt told it to always verify, which on Opus 5 is redundant with behavior it already has. This section is about the orchestrator commissioning an independent verification dispatch for a high-stakes artifact, with no intent framing and deterministic checks first. Delete the standing "always add a verification step" instruction; keep the deliberate verify dispatch.
 
 Ask for coverage, not pre-filtered findings: report every issue including low-severity or uncertain ones, with confidence and severity per finding — a separate step filters. Cap verify→revise at two rounds, then escalate to the user.
 
