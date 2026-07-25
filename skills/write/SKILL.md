@@ -1,23 +1,26 @@
 ---
 name: write
 description: >-
-  Edits and reviews prose to remove the AI tells a model cannot see in its own
-  writing — measured detection signals, not intuition: structural rhythm first
-  (sentence-length variance, information density, discourse order), the
-  surface kill-list second (banned phrases, em-dash overuse, hollow openers,
-  hedging), with an optional phased interactive review for longer pieces. Use
-  whenever prose for human readers is being written or edited — blog posts,
-  announcements, docs, emails, READMEs — when text needs humanizing or sounds
-  robotic, and when reviewing someone's writing. Not for: wording prompts or
-  system-prompt text (use oberskills:prompt), converting markdown for
-  platforms like Slack or Notion (use penman), or writing code, comments,
-  docstrings, or API reference docs.
+  Drafts, edits, and reviews prose to remove the AI tells a model cannot see in
+  its own writing — measured detection signals, not intuition: structural rhythm
+  first (sentence-length variance, information density, discourse order), a
+  reader-job type router second (narrative, expository, persuasive, marketing,
+  expressive, announcement), the surface kill-list third (banned phrases,
+  em-dash overuse, hollow openers, hedging), with optional private voice
+  profiles and a phased interactive review for longer pieces. Use whenever prose
+  for human readers is written, drafted, edited, or reviewed — blog posts,
+  announcements, docs, emails, READMEs — when text needs humanizing, sounds
+  robotic, or must match a specific person's voice. Not for: wording prompts or
+  system-prompt text (use oberskills:prompt), converting markdown for platforms
+  like Slack or Notion (use penman), or writing code, comments, docstrings, or
+  API reference docs.
 when_to_use: >-
   edit this to sound human, humanize this text, make this not sound like AI,
   this sounds robotic or corporate, review my writing, this reads like ChatGPT
-  wrote it, tighten this prose, remove the AI tells, rewrite or polish this
-  blog post, announcement, draft, or email before it ships. Not for writing a
-  prompt, formatting for Slack or Notion, or code, comments, and docstrings.
+  wrote it, tighten this prose, remove the AI tells, write or polish this blog
+  post, announcement, draft, or email, write this in my voice, make this sound
+  like me, does this sound like me. Not for writing a prompt, formatting for
+  Slack or Notion, or code, comments, and docstrings.
 ---
 
 # write
@@ -34,12 +37,36 @@ What readers detect in authentic writing is cost: a specific person chose these 
 
 | Mode | When | Output |
 |------|------|--------|
-| **EDIT** (default) | Writing/improving prose | Rewritten text only |
+| **EDIT** (default) | Drafting or improving prose | Rewritten text only |
 | **REVIEW** | "review writing", "analyze this prose" | Interactive phased review |
 
-**EDIT:** Silently fix everything. Return only improved text. No meta-commentary.
+**EDIT:** Editing supplied text, or drafting new text from a description. Silently fix everything. Return only improved text. No meta-commentary.
 
 **REVIEW:** Help the author improve through guided discovery. One issue group at a time. See [Review Protocol](#review-protocol) below.
+
+---
+
+## Type — match the reader's job
+
+Before editing or drafting, name what the reader is trying to *do* with the text: follow a story, understand why, decide what to believe, decide to act, meet a voice, learn what changed. That job — not the container it ships in (email, blog, doc) — sets the spine. Load `references/types.md` in this skill directory for the reader-job taxonomy: per-type craft rules, the characteristic AI failure for each, and the cross-type register-consistency check. Apply the matching row on top of the core rules below.
+
+---
+
+## Voice — match a specific person (optional)
+
+When the ask is "write this in my voice" / "make this sound like me" / "does this sound like me", overlay a voice profile. Humanizing is table stakes; the voice is the point — a piece that's merely "human" but doesn't sound like the target person has failed.
+
+Voice profiles are private and live outside this skill. Resolve one in order:
+
+1. An explicit path or URL given in the request.
+2. `$WRITE_VOICES_DIR/<name>.md` if that variable is set.
+3. `~/.claude/writing-voices/<name>.md` — the default private dir. "my voice" / "me" resolves to the author's own profile there.
+
+If none resolves, say so and offer to author one from `voices/_template.md` in this skill directory — don't invent a voice. Once resolved, load the profile and apply its register ladder and patterns *after* the core rules and surface pass.
+
+### Drafting long-form (Claude-only)
+
+For drafting long-form or voiced prose from scratch on Claude Code, consider routing the draft to a stronger model and running the EDIT pass locally. See `references/fable-drafting.md` in this skill directory (labeled Claude-specific; skip on other hosts).
 
 ---
 
@@ -109,6 +136,7 @@ Before returning, apply:
 6. Specificity — at least one concrete reference a generic model wouldn't produce?
 7. Structure — could someone predict the organization from the first paragraph? Rearrange.
 8. Em-dashes — more than one? Replace extras with commas, colons, periods, or parentheses.
+9. Register — does any sentence belong to a different type than the one you chose? Pull it back (see `references/types.md` in this skill directory).
 
 ---
 
