@@ -4,9 +4,15 @@ Hand-authored eval sets for the meta-skills, run through the `skill-eval` MCP se
 Schema and assertion-design rules: `skills/skill-craft/references/eval.md`.
 
 ```
-evals/<skill>/evals.json      # eval definitions (house schema)
-evals/<skill>/fixtures/       # files copied into each run's workspace
+evals/<skill>/evals.json             # eval definitions (house schema)
+evals/<skill>/fixtures/              # files copied into each run's workspace
+evals/<skill>/trigger-queries.json   # [{query, should_trigger}] for test_triggers (write has one)
 ```
+
+Trigger sets run through `test_triggers` with `skill_path` and
+`queries_path: /abs/path/to/evals/<skill>/trigger-queries.json`. Run one whenever a
+skill's `description` or `when_to_use` changes; near-miss negatives are the rows that
+earn their keep.
 
 ## Running one
 

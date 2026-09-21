@@ -4,6 +4,8 @@ Kill the obvious tells. These are the words, phrases, and punctuation patterns t
 
 Sources: Pangram Labs phrase analysis (N=millions), UCC stylometric study, Columbia University creative writing analysis, community-compiled tells from editors/writers, 147-paper synthesis (2025-2026).
 
+Machine-readable lists: the ban list, hedge list, contraction pairs, and every phrase below that the lint matches live in `scripts/prose-lint.data.json`, read by `scripts/prose-lint.mjs`. That file is the single home of the ban list; this file keeps the explanations, the replacements, and the measured rates. Read the JSON directly when you can't run the lint.
+
 ## Contents
 
 1. [The Aidiolect](#1-the-aidiolect)
@@ -37,9 +39,7 @@ Each model has a vocabulary fingerprint. Individual words prove nothing, but clu
 
 ### Kill List
 
-**Ban:** delve, crucial, tapestry, foster, nuanced, moreover, furthermore, essential, pivotal, comprehensive, utilize, harness, illuminate, bolster, underscore, enhance, intricate, multifaceted, innovative, groundbreaking, elevate, systemic, inherent, facilitate, realm, beacon, cacophony, kaleidoscope, mosaic, commendable, resonate, navigate, synergy, unleash, embarked, spearheaded, ventured
-
-**Morphological variants equally banned:** leveraging, harnessing, utilizing, facilitating, bolstering, etc.
+**Ban:** the words under `kill_words` in `scripts/prose-lint.data.json` ("delve", "tapestry", "pivotal", "leverage", and the rest). The lint matches each with its inflections (leveraging, harnessed, utilizes), so morphological variants are equally banned.
 
 **Synonym trap:** Don't replace kill-list words with mid-register synonyms. "Thorough," "extensive," "holistic," "end-to-end" in rotation is the same tell in a different coat.
 

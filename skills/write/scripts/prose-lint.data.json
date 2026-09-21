@@ -1,0 +1,59 @@
+{
+  "_about": "Machine-readable lists and thresholds for prose-lint.mjs. This file is the single home of the ban list (kill_words) and the hedge, contraction, and transition lists. Every threshold quotes the sentence in the skill that states it; prose-lint.test.mjs fails when a quote no longer appears in its file, so a number cannot change in one place only. Explanations, replacements, and measured overuse rates stay in references/surface-rules.md.",
+  "thresholds": {
+    "short_sentence_under_words": { "value": 5, "file": "SKILL.md", "quote": "Shortest under five words." },
+    "long_sentence_over_words": { "value": 30, "file": "SKILL.md", "quote": "Longest over thirty." },
+    "monotone_run_length": { "value": 3, "file": "SKILL.md", "quote": "Never three consecutive sentences within five words of each other." },
+    "monotone_run_within_words": { "value": 5, "file": "SKILL.md", "quote": "Never three consecutive sentences within five words of each other." },
+    "cluster_range_words": { "value": 4, "file": "SKILL.md", "quote": "If your sentences cluster within a 4-word range, rewrite." },
+    "min_range_words": { "value": 20, "file": "SKILL.md", "quote": "20 words between the shortest sentence and the longest" },
+    "whole_piece_min_words": { "value": 200, "file": "SKILL.md", "quote": "| < 200 words, clear purpose | Quick |" },
+    "max_em_dashes": { "value": 1, "file": "references/surface-rules.md", "quote": "ONE em-dash maximum per piece." },
+    "max_hedges_per_sentence": { "value": 1, "file": "references/surface-rules.md", "quote": "One hedge maximum." },
+    "paragraphs_per_formal_transition": { "value": 3, "file": "references/surface-rules.md", "quote": "One formal transition per three paragraphs maximum." }
+  },
+  "kill_words": [
+    "delve", "crucial", "tapestry", "foster", "nuanced", "moreover", "furthermore", "essential", "pivotal",
+    "comprehensive", "utilize", "harness", "illuminate", "bolster", "underscore", "enhance", "intricate",
+    "multifaceted", "innovative", "groundbreaking", "elevate", "systemic", "inherent", "facilitate", "realm",
+    "beacon", "cacophony", "kaleidoscope", "mosaic", "commendable", "resonate", "navigate", "synergy", "unleash",
+    "embarked", "spearheaded", "ventured", "leverage"
+  ],
+  "kill_phrases": [
+    "as a poignant", "as a powerful reminder", "reminder of the enduring", "faced numerous challenges",
+    "provide new insights into", "the complex interplay", "vibrant tapestry", "in the ever-evolving"
+  ],
+  "hollow_openers": [
+    "it's important to note that", "it is important to note that", "it's worth mentioning that",
+    "it is worth mentioning that", "it should be noted that", "let me explain", "in order to",
+    "in today's", "in an era of", "in conclusion", "in summary"
+  ],
+  "formulaic_patterns": [
+    { "name": "not-only-but-also", "regex": "\\bnot only\\b[^.!?]*\\bbut also\\b" },
+    { "name": "isnt-just-its", "regex": "\\b(?:isn't|is not|aren't|are not|wasn't|was not) just\\b[^.!?]*[;,:]\\s*(?:it's|it is|they're|they are|it was)\\b" }
+  ],
+  "sycophancy": [
+    "great question", "absolutely! let me", "i'd be happy to help", "but here's the thing", "hot take:"
+  ],
+  "formal_transitions": [
+    "furthermore", "moreover", "additionally", "consequently", "nevertheless", "however",
+    "that being said", "having said that"
+  ],
+  "hedges": [
+    "might", "may", "could", "possibly", "potentially", "perhaps", "maybe", "seems", "seem", "seemed",
+    "appears to", "appear to", "arguably", "somewhat", "generally", "likely", "presumably",
+    "to some extent", "in some cases", "tends to", "tend to", "sort of", "kind of"
+  ],
+  "contractible": [
+    "do not", "does not", "did not", "is not", "are not", "was not", "were not", "cannot", "can not",
+    "will not", "would not", "should not", "could not", "have not", "has not", "had not", "it is",
+    "that is", "there is", "here is", "what is", "we are", "you are", "they are", "i am", "i have",
+    "we have", "you have", "they have", "i will", "we will", "you will", "they will", "it will", "let us"
+  ],
+  "contracted_suffixes": ["n't", "'re", "'ve", "'ll", "'d", "'m"],
+  "contracted_words": ["it's", "that's", "there's", "here's", "what's", "let's", "he's", "she's", "who's"],
+  "abbreviations": [
+    "e.g", "i.e", "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "vs", "inc", "ltd",
+    "u.s", "u.k", "a.m", "p.m", "fig", "approx", "cf"
+  ]
+}
