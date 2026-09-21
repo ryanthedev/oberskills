@@ -6,7 +6,11 @@
 2. [Search Agent: Standard (scan, brief, deep)](#search-agent-standard-scan-brief-deep)
 3. [Search Agent: Breadth (landscape scanning)](#search-agent-breadth-landscape-scanning)
 
+Templates are written as Claude Code `Agent(...)` calls. On another host, pass the same prompt text to its delegation tool and map `model` to the equivalent tier. Host-neutral tiers, effort targets, and Claude Code's tool names and wait mechanics: the Model and Effort Selection table and the Host Mapping section of the web-research skill body.
+
 ## Planner Prompt
+
+**Gating dispatch.** Search runs on this agent's output: wait for its result before dispatching any search agent. Effort target: medium.
 
 ```
 Agent(
@@ -16,7 +20,7 @@ Agent(
 
   USER QUERY: {query}
   DEPTH MODE: {mode}
-  EXISTING KNOWLEDGE: {from step 0 hook/local files, or 'none'}
+  EXISTING KNOWLEDGE: {from Step 0 local files, or 'none'}
 
   PHASE 1 - GROUNDING:
   Check local files relevant to this query (package.json, configs, code).
@@ -64,6 +68,8 @@ Agent(
 
 ## Search Agent: Standard (scan, brief, deep)
 
+**Parallel stage.** Dispatch every dimension's agent in one turn, then wait for ALL of them to complete. Before passing paths on, list the run directory with sizes and treat a missing or empty file as a failed dimension (web-research skill body, Step 2). `{path}` is `{run-dir}/{dimension}.md`. Effort target: low.
+
 ```
 Agent(
   model="sonnet",
@@ -77,18 +83,21 @@ Agent(
   OUTPUT FILE: {path}
 
   TASK:
-  1. WebSearch the query
+  1. Search the web for the query with the host's web search tool
   2. SCAN phase: Read the search result snippets. Pick the 1-2 URLs most
      likely to contain novel, specific, authoritative information.
      Skip: results that repeat what other snippets already say,
      results older than 2 years if TIME-SENSITIVE is yes,
      results that are clearly listicles or thin wrappers.
-  3. FETCH phase: WebFetch only the 1-2 selected URLs.
+  3. FETCH phase: Fetch only the 1-2 selected URLs with the host's
+     web fetch tool.
   4. EXTRACT phase: Pull verbatim — exact numbers, version strings,
      config snippets, CLI commands, concrete steps, caveats.
      For each extracted item, note the publication date if visible.
   5. Flag conflicts with LOCAL CONTEXT
-  6. Write to file, return path only
+  6. Write to OUTPUT FILE, return path only. If the write fails or is
+     denied, return WRITE FAILED: {path} and the reason instead of a
+     path — never return a path you did not write.
 
   IF SEARCH RETURNS NO USEFUL RESULTS:
   Reformulate the query — try different terms, broaden or narrow scope,
@@ -150,6 +159,8 @@ Agent(
 
 ## Search Agent: Breadth (landscape scanning)
 
+**Parallel stage.** Same dispatch-together, wait-for-all, check-the-files rule as the standard search agent. Effort target: low.
+
 ```
 Agent(
   model="sonnet",
@@ -161,12 +172,14 @@ Agent(
   OUTPUT FILE: {path}
 
   TASK:
-  1. WebSearch the query
+  1. Search the web for the query with the host's web search tool
   2. Scan top 5-8 results (titles, snippets, first paragraphs)
   3. Extract: what exists, who the key players are, rough categories
   4. Don't deep-fetch every page — headlines and snippets are enough
   5. If TIME-SENSITIVE, note which results look current vs dated
-  6. Write to file, return path only
+  6. Write to OUTPUT FILE, return path only. If the write fails or is
+     denied, return WRITE FAILED: {path} and the reason instead of a
+     path — never return a path you did not write.
 
   FILE FORMAT:
   # Landscape: {dimension}

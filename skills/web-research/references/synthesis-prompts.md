@@ -7,6 +7,10 @@
 3. [Breadth](#breadth)
 4. [Deep](#deep)
 
+Templates are written as Claude Code `Agent(...)` calls with `model` omitted so synthesis inherits the user's model; on another host, pass the same prompt text to its delegation tool without a model override.
+
+**Gating dispatch, every mode.** Synthesis reads the extract files, so dispatch it only after ALL search agents (and, in deep mode, cross-pollination) have completed and every path in RESEARCH FILES has been checked as present and non-empty (web-research skill body, Step 2). Then wait for the synthesis result before presenting anything or starting deep-mode verification.
+
 ## Scan
 
 No synthesis agent. Return the search results directly with a 2-3 sentence summary.
@@ -26,7 +30,9 @@ Agent(
   RESEARCH FILES: {list paths}
 
   TASK:
-  1. Read each research file
+  1. Read each research file. If any listed file is missing, unreadable,
+     or empty, STOP: return only INPUT ERROR: {path} — {what was wrong}
+     for each bad file. Do not synthesize from the remainder.
   2. Cross-reference: what do sources agree on?
   3. Ground against LOCAL CONTEXT
   4. Prioritize by actionability
@@ -72,7 +78,9 @@ Agent(
   RESEARCH FILES: {list paths}
 
   TASK:
-  1. Read each research file
+  1. Read each research file. If any listed file is missing, unreadable,
+     or empty, STOP: return only INPUT ERROR: {path} — {what was wrong}
+     for each bad file. Do not synthesize from the remainder.
   2. Organize by category, not by dimension
   3. If a [COUNTER] dimension exists, use it to flag risks per category
   4. If TIME-SENSITIVE: note which options are actively maintained vs stale
@@ -110,11 +118,13 @@ Agent(
   ORIGINAL QUERY: {query}
   LOCAL CONTEXT: {from planner}
   TIME-SENSITIVE: {yes/no}
-  EXISTING KNOWLEDGE: {from step 0 hook/local files, or 'none'}
+  EXISTING KNOWLEDGE: {from Step 0 local files, or 'none'}
   RESEARCH FILES: {list paths, including cross-pollination file}
 
   TASK:
-  1. Read all research files
+  1. Read all research files. If any listed file is missing, unreadable,
+     or empty, STOP: return only INPUT ERROR: {path} — {what was wrong}
+     for each bad file. Do not synthesize from the remainder.
   2. Reorganize by theme, NOT by dimension
   3. The [COUNTER] dimension findings are equal citizens — integrate them
      into the relevant themes, don't quarantine them in a separate section

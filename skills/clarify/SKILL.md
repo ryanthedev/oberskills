@@ -1,212 +1,91 @@
 ---
 name: clarify
 description: >-
-  Decomposes user intent through structured brainstorming before acting on
-  ambiguous or underspecified requests — classifies the ambiguity type,
-  generates competing interpretations, and selects the clarifying question that
-  removes the most uncertainty. Use when requirements are unclear, a request
-  could have multiple valid interpretations, critical details or constraints
-  are missing, or the request contains contradictions. Most requests need no
-  clarification — invoke only when a concrete ambiguity would change the
-  approach. Not for: mechanical or well-specified tasks (renames, typo fixes,
-  version bumps, running tests or commands, any edit with an explicit file and
-  target), details you can determine yourself from the codebase, or full
-  research or planning workflows that own their own scoping.
+  Pins down what a user actually wants before work starts on an ambiguous or
+  underspecified request — surfaces the competing interpretations and asks the
+  clarifying question that removes the most uncertainty. Use when a request has
+  multiple valid readings, critical details or constraints are missing, or it
+  contradicts itself, and the gap would change the approach. Not for:
+  well-specified tasks (renames, typo fixes, version bumps, running tests or
+  commands, edits naming an explicit file and change), details readable from
+  the codebase, or research and planning workflows that own their own scoping.
 when_to_use: >-
-  clarify intent, understand requirements, ambiguous request, underspecified,
-  what do they actually want, this request is vague, multiple valid
-  interpretations, missing critical details, before acting on an unclear ask.
-  Not for already-clear requests — renames, typo fixes, version bumps, running
-  tests or commands, tasks naming an explicit file and change — facts readable
-  from the code, or a full research or planning phase.
-user-invocable: false
+  help me pin down what I want, clarify intent, understand requirements,
+  ambiguous request, underspecified, this request is vague, what do they
+  actually want, multiple valid interpretations, missing critical details,
+  before acting on an unclear ask. Not for already-clear requests or facts
+  readable from the code.
 ---
 
 # Clarify
 
-You are about to start work on a user request. Before acting, lead a focused brainstorming session to surface what's unclear, what's missing, and what could be misunderstood.
+You are about to start work on a user request — because the user asked for help pinning down what they want, because you spotted an ambiguity yourself, or because another skill handed you an unclear ask. Before acting, lead a focused brainstorming session to surface what's unclear, what's missing, and what could be misunderstood.
 
 Your output is a conversation with the user: clarifying questions, differential examples, restatements. Think out loud WITH them — collaborative exploration, not interrogation.
 
----
-
 ## When to Clarify
 
-LLMs default to assuming rather than asking — even frontier models overwhelmingly default to proceeding without clarification when information is missing. This skill counteracts that bias.
+LLMs default to assuming rather than asking — on underspecified software tasks, "without explicit prompting, models almost never interact, even for severely underspecified inputs" (Ambig-SWE, Vijayvargiya et al., ICLR 2026, arXiv:2502.13069). This skill counteracts that bias.
 
-**Separate detection from execution.** Checking for ambiguity as a distinct pass — before starting work — outperforms trying to notice gaps while already solving the problem. Treat this as its own reasoning step.
+**Separate detection from execution.** Check for ambiguity as a distinct pass — before starting work — rather than trying to notice gaps while already solving the problem. A coding-agent scaffold that decoupled underspecification detection from code execution significantly outperformed a single agent doing both, which tended to start modifying code before it recognized the gap (Edwards & Schuster, "Ask or Assume?", arXiv:2603.26233 — one preprint, SWE-bench-style tasks). Treat this as its own reasoning step. (Both sources checked 2026-09-21.)
 
-**Invoke when:**
+**Clarify when:**
 - The request could have multiple valid interpretations
 - Critical constraints or details are absent
 - You'd need to make assumptions to proceed
 - The request contains contradictions
 - You're about to make a hard-to-reverse decision
 
-**Don't invoke when:**
+**Don't clarify when:**
 - The request is unambiguous and well-specified
 - The action is trivially reversible
 - You can determine the answer yourself from the codebase
 - Asking would only confirm what's obvious
 
----
+## The Method
 
-## Classifying What's Unclear
+Three separate decisions, in order:
 
-Not all gaps are the same. Classifying the type of ambiguity determines what kind of question to ask.
-
-### Fault Types
-
-**Intention faults** — The real goal isn't recoverable from the request.
-- Indirect intent: "Can you check if this is possible?" (often means "please do this")
-- Vague objectives: "Make it better" (better how? for whom?)
-- Contextual irrelevance: user introduces an unrelated goal mid-task
-
-**Premise faults** — An assumption in the request is wrong.
-- False presupposition: "Fix the race condition in the cache" (no race condition exists)
-- Capability mismatch: asking for something the system can't do
-- Factual error: assumptions based on code that has since changed
-
-**Parameter faults** — Required details are missing or conflicting.
-- Insufficient information: "Build a login page" (OAuth? email/password? SSO?)
-- Contradictions: "Keep it simple but handle every edge case"
-- Missing priorities: everything seems equally important
-
-**Expression faults** — The language prevents unique interpretation.
-- Referential ambiguity: "Update that component" (which one?)
-- Lexical ambiguity: "Clean up the API" (refactor? deprecate? document?)
-- Scope ambiguity: "Production-ready" means different things to different people
-
-### Ambiguity Direction
-
-Once you've identified a gap, classify which direction it pulls — this shapes your question:
-
-| Direction | Signal | Clarification Action |
-|-----------|--------|---------------------|
-| **Semantic** | Key terms have multiple valid meanings | Disambiguate: "do you mean A or B?" |
-| **Too broad** | Clear intent but scope is huge | Specify: "which part matters most right now?" |
-| **Too narrow** | Request is oddly specific for the likely goal | Generalize: "what's the broader outcome you're after?" |
-
-### For Coding Tasks Specifically
-
-Three concrete ways a coding request becomes ambiguous:
-
-- **Missing goal**: the what/why is absent — only the how is stated
-- **Missing premises**: constraints are unstated (sort order, error handling, edge cases)
-- **Ambiguous terminology**: precise terms replaced with vague ones ("sorted appropriately" vs "ascending by date")
-
-Inconsistencies between requirements are the hardest to detect. Explicitly check whether parts of the request conflict with each other.
-
----
-
-## Generating Questions
-
-### Think in Hypotheses
-
-Don't start with "what should I ask?" Start with "what are the plausible interpretations?" Then find the question whose answer eliminates the most of them.
-
-1. Generate 2-4 competing interpretations of the request
-2. Identify what distinguishes them — the axis of disagreement
-3. Ask about that axis
-
-**Example:**
-- Request: "Add caching to the API"
-- Interpretation A: In-memory cache for latency
-- Interpretation B: External cache (Redis) for scaling
-- Interpretation C: HTTP cache headers for clients
-- Axis: what problem are they solving — speed, load, or bandwidth?
-- Question: "What's driving the caching need — slow responses, high server load, or reducing redundant client requests?"
-
-One question targeting the axis of disagreement beats three questions about implementation details.
-
-### Select for Information Gain
-
-Among possible questions, ask the one that maximally reduces uncertainty across your interpretations. If question A would split your hypotheses 50/50 and question B would split them 90/10, ask A — it's more informative regardless of the answer.
-
-Target convergence in 3-5 rounds. Beyond that, returns diminish sharply.
-
-### Concrete Over Abstract
-
-When possible, show the user what different interpretations produce rather than asking abstract questions:
-
-- Weak: "How should error handling work?"
-- Strong: "Right now errors silently return null. Option A: throw and let the caller handle it. Option B: return a Result type. They'd look like [snippet A] vs [snippet B]."
-
-Show differential behavioral examples — "If you mean X, here's what happens for input Z. If you mean Y, here's what happens instead." Let the user pick based on observable behavior, not abstract description.
-
-### Five Clarification Strategies
-
-Match your approach to the fault type:
-
-| Strategy | When | Example |
-|----------|------|---------|
-| **Ask for parameter** | Specific detail is missing | "What should happen when the input is empty?" |
-| **Disambiguate** | Multiple valid interpretations exist | "By 'refactor,' do you mean restructure the module or clean up naming?" |
-| **Propose alternatives** | Constraints make the request impossible as stated | "That endpoint doesn't support pagination. We could add it, or switch to cursor-based fetching." |
-| **Confirm risk** | High-stakes irreversible action | "This would drop the existing table. Proceed, or migrate the data first?" |
-| **Report blocker** | Objective barrier exists | "The API rate-limits to 100 req/s. The current design needs 300. How should we handle that?" |
-
----
-
-## Question Quality
-
-### Attributes
-
-Every question should pass these checks:
-
-| Attribute | Test |
-|-----------|------|
-| **Focused** | Addresses ONE gap — no compound questions |
-| **Answerable** | User can answer from what they already know |
-| **Discriminative** | The answer meaningfully narrows interpretations |
-| **Non-leading** | Doesn't presuppose the answer |
-| **Task-relevant** | Directly advances the work at hand |
-| **Constructive** | Builds toward shared understanding, not just gathering data |
-
-### Effort Awareness
-
-Estimate the effort each question requires from the user:
-
-| Effort | Example | Policy |
-|--------|---------|--------|
-| **Low** | "Should this be async or sync?" | Ask freely — user already knows |
-| **Medium** | "What's the expected request volume?" | Ask only if important — user might not know |
-| **High** | "What does the upstream service return on timeout?" | Don't ask — investigate yourself |
-
-**The principle: ask about intent, goals, and constraints (the user's knowledge). Figure out implementation details yourself (your job).**
-
-High-effort questions that shift investigation to the user are far more costly than questions they can't answer. When in doubt, investigate yourself first.
-
----
-
-## Managing the Conversation
-
-### Track Intent State
-
-Maintain two mental sets as the conversation progresses:
-
-- **Confirmed** (+): interpretations, constraints, and goals the user has validated
-- **Ruled out** (-): interpretations the user has rejected or that contradict confirmed information
-
-Score remaining interpretations by alignment with confirmed items and conflict with ruled-out items. This naturally narrows the space with each turn.
-
-### Decouple the Decisions
-
-Three separate questions, in order:
-
-1. **Should I clarify?** — Is there meaningful ambiguity that would change my approach?
-2. **What type of clarification?** — Which fault type and strategy apply?
+1. **Should I clarify?** — Is there meaningful ambiguity that would change my approach? The lists above and the short-circuit rules below decide this.
+2. **What kind of gap is it?** — The type of gap determines the kind of question.
 3. **How do I phrase it?** — What specific question, with what framing?
 
 Don't collapse these. Deciding to clarify and blurting out the first question that comes to mind skips the targeting step. Poorly targeted questions waste the user's goodwill.
+
+### Name the Gap
+
+| The gap | What to do |
+|---------|------------|
+| The real goal isn't recoverable from the request | Ask what outcome they're after |
+| An assumption in the request is wrong | Say what you found; propose alternatives |
+| A required detail is missing or conflicts with another | Ask for that detail, or which side wins |
+| The wording admits several readings | Offer the readings: "do you mean A or B?" |
+
+If the gap doesn't fall cleanly into one row, or you sense something is off but can't say what, load `references/taxonomy.md` in this skill directory.
+
+### Find the Question
+
+Don't start with "what should I ask?" Start with "what are the plausible interpretations?"
+
+1. Generate a few competing interpretations of the request
+2. Identify what distinguishes them — the axis of disagreement
+3. Ask about that axis
+
+One question targeting the axis of disagreement beats three questions about implementation details.
+
+**Concrete over abstract.** Show what the interpretations would produce — "If you mean X, here's what happens for input Z. If you mean Y, here's what happens instead." — and let the user pick based on observable behavior.
+
+**Ask about intent, goals, and constraints (the user's knowledge). Figure out implementation details yourself (your job).** If answering would send the user off to investigate, investigate yourself first.
+
+**Keep it conversational.** A few questions per turn at most; a list of ten is an interrogation.
+
+A single quick question needs nothing more than this. Load `references/question-craft.md` in this skill directory when the first answer didn't converge and you're heading into a multi-round exchange, when you're choosing among several candidate questions, or when the decision is high-stakes enough to check a drafted question before sending it.
 
 ### Short-Circuit Rules
 
 - If all key information is present and you have no competing hypotheses, proceed directly.
 - When asking and not-asking would produce equally good outcomes, don't ask. Favor action on ties.
 - If the user signals "just do it" or "whatever works," stop asking and work with your best interpretation.
-
----
 
 ## Wrapping Up
 
@@ -222,15 +101,13 @@ When you've reached clarity, restate before proceeding:
 
 This gives the user a final chance to correct course and documents the shared understanding.
 
----
-
 ## Anti-Patterns
 
 | Pattern | Problem | Instead |
 |---------|---------|---------|
 | Proceeding without checking | Default execution bias — the problem this skill counters | Run detection as a separate pass first |
 | Asking implementation details | Shifts investigation work to the user | Figure it out from the codebase yourself |
-| Rapid-fire question lists | Feels like an interrogation, overwhelms | 1-3 questions max per turn, conversational |
+| Rapid-fire question lists | Feels like an interrogation, overwhelms | A few questions per turn, conversational |
 | Asking what you could read from code | Wastes their time on your job | Read first, ask only about what you can't determine |
 | Over-asking on clear requests | Delays work, erodes trust | If it's clear, proceed |
 | Abstract questions | Harder for the user to reason about | Show differential examples with concrete behavior |
@@ -239,12 +116,19 @@ This gives the user a final chance to correct course and documents the shared un
 | Treating clarification as a blocking gate | Stalls all progress | Clarify the critical gap, start work, refine as you learn |
 | Asking when outcomes are equivalent | Unnecessary friction | Favor direct action when asking wouldn't change the result |
 
----
-
 ## Integration
 
-When another skill or agent loads this skill:
+**When the user invokes this skill directly**, they have already answered "should I clarify?" — go straight to naming the gap. If they haven't said what they're trying to get done, ask that first. If the request turns out to be clear, don't manufacture questions: give the Wrapping Up restatement and confirm. Either way, finish by asking whether to go ahead with the work.
+
+**When another skill or agent loads this skill:**
 
 1. Run the brainstorming session BEFORE the calling skill's main workflow
 2. Pass the shared understanding (goal, scope, constraints, approach) into the calling skill's context
 3. If new ambiguity surfaces during work, return to the loop — clarification is not a one-time phase
+
+## References
+
+| File | Load when |
+|------|-----------|
+| `references/taxonomy.md` in this skill directory | The gap is hard to name: fault types with examples, ambiguity direction, coding-specific gaps |
+| `references/question-craft.md` in this skill directory | Multi-round or high-stakes clarification: worked hypothesis example, information-gain selection, strategy table, question-quality checks, effort tiers, intent tracking |
