@@ -1,12 +1,12 @@
 {
   "name": "oberskills",
-  "version": "2.8.1",
+  "version": "3.0.0",
   "description": "Discipline plugins for Claude Code — prompt engineering, agent dispatch, writing, search, and browser/DevTools control",
   "author": {
     "name": "r"
   },
   "license": "MIT",
-  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "screenshot-analysis", "writing", "humanization"],
+  "keywords": ["skills", "workflow", "agents", "prompt-engineering", "web-search", "browser-automation", "writing", "copywriting", "humanization"],
   "mcpServers": {
     "skill-eval": {
       "command": "bun",

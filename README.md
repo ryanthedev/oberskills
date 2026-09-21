@@ -47,19 +47,19 @@ For local development, this repo directory is the plugin directory. `skill-eval`
 
 ### write
 
-Two modes. EDIT rewrites silently. REVIEW walks you through issues one batch at a time, asks questions, then offers an edit pass. Built on 47 AI-writing detection papers, Pangram Labs data (N=millions), and a blind test that dropped AI detection probability from 85% to 15%.
+Two modes. EDIT rewrites silently. REVIEW walks you through issues one batch at a time, asks questions, then offers an edit pass. Six axes route any piece: the reader's job, edit depth (proofread → copy edit → line edit → developmental, so "just tidy this" doesn't come back as a rewrite), shape (BLUF, inverted pyramid, PAS, AIDA, changelog, press release), style cards distilled from published house guides (Economist, AP, GOV.UK, plain language) with style-by-extraction for anything else, copy organized by reader awareness with a never-invent-proof claims rider, and private voice profiles. A zero-dependency prose lint (`bun` or `node`) measures what a model can't see by rereading — sentence-length variance, monotone runs, kill-list hits, hedge stacking — and REVIEW carries an argument-integrity lens that asks whether the piece works, not just whether it reads human. Built on a 147-paper synthesis of AI-detection, co-writing, and style-transfer research, Pangram Labs data (N=millions), and a blind test that dropped AI detection probability from 85% to 15%.
 
 ### web-research
 
 Parallel search agents fan out across multiple dimensions (docs, tutorials, discussions, forums). Each agent extracts precise information with source URLs. Results synthesize back through your model. No hallucinated links.
 
-### shot
+### browser
 
-Screenshot capture and analysis. Full screen, active window, or named window. Dispatches a haiku-tier analyzer and returns a summary.
+Drives a live Chrome through a persistent puppeteer-core connection (the bundled `mcp-browser` server, 40 tools): snapshot the accessibility tree and act on stable element refs; click, type, drag, fill forms; extract and collect structured data; screenshots and PDFs; Lighthouse audits and Core Web Vitals traces; intercept, stub, or block network requests and export HAR; emulate devices; save and restore sessions. Large payloads spill to disk and get read by a subagent, so a DOM dump never lands in your main context.
 
 ### clarify
 
-Decomposes user intent through structured brainstorming before acting on ambiguous requests. Model-invoked; other skills chain into it.
+Decomposes user intent through structured brainstorming before acting on ambiguous requests. Run it yourself with `/oberskills:clarify`, let Claude reach for it when a request is genuinely ambiguous, or let other skills chain into it. The fault taxonomy and question-selection method are cited to the clarification-question literature.
 
 ## How They Connect
 
@@ -75,11 +75,13 @@ prompt ──┬─ DESIGN: principles + on-demand references
 agent ──── dispatch gate → delegation contract → model/effort → verifier dispatch
               (chains to prompt for long/novel briefs, clarify for ambiguous intent)
 
-write ──┬─ EDIT: core rules + surface rules (+ deep craft if needed)
+write ──┬─ EDIT: axes (job · depth · shape · style · copy · voice) → core rules + surface rules (+ deep craft if needed)
         └─ REVIEW: scan → orient → top issues → next batch → offer edit
 
 web-research ─── parallel search agents ─── synthesize with source URLs
-shot ──── capture → haiku analyzer → summary
+
+browser ──── snapshot → act on refs → read/extract (large payloads → file → subagent)
+              └── mcp-browser MCP tools
 ```
 
 ## Install
@@ -114,7 +116,7 @@ MCP dependencies are installed in the plugin directory Codex launches. Browser M
 
 ## Version
 
-**2.7.0**
+**3.0.0** — `plugin.json` is the source of truth.
 
 ---
 
