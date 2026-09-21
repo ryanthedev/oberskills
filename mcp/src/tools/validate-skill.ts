@@ -74,6 +74,73 @@ function stripMentions(text: string): string {
     .replace(/"[^"\n]*"/g, "");
 }
 
+// Self-ticked compliance checklists: the banned construct is the INSTRUCTION to
+// tick boxes as self-attestation, not checkbox syntax — a bare task list may be a
+// user-facing TODO template or GitHub task-list documentation.
+const CHECKBOX_ITEM_RE = /^\s*(?:[-*+]|\d+[.)])\s+\[[ xX]\]\s/;
+const FENCE_RE = /^\s*(```|~~~)/;
+const TICK_INSTRUCTION_PATTERNS: RegExp[] = [
+  /\bcopy\s+(?:this|the|the following)\s+(?:check-?list|list)\b/i,
+  /\b(?:check|tick|cross)(?:s|es|ed|ing)?\s+(?:(?:each|every|all|the|these|those|an?|it|them|items?|box(?:es)?|steps?)\s+)*off\b/i,
+  /\btick(?:s|ed|ing)?\s+(?:each|every|all|the)\s+(?:box|checkbox|item|step)/i,
+  /\bmark(?:s|ed|ing)?\s+(?:each|every|all|the|these|them|it)\b[^.\n]{0,30}?\b(?:done|completed?|finished|checked)\b/i,
+  /\b(?:confirm|verify|attest)\s+(?:that\s+)?you(?:'ve|\s+have)\b/i,
+];
+// When someone else ticks the boxes it is a hand-off template, not self-attestation.
+const OTHER_TICKER_RE = /\b(?:users?|reviewers?|humans?|maintainers?)\b/i;
+const CHECKLIST_LOOKBACK = 3; // non-blank lines before the first checkbox
+const CHECKLIST_LOOKAHEAD = 2; // non-blank lines after the last checkbox
+
+function isTickInstruction(line: string): boolean {
+  // Mention vs use, per line: quoted or code-span wording is a mention.
+  const bare = line.replace(/`[^`\n]*`/g, "").replace(/"[^"\n]*"/g, "");
+  if (OTHER_TICKER_RE.test(bare)) return false;
+  return TICK_INSTRUCTION_PATTERNS.some((re) => re.test(bare));
+}
+
+/**
+ * Find self-ticked compliance checklists: a tick instruction adjacent to a run
+ * of checkbox items. Fences are deliberately NOT stripped — a fenced template
+ * shipped to be copied is the construct itself — so fence delimiters are just
+ * skipped when measuring adjacency. Returns the 1-based line (within `text`)
+ * of each matching instruction, deduplicated.
+ */
+export function findSelfTickedChecklists(text: string): number[] {
+  const lines = text.split("\n");
+  const skippable = (l: string): boolean => l.trim() === "" || FENCE_RE.test(l);
+  const isBox = (i: number): boolean => CHECKBOX_ITEM_RE.test(lines[i] ?? "");
+  const scan = (from: number, step: 1 | -1, budget: number): number | null => {
+    for (let i = from, seen = 0; i >= 0 && i < lines.length && seen < budget; i += step) {
+      const l = lines[i] ?? "";
+      if (skippable(l)) continue;
+      if (isBox(i)) return null;
+      if (isTickInstruction(l)) return i + 1;
+      seen++;
+    }
+    return null;
+  };
+
+  const hits: number[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!isBox(i)) continue;
+    const start = i;
+    // Extend the run across blank lines and further checkbox items.
+    let end = i;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (isBox(j)) end = j;
+      else if ((lines[j] ?? "").trim() !== "") break;
+    }
+    const hit = scan(start - 1, -1, CHECKLIST_LOOKBACK) ?? scan(end + 1, 1, CHECKLIST_LOOKAHEAD);
+    if (hit !== null) hits.push(hit);
+    i = end;
+  }
+  // An instruction between two runs is adjacent to both — report it once.
+  return [...new Set(hits)];
+}
+
+const SELF_TICKED_CHECKLIST_MESSAGE =
+  "self-ticked compliance checklist (tick instruction next to checkbox items)";
+
 const TIME_SENSITIVE_RE =
   /\b(as of (january|february|march|april|may|june|july|august|september|october|november|december|\d{4})|at the time of writing|in the coming (weeks|months))\b/i;
 const CITATION_CONTEXT_RE = /https?:\/\/|arxiv|\b\d{4}\.\d{4,5}\b|fetched|accessed|published/i;
@@ -277,6 +344,17 @@ export function validateSkill(skillPath: string): ValidationResult {
         );
       }
     }
+    const bodyOffset = content.split("\n").length - body.split("\n").length;
+    for (const line of findSelfTickedChecklists(body)) {
+      warnings.push(
+        find(
+          "self-assessment-construct",
+          `${SELF_TICKED_CHECKLIST_MESSAGE} — track progress by an output file or tool result the next gate reads`,
+          skillMd,
+          bodyOffset + line,
+        ),
+      );
+    }
   }
 
   // --- SKILL.md size
@@ -346,6 +424,16 @@ export function validateSkill(skillPath: string): ValidationResult {
           find("self-assessment-construct", `${p.what} in ${rel} — replace with external checkers / deterministic gates`, rel),
         );
       }
+    }
+    for (const line of findSelfTickedChecklists(refContent)) {
+      warnings.push(
+        find(
+          "self-assessment-construct",
+          `${SELF_TICKED_CHECKLIST_MESSAGE} in ${rel} — track progress by an output file or tool result the next gate reads`,
+          rel,
+          line,
+        ),
+      );
     }
   }
 

@@ -31,7 +31,7 @@ Claude Code extensions (portable validators flag these as Claude-Code-only):
 
 | Field | Load-bearing semantic |
 |---|---|
-| `when_to_use` | Trigger phrases/examples appended to the description in the listing; counts toward the 1,536-char combined cap |
+| `when_to_use` | Trigger phrases/examples appended to the description in the listing; counts toward the combined listing cap (SKILL.md's limits table) |
 | `argument-hint` | Autocomplete hint, e.g. `[issue-number]` |
 | `arguments` | Named positional args mapping to `$name` substitutions |
 | `disable-model-invocation` | `true` = user-only invocation; description removed from context; also blocks preloading into subagents |
@@ -69,11 +69,11 @@ Available in skill bodies: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `$name` (named a
 Invariants regardless of doctrine:
 
 - Third person — the description is injected into the system prompt; first/second person causes discovery problems.
-- Key use case first (the listing truncates the combined `description` + `when_to_use` at 1,536 chars).
+- Key use case first (the listing truncates the combined `description` + `when_to_use` — cap in SKILL.md's limits table).
 - Concrete trigger nouns users actually say, including jargon and file types.
 - Exclusion clause: "Not for: …" listing near-misses, not absurd negatives.
 - **Capability nouns allowed; workflow steps never.** A workflow summary becomes a shortcut Claude takes instead of reading the body.
-- ≤1024 chars; no XML tags.
+- Within the `description` length limit (SKILL.md's limits table); no XML tags.
 - No pushy "make sure to use this whenever…" by default — current models overtrigger under aggressive language. Add pushiness only if trigger evals measure under-triggering.
 
 **Tie-breaker: the description is a routing hyperparameter.** Don't argue doctrine — run `test_triggers` and adjust to the measurement.
@@ -100,7 +100,7 @@ Detailed-but-compact beats comprehensive. SkillsBench (2602.12670) measured Skil
 
 Practical consequences:
 
-- Target ~200 lines of always-relevant core in SKILL.md; push depth into references. (Calibration: the public-ecosystem median SKILL.md is ~1.2k tokens — SkillsBench Fig 7.)
+- Keep SKILL.md to the always-relevant core (line target in SKILL.md's limits table); push depth into references. (Calibration: the public-ecosystem median SKILL.md is ~1.2k tokens — SkillsBench Fig 7.)
 - Don't encode model-default behavior (formatting niceties, "no magic numbers") — the skill must add non-obvious knowledge to earn its tokens.
 - Every line is a recurring per-session cost once loaded. Cut paragraphs that explain what Claude already knows.
 
@@ -110,10 +110,10 @@ Practical consequences:
 
 Audit every skill (new or ported) against these; `oberskills:prompt`'s claude-models reference carries the prompting-level detail.
 
-- **De-prompt the triggers.** Remove "CRITICAL: you MUST use…", "If in doubt, use X", and anti-laziness/thoroughness pushes — Opus 4.5+ models overtrigger under them. "Use X when…" is enough.
-- **Never instruct "show your thinking"** or any echo-your-reasoning step — this can trigger `reasoning_extraction` refusals on Fable 5. Read structured thinking blocks instead.
+- **De-prompt the triggers.** Remove "CRITICAL: you MUST use…", "If in doubt, use X", and anti-laziness/thoroughness pushes — current models overtrigger under them. "Use X when…" is enough.
+- **Never instruct "show your thinking"** or any echo-your-reasoning step — this can trigger `reasoning_extraction` refusals on Fable 5 and 5.1. Read structured thinking blocks instead.
 - **Never instruct prefill techniques** — prefilled assistant turns return a 400 error on 4.6+ models. Use structured outputs, direct instruction, or tool enums.
-- **Prefer general instructions over prescriptive step plans.** "Think thoroughly" beats a hand-written reasoning recipe; skills developed for prior models are often too prescriptive for Claude Fable 5 and can degrade output quality. Re-test default behavior before keeping old scaffolding.
+- **Prefer general instructions over prescriptive step plans.** "Think thoroughly" beats a hand-written reasoning recipe; skills developed for prior models are often too prescriptive for current ones and can degrade output quality (Anthropic's wording, written of Fable 5 — verbatim quote in `oberskills:prompt`'s claude-models reference). Re-test default behavior before keeping old scaffolding.
 - **Effort is the reasoning dial,** not magic words; `low` suits subagents. Model/effort selection for dispatch: the `oberskills:agent` skill.
 - **Delete verification and self-check steps from skill bodies (Opus 5+).** "Include a final verification step", "use a subagent to verify", "double-check your answer before responding" — Opus 5 does this unprompted, and Anthropic states these instructions "cause over-verification… removing them reduces wasted tokens with no loss in quality." A skill that bakes in a verify step is now paying twice for it. The exception is a *deliberate* independent verifier dispatch, which is a different thing (the `oberskills:agent` skill §5).
 - **Cap delegation, don't encourage it (Opus 5+).** Skills written to push a reluctant model toward subagents now overshoot: Opus 5 delegates readily on its own. Remove "delegate more" language; add a spawn cap if the skill drives fan-out.
@@ -154,13 +154,13 @@ Proceed to step N only when [checkable condition].
 For [conditional depth]: see references/[topic].md.
 ```
 
-Progress-checklist pattern (adherence aid for multi-step workflows — Claude copies it and checks items off, making skips visible):
+Progress-artifact pattern (adherence aid for multi-step workflows — each step leaves evidence the next gate reads, so a skipped step shows up as a missing file or a failing result, not an unticked box the model attests to itself):
 
 ```markdown
-Copy this checklist and check off each item as it completes:
-- [ ] Baseline run documented
-- [ ] Validation passes with zero errors
-- [ ] All evals re-run after the last edit
+Each step writes its evidence; start a step only when the prior step's evidence exists:
+1. Baseline run → `grading.json` in the baseline run directory (written by the grader)
+2. Validation → validator output reporting zero errors
+3. Evals re-run after the last edit → `benchmark.json` newer than the last SKILL.md edit
 ```
 
 Feedback-loop pattern (quality-critical output): "Run [validator] → fix the reported errors → run again. Proceed only on a clean pass." Make the validator verbose with specific messages ("Field signature_date not found. Available fields: …").

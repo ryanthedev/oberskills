@@ -68,7 +68,7 @@ Write the skill *after* the baseline. The baseline failures are the spec.
 |---|---|
 | `name` | ≤64 chars, lowercase alphanumeric + hyphens, no leading/trailing/consecutive hyphens, must match the directory name, no "anthropic"/"claude" |
 | `description` | 1–1024 chars, third person, no XML tags |
-| `description` + `when_to_use` in the listing | truncated at 1,536 chars combined |
+| `description` + `when_to_use` in the listing | truncated at 1,536 chars combined by default (`skillListingMaxDescChars` setting) |
 | SKILL.md body | <500 lines hard; <5k tokens recommended; ~200 lines for the always-relevant core |
 | References | One level deep from SKILL.md; >100 lines → table of contents at top |
 | Evals | ≥3 before ship |
@@ -109,7 +109,7 @@ Claude Code names and mechanics remain supported where the host exposes them. On
 1. **Claude is already smart.** Only add context Claude doesn't have; challenge every paragraph's token cost — the context window is a public good.
 2. **Standing instructions, not one-time steps.** Skill content persists in context for the rest of the session.
 3. **Don't over-prompt.** No CRITICAL/MUST trigger language by default — current models overtrigger under it, and skills written for prior models are often too prescriptive for current ones and can degrade output quality. Escalate force only for rules that measurably get missed, and then explain *why*.
-4. **Gates beat persuasion.** "Proceed only when X passes" plus external or deterministic checks. Never self-assessed compliance, never anti-rationalization tables — `validate_skill` WARNs on these constructs.
+4. **Gates beat persuasion.** "Proceed only when X passes" plus external or deterministic checks. Never self-assessed compliance, never anti-rationalization tables — `validate_skill` WARNs on the forms it can match (anti-rationalization tables, the two self-directed section forms, tick instructions next to checkbox items); subtler self-attestation is a REVIEW-mode check.
 5. **Match freedom to fragility.** Fragile or sequence-critical work gets an exact script ("run exactly this, do not modify"); open-ended work gets heuristics.
 6. **Feedback loops for quality-critical output.** Run validator → fix → repeat; make validators verbose with specific error messages.
 

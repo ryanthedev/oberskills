@@ -7,7 +7,11 @@ const skillsRoot = new URL("../../skills/", import.meta.url).pathname;
 
 function skillDirs(): string[] {
   return readdirSync(skillsRoot, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    // `<skill>-workspace/` is gitignored skill-eval run output, not a skill.
+    .filter(
+      (entry) =>
+        entry.isDirectory() && !entry.name.startsWith(".") && !entry.name.endsWith("-workspace"),
+    )
     .map((entry) => join(skillsRoot, entry.name))
     .sort();
 }

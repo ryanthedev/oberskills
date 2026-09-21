@@ -44,8 +44,8 @@ SKILL.md carries the core decision table. Additional mechanics that change the c
 | Skill + `context: fork` vs subagent with `skills:` field | Forked skill: system prompt comes from the agent type, the task IS the SKILL.md content, CLAUDE.md also loads (except Explore/Plan agents). Subagent with `skills:`: system prompt is the subagent's markdown body, the task is Claude's delegation message, preloaded skills + CLAUDE.md also load |
 | `context: fork` precondition | Only for task content with an actionable prompt. A guideline-only forked skill hands the subagent guidelines with no task — it returns without meaningful output |
 | `paths` frontmatter | Glob patterns gate auto-activation to matching files — use for file-type-bound skills (e.g. only when touching `*.tf`) |
-| `/btw` | For one-off side questions, `/btw` (full context, no tool access) beats spawning a subagent |
-| Subagent nesting | Subagents cannot spawn other subagents — don't design workflows that assume they can |
+| `/btw` | For a one-off side question about content already in the conversation, `/btw` beats spawning a subagent; use a subagent when the answer needs new tool work. What `/btw` can see and do: the `oberskills:agent` skill |
+| Subagent nesting | Deep nesting is a design smell — each layer distills again and compounds the chance an instruction is lost, so justify every level beyond the first. Whether and how deep the harness permits nesting: the `oberskills:agent` skill's mechanics reference |
 | Skill preloading into subagents | Subagents don't inherit skills. Preload via the subagent's `skills:` frontmatter field, or explicit flat `Skill(...)` lines in the dispatch prompt. Field reference and dispatch rules: the `oberskills:agent` skill |
 
 ## 3. Invocation control
@@ -107,7 +107,7 @@ If uncertain, start single and split later — premature routing adds complexity
 - **Stateless workers**: each worker handles one mode end-to-end; depth in its own references.
 - **Fallback on ambiguity**: the router asks rather than guessing between modes.
 
-**Bias toward fewer, broader skills.** Per-skill descriptions compete for a listing budget of roughly 1% of the context window, and many near-duplicate descriptions confuse selection — Superpowers 4 consolidated overlapping skills for exactly this reason. A single skill with domain-organized references usually beats a family of narrow skills.
+**Bias toward fewer, broader skills.** Per-skill descriptions compete for a shared listing budget — it scales at 1% of the model's context window, and on overflow the harness drops descriptions starting with the least-invoked skills (Claude Code skills docs, code.claude.com/docs/en/skills, accessed 2026-09-21) — and many near-duplicate descriptions confuse selection — Superpowers 4 consolidated overlapping skills for exactly this reason. A single skill with domain-organized references usually beats a family of narrow skills.
 
 ## 7. When NOT a skill
 

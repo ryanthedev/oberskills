@@ -209,6 +209,76 @@ describe("validate_skill rules", () => {
     expect(rules(r.warnings)).toContain("self-assessment-construct");
   });
 
+  describe("self-ticked compliance checklists", () => {
+    const FENCE = "```";
+    const selfTicked = (r: ValidationResult) =>
+      r.warnings.filter((w) => w.rule === "self-assessment-construct" && w.message.includes("self-ticked"));
+
+    // The template skill-craft's build.md used to recommend, verbatim — fenced, so
+    // the fence-stripping mention filter must not hide it.
+    const OLD_BUILD_MD =
+      "Progress-checklist pattern (adherence aid for multi-step workflows — Claude copies it and checks items off, making skips visible):\n\n" +
+      FENCE + "markdown\n" +
+      "Copy this checklist and check off each item as it completes:\n" +
+      "- [ ] Baseline run documented\n" +
+      "- [ ] Validation passes with zero errors\n" +
+      "- [ ] All evals re-run after the last edit\n" +
+      FENCE + "\n";
+
+    test("fires on the old build.md pattern verbatim, in a reference and in SKILL.md, with a line number", () => {
+      const body = GOOD + "\nSee ${CLAUDE_SKILL_DIR}/references/build.md\n";
+      const inRef = selfTicked(run(makeSkill("good-skill", body, { "references/build.md": OLD_BUILD_MD })));
+      expect(inRef).toHaveLength(1);
+      expect(inRef[0]?.file).toBe("references/build.md");
+      expect(inRef[0]?.line).toBe(4);
+
+      const inBody = selfTicked(run(makeSkill("good-skill", GOOD + "\n" + OLD_BUILD_MD)));
+      expect(inBody).toHaveLength(1);
+      // GOOD is 8 lines + 1 blank; the fenced instruction is OLD_BUILD_MD line 4.
+      expect(inBody[0]?.line).toBe(13);
+    });
+
+    test("fires on realistic variants (unfenced, instruction after the list, numbered boxes)", () => {
+      const variants = [
+        "Before responding, tick each box as you complete it:\n\n- [ ] Tests run\n- [ ] Docs updated\n",
+        "- [ ] Read the spec\n- [ ] Ran the linter\n\nMark each item as done before moving to the next phase.\n",
+        "Confirm you have:\n1. [ ] Loaded the reference\n2. [ ] Followed every step\n",
+        "## Completion\n\nCopy the following checklist into your reply.\n\n* [x] Workflow followed\n* [ ] Output validated\n",
+      ];
+      for (const v of variants) {
+        expect(selfTicked(run(makeSkill("good-skill", GOOD + "\n" + v)))).toHaveLength(1);
+      }
+    });
+
+    test("an instruction between two checkbox runs is reported once", () => {
+      const md = GOOD + "\n- [ ] First\n\nCheck off each item as it completes.\n\n- [ ] Second\n";
+      expect(selfTicked(run(makeSkill("good-skill", md)))).toHaveLength(1);
+    });
+
+    test("does not fire on task lists, mentions, other tickers, or artifact-based progress", () => {
+      const clean = [
+        // Plain user-facing task list / GitHub task-list syntax, fenced or not.
+        "PR description template:\n\n" + FENCE + "markdown\n## TODO\n- [ ] Add tests\n- [ ] Update changelog\n" + FENCE + "\n",
+        "Implementation checklist:\n\n- [ ] Every tool call passes a policy check\n- [ ] Exceptions are redacted\n",
+        // Prose that merely mentions checklists, with no checkbox items.
+        "A checklist is no substitute for a gate. Never copy this checklist habit from older skills.\n",
+        // Quoted wording is a mention, even next to checkbox syntax.
+        'Flag skills that say "copy this checklist and check off each item":\n\n- [ ] example item\n',
+        // Someone else ticks the boxes — a hand-off template, not self-attestation.
+        "Give the user this list to check off each item as they verify it:\n\n- [ ] Staging looks right\n",
+        // The instruction is too far from the list to be about it.
+        "Check off each item.\n\nOne.\n\nTwo.\n\nThree.\n\n- [ ] Unrelated task\n",
+        // Progress-artifact pattern: evidence files, no self-ticked boxes.
+        "Each step writes its evidence; start a step only when the prior step's evidence exists:\n" +
+          "1. Baseline run → `grading.json` in the baseline run directory (written by the grader)\n" +
+          "2. Validation → validator output reporting zero errors\n",
+      ];
+      for (const c of clean) {
+        expect(selfTicked(run(makeSkill("good-skill", GOOD + "\n" + c)))).toHaveLength(0);
+      }
+    });
+  });
+
   test("substitution vars inside references warn", () => {
     const body = GOOD + "\nSee ${CLAUDE_SKILL_DIR}/references/uses-var.md\n";
     const r = run(
