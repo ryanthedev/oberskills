@@ -3,7 +3,7 @@
  * (the P2 contract; P3 fills the real threshold logic without changing the shape).
  */
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { resetSession, setPort } from "../src/core/session.ts";
 import type {
   AxNode,
@@ -192,7 +192,30 @@ describe("screenshot tool (writes via the writePayload seam)", () => {
     // full_page is still forwarded; the adapter decides selector takes precedence.
     expect(port.lastScreenshotOpts?.fullPage).toBe(true);
     const s = structured(r);
-    if (typeof s.path === "string" && s.path.length > 0) rmSync(s.path, { force: true });
+    // An 8-byte capture is far below the payload threshold — still a real file (gap B).
+    expect((s.path as string).length).toBeGreaterThan(0);
+    rmSync(s.path as string, { force: true });
+  });
+
+  test("a sub-threshold PNG is still written to a file: non-empty path, file on disk, exact bytes", async () => {
+    const { PAYLOAD_THRESHOLD_BYTES } = await import("../src/lib/payload.ts");
+    const png = fakePng(16, 16, 64); // a tiny element-scoped capture
+    expect(png.length).toBeLessThan(PAYLOAD_THRESHOLD_BYTES);
+    setPort(new CapturePort(png));
+    const r = await screenshot.handler({ full_page: false, selector: ".icon" });
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(typeof s.path).toBe("string");
+    expect((s.path as string).length).toBeGreaterThan(0);
+    expect((s.path as string).endsWith(".png")).toBe(true);
+    expect(existsSync(s.path as string)).toBe(true);
+    expect(readFileSync(s.path as string).equals(png)).toBe(true);
+    expect(s.bytes).toBe(png.length);
+    expect(s.width).toBe(16);
+    expect(s.height).toBe(16);
+    // The summary text names the real path, never an empty one.
+    expect(r.content[0]?.text).toContain(s.path as string);
+    rmSync(s.path as string, { force: true });
   });
 
   test("a dead connection returns connection_lost", async () => {

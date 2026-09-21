@@ -13,11 +13,12 @@ import { ensureAlive, errFromBrowserError, ok, runPort, type ToolModule, type To
 import { NavigateInputSchema, type NavResultOut } from "../types.ts";
 
 export const name = "browser_navigate";
-export const title = "Navigate the active page to an http(s) URL";
+export const title = "Navigate the active page to a URL";
 export const description =
-  "Navigates the active page. Accepts http(s) URLs only; file://, chrome://, javascript:, data:, about: and other " +
-  "internal schemes are blocked at the barricade (SSRF-sensitive). allow_internal opts in to file:///about: but " +
-  "never javascript:. A malformed URL returns invalid_url; a blocked scheme blocked_url. Never throws.";
+  "Navigates the active page. By default only http(s) URLs are accepted. allow_internal=true additionally permits " +
+  "file: and about: (a local HTML file, about:blank). javascript: and vbscript: are never allowed, and every other " +
+  "scheme (chrome:, data:, …) is blocked with or without the flag (SSRF-sensitive barricade). A malformed URL " +
+  "returns invalid_url; a blocked scheme blocked_url. Never throws.";
 
 export const inputShape = NavigateInputSchema;
 

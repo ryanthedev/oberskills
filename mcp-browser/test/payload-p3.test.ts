@@ -101,3 +101,33 @@ describe("writePayload — real /tmp write (integration sanity)", () => {
     rmSync(r.path, { force: true });
   });
 });
+
+describe("writePayload — force (always-a-file payloads)", () => {
+  test("force writes a sub-threshold payload to disk: written=true, real path, no inline copy", async () => {
+    const tiny = Buffer.from([0x89, 0x50, 0x4e, 0x47]); // far below threshold, binary
+    const cap = capturingWrite();
+    const r = await writePayload(tiny, { ext: "png", force: true }, cap.fn);
+    expect(r.written).toBe(true);
+    expect(r.path.length).toBeGreaterThan(0);
+    expect(r.path.endsWith(".png")).toBe(true);
+    expect(r.bytes).toBe(tiny.length);
+    expect(r.inlinedPreview).toBeUndefined();
+    expect(cap.calls).toHaveLength(1);
+    expect(cap.calls[0]?.data).toBe(tiny);
+  });
+
+  test("force:false behaves exactly like force absent (sub-threshold stays inline)", async () => {
+    const cap = capturingWrite();
+    const r = await writePayload("hello", { ext: "txt", force: false }, cap.fn);
+    expect(r.written).toBe(false);
+    expect(r.path).toBe("");
+    expect(cap.calls).toHaveLength(0);
+  });
+
+  test("a failed forced write throws — never a silent empty path", async () => {
+    const failing = async (): Promise<void> => {
+      throw new Error("disk full");
+    };
+    await expect(writePayload("hello", { ext: "txt", force: true }, failing)).rejects.toThrow("disk full");
+  });
+});

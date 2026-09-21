@@ -4,7 +4,9 @@
  *
  * Contract: data below PAYLOAD_THRESHOLD_BYTES is returned inline (written=false,
  * path=""). Data at or above the threshold is written to /tmp and path+bytes returned
- * (written=true). A failed write throws — the payload is NEVER silently dropped.
+ * (written=true). `force` writes regardless of size — for payloads that must always
+ * be a file (binary captures). A failed write throws — the payload is NEVER silently
+ * dropped.
  *
  * The write function is injectable (defaults to node:fs/promises writeFile) so the
  * "write fails" dirty test can inject a rejecting promise without touching disk.
@@ -33,7 +35,7 @@ export type WrittenPayload = {
   /**
    * true: data was written to disk (path is valid); false: data was inlined
    * (path is ""). The only legitimate reason for written=false is that bytes
-   * is below the threshold AND the content fit inline.
+   * is below the threshold AND the content fit inline AND `force` was not set.
    */
   written: boolean;
 };
@@ -49,6 +51,11 @@ export type WritePayloadOpts = {
   ext: string;
   /** When present, truncate the inlinedPreview to this many characters. */
   inlinePreviewChars?: number;
+  /**
+   * Write to disk even below the threshold (written=true, path always valid). For
+   * payloads that cannot be inlined as text — a PNG has no meaningful inline form.
+   */
+  force?: boolean;
 };
 
 /**
@@ -67,7 +74,7 @@ export async function writePayload(
   const bytes = typeof data === "string" ? Buffer.byteLength(data) : data.length;
   const safeExt = opts.ext.replace(/[^a-zA-Z0-9]/g, "").slice(0, 16) || "bin";
 
-  if (bytes < PAYLOAD_THRESHOLD_BYTES) {
+  if (bytes < PAYLOAD_THRESHOLD_BYTES && opts.force !== true) {
     // Return inline — no disk write.
     const raw = typeof data === "string" ? data : data.toString("utf8");
     const inlinedPreview =
@@ -75,7 +82,7 @@ export async function writePayload(
     return { path: "", bytes, inlinedPreview, written: false };
   }
 
-  // At or above threshold: write to /tmp.
+  // At or above threshold (or forced): write to /tmp.
   const fileName = `browser-mcp-${Date.now()}.${safeExt}`;
   const path = join(tmpdir(), fileName);
   // Throws on failure — caller (tool barricade) converts to err().

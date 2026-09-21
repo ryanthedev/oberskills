@@ -86,3 +86,35 @@ describe("navigate barricade (DW-2.5)", () => {
     expect(structured(r).code).toBe("connection_lost");
   });
 });
+
+describe("navigate description matches the barricade", () => {
+  // The description is what a client reads to decide how to call the tool. It used to
+  // open with "http(s) URLs only" and list file:/about: as blocked before mentioning the
+  // opt-in — so every claim below is pinned to the behaviour it describes.
+  afterEach(() => resetSession());
+
+  test("front-loads the default and documents the opt-in without claiming http(s)-only", () => {
+    expect(navigate.description).not.toContain("http(s) URLs only");
+    expect(navigate.title).not.toContain("http(s)");
+    const byDefault = navigate.description.indexOf("By default");
+    const optIn = navigate.description.indexOf("allow_internal");
+    expect(byDefault).toBeGreaterThanOrEqual(0);
+    expect(optIn).toBeGreaterThan(byDefault);
+  });
+
+  test("about: is permitted with allow_internal, as the description says", async () => {
+    const port = await fresh();
+    const r = await navigate.handler({ url: "about:blank", allow_internal: true });
+    expect(r.isError).toBeUndefined();
+    expect(port.navigated).toEqual(["about:blank"]);
+  });
+
+  test("chrome: and data: stay blocked even with allow_internal, as the description says", async () => {
+    await fresh();
+    for (const url of ["chrome://settings", "data:text/html,<p>x</p>", "vbscript:msgbox(1)"]) {
+      const r = await navigate.handler({ url, allow_internal: true });
+      expect(r.isError).toBe(true);
+      expect(structured(r).code).toBe("blocked_url");
+    }
+  });
+});

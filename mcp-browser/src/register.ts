@@ -70,16 +70,18 @@ Interact & navigate: browser_click, browser_type, browser_hover, browser_select,
   browser_wait_for_text.
 
 Read / extract (large reads spill to /tmp): browser_dom, browser_accessibility, browser_extract,
-  browser_collect, browser_evaluate, browser_form, browser_screenshot, browser_pdf. A result at or above the
-  size threshold is written to /tmp and the tool returns a path instead of the raw content — Read the returned
-  path (ideally in a subagent) rather than loading it into this conversation. Small results are returned inline.
+  browser_collect, browser_evaluate, browser_form. A result at or above the size threshold is written to /tmp
+  and the tool returns a path (most add a short preview) instead of the raw content — Read the returned path
+  (ideally in a subagent) rather than loading it into this conversation. Small results are returned inline, in
+  full (written:false). browser_screenshot and browser_pdf are binary and ALWAYS a file, however small.
 
 Performance / network: browser_performance_start_trace, browser_performance_stop_trace,
   browser_analyze_insight, browser_lighthouse_audit, browser_export_har, browser_route, browser_emulate.
 
-Storage / emulation / capture: browser_storage, browser_storage_state_save, browser_storage_state_restore,
-  browser_emulate_device, browser_geolocation, browser_permissions, browser_screencast_start,
-  browser_screencast_stop, browser_upload, browser_download.
+Storage / emulation / capture: browser_storage, browser_storage_state_save, browser_storage_state_restore
+  (pass the saved file's path — the server reads it, so credentials stay out of the conversation),
+  browser_emulate_device, browser_geolocation, browser_permissions (an empty list clears all overrides),
+  browser_screencast_start, browser_screencast_stop, browser_upload, browser_download.
 
 All tools return a structured {code,message,suggestion} error (never a thrown exception) on bad input or a lost
 connection; the connection is held across calls for the life of the server process.`;

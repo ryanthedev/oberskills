@@ -1,8 +1,10 @@
 /**
  * browser_screenshot — driving adapter. Captures a PNG and writes it to disk via
- * the P1 writePayload seam, returning { path, bytes } (the P2 contract; P3 fills
- * the real threshold/inline logic without changing this shape). The image bytes
- * never enter the tool result — only the file path does (anti-context discipline).
+ * the writePayload seam, returning { path, bytes, width?, height? }. A PNG is
+ * binary — it has no inline form — so the write is FORCED regardless of the payload
+ * threshold: `path` is always a real file, however small the capture. The image
+ * bytes never enter the tool result — only the file path does (anti-context
+ * discipline).
  */
 import { z } from "zod";
 import { getPort } from "../core/session.ts";
@@ -13,8 +15,9 @@ import { ScreenshotInputSchema, type ScreenshotOut } from "../types.ts";
 export const name = "browser_screenshot";
 export const title = "Screenshot the active page to a file";
 export const description =
-  "Captures a PNG screenshot and writes it to a file, returning { path, bytes, width, height }. The image bytes " +
-  "are never inlined into the result — read the file path (route it to a subagent to keep it out of main context). " +
+  "Captures a PNG screenshot and writes it to a file, returning { path, bytes, width, height }. The capture is " +
+  "always a file, however small — path is never empty and the image bytes are never inlined into the result. Read " +
+  "the file path (route it to a subagent to keep it out of main context). " +
   "Image token cost is dimension-driven (~width×height/750), so prefer selector to capture one element instead of " +
   "full_page when you only need part of the page. full_page captures the whole scrollable page. Returns " +
   "connection_lost if the browser died; never throws.";
@@ -52,7 +55,8 @@ export async function handler(args: Input): Promise<ToolResult> {
       fullPage: args.full_page,
       ...(args.selector !== undefined ? { selector: args.selector } : {}),
     });
-    const written = await writePayload(png, { ext: "png" });
+    // force: a sub-threshold PNG (a tiny element capture) must still land on disk.
+    const written = await writePayload(png, { ext: "png", force: true });
     const dims = pngDimensions(png);
     const out: ScreenshotOut = {
       path: written.path,

@@ -13,6 +13,9 @@
  * DW-5.7: no puppeteer in core (static.test.ts); pdf + storage_state route through writePayload
  */
 import { afterEach, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { resetSession, setPort } from "../src/core/session.ts";
 import { FakePort } from "./fake-port.ts";
 import * as storage from "../src/tools/storage.ts";
@@ -27,7 +30,8 @@ import * as screencastStop from "../src/tools/screencast-stop.ts";
 import * as upload from "../src/tools/upload.ts";
 import * as download from "../src/tools/download.ts";
 import * as waitForText from "../src/tools/wait-for-text.ts";
-import { StorageStateSchema, GeolocationInputSchema } from "../src/types.ts";
+import { StorageStateSchema, GeolocationInputSchema, PermissionsInputSchema, StorageRestoreInputSchema } from "../src/types.ts";
+import { grantPermissions as adapterGrantPermissions } from "../src/adapters/puppeteer/emulation.ts";
 import { z } from "zod";
 
 function structured(r: { structuredContent?: Record<string, unknown> }): Record<string, unknown> {
@@ -256,6 +260,139 @@ describe("storage_state (DW-5.2)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// storage_state restore by path — the saved file is read by the SERVER so its
+// credentials never pass through the conversation. Exactly one of path/state_json.
+// ---------------------------------------------------------------------------
+
+describe("storage_state restore by path", () => {
+  const SECRET = "s3cr3t-session-token";
+  const validState = {
+    origin: "https://example.com",
+    cookies: [{ name: "session", value: SECRET }],
+    localStorage: [{ key: "token", value: "xyz" }],
+    sessionStorage: [],
+  };
+
+  let dir: string | null = null;
+  function stateFile(contents: string, fileName = "state.json"): string {
+    dir = mkdtempSync(join(tmpdir(), "browser-mcp-restore-test-"));
+    const file = join(dir, fileName);
+    writeFileSync(file, contents);
+    return file;
+  }
+  afterEach(() => {
+    if (dir !== null) rmSync(dir, { recursive: true, force: true });
+    dir = null;
+  });
+
+  test("a valid state file restores by path, and the validated state reaches the port", async () => {
+    const port = await fresh();
+    port.cannedRestoreResult = { restored: ["cookie:session", "localStorage:token"], skipped: [] };
+    const r = await storageStateRestore.handler({ path: stateFile(JSON.stringify(validState)) });
+    expect(r.isError).toBeUndefined();
+    expect(structured(r).restored).toEqual(["cookie:session", "localStorage:token"]);
+    expect(port.lastRestoredState?.origin).toBe("https://example.com");
+    expect(port.lastRestoredState?.cookies[0]?.value).toBe(SECRET);
+    // The credentials went to the port, not into the tool result.
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+  });
+
+  test("save -> restore round-trips by path: save's { path } is a valid restore input as-is", async () => {
+    const port = await fresh();
+    port.cannedStorageStatePath = stateFile(JSON.stringify(validState));
+    const saved = await storageStateSave.handler({});
+    const r = await storageStateRestore.handler({ path: structured(saved).path as string });
+    expect(r.isError).toBeUndefined();
+    expect(port.lastRestoredState?.localStorage[0]?.key).toBe("token");
+  });
+
+  test("state_json still works on its own (unchanged contract)", async () => {
+    const port = await fresh();
+    const r = await storageStateRestore.handler({ state_json: JSON.stringify(validState) });
+    expect(r.isError).toBeUndefined();
+    expect(port.lastRestoredState?.origin).toBe("https://example.com");
+  });
+
+  test("neither input -> storage_state_invalid, port never reached", async () => {
+    const port = await fresh();
+    const r = await storageStateRestore.handler({});
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(String(structured(r).message)).toContain("required");
+    expect(port.lastRestoredState).toBeNull();
+  });
+
+  test("empty strings count as absent -> storage_state_invalid", async () => {
+    await fresh();
+    const r = await storageStateRestore.handler({ path: "", state_json: "" });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+  });
+
+  test("both inputs -> storage_state_invalid, port never reached", async () => {
+    const port = await fresh();
+    const json = JSON.stringify(validState);
+    const r = await storageStateRestore.handler({ path: stateFile(json), state_json: json });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(String(structured(r).message)).toContain("not both");
+    expect(port.lastRestoredState).toBeNull();
+  });
+
+  test("missing file -> storage_state_invalid naming the path", async () => {
+    await fresh();
+    const missing = join(tmpdir(), "browser-mcp-restore-test-does-not-exist.json");
+    const r = await storageStateRestore.handler({ path: missing });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(String(structured(r).message)).toContain("file not found");
+    expect(String(structured(r).message)).toContain(missing);
+  });
+
+  test("relative path -> storage_state_invalid", async () => {
+    await fresh();
+    const r = await storageStateRestore.handler({ path: "state.json" });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(String(structured(r).message)).toContain("absolute");
+  });
+
+  test("a directory is not a state file -> storage_state_invalid", async () => {
+    await fresh();
+    const r = await storageStateRestore.handler({ path: tmpdir() });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(String(structured(r).message)).toContain("not a regular file");
+  });
+
+  test("a non-JSON file is rejected WITHOUT echoing its contents (JSON.parse messages quote the input)", async () => {
+    const port = await fresh();
+    const r = await storageStateRestore.handler({ path: stateFile(`${SECRET}=not json at all`, "creds.txt") });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+    expect(port.lastRestoredState).toBeNull();
+  });
+
+  test("a schema-failing file is rejected without echoing its values", async () => {
+    const port = await fresh();
+    const bad = { origin: "https://example.com", cookies: [{ name: "session", value: SECRET, sameSite: SECRET }] };
+    const r = await storageStateRestore.handler({ path: stateFile(JSON.stringify(bad)) });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("storage_state_invalid");
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+    expect(port.lastRestoredState).toBeNull();
+  });
+
+  test("the input schema makes both fields optional (the handler owns the exactly-one rule)", () => {
+    const schema = z.object(StorageRestoreInputSchema);
+    expect(schema.safeParse({}).success).toBe(true);
+    expect(schema.safeParse({ path: "/tmp/x.json" }).success).toBe(true);
+    expect(schema.safeParse({ state_json: "{}" }).success).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // DW-5.3: emulate_device, geolocation, permissions
 // ---------------------------------------------------------------------------
 
@@ -346,6 +483,81 @@ describe("permissions (DW-5.3)", () => {
       const last = port.lastPermissions as import("../src/core/browser-port.ts").PermissionsOpts | null;
       expect(last?.permissions).toEqual([perm]);
     }
+  });
+});
+
+describe("permissions — empty list clears all overrides", () => {
+  test("the schema accepts an empty list (it used to demand min 1 while documenting 'empty = revoke all')", () => {
+    const schema = z.object(PermissionsInputSchema);
+    expect(schema.safeParse({ permissions: [] }).success).toBe(true);
+    expect(schema.safeParse({ permissions: ["geolocation"] }).success).toBe(true);
+  });
+
+  test("an empty list reaches the port as [] and the result says the clear is context-wide", async () => {
+    const port = await fresh();
+    const r = await permissions.handler({ permissions: [] });
+    expect(r.isError).toBeUndefined();
+    expect(port.lastPermissions?.permissions).toEqual([]);
+    expect(structured(r).granted).toEqual([]);
+    expect(structured(r).origin).toBe("(all origins)");
+    expect(r.content[0]?.text).toContain("cleared");
+  });
+
+  test("origin is NOT forwarded on the clear branch — the reset is not origin-scoped", async () => {
+    const port = await fresh();
+    const r = await permissions.handler({ permissions: [], origin: "https://example.com" });
+    expect(r.isError).toBeUndefined();
+    expect(port.lastPermissions?.origin).toBeUndefined();
+    expect(structured(r).origin).toBe("(all origins)");
+  });
+
+  test("a non-empty grant still forwards origin and reports it", async () => {
+    const port = await fresh();
+    const r = await permissions.handler({ permissions: ["camera"], origin: "https://example.com" });
+    expect(r.isError).toBeUndefined();
+    expect(port.lastPermissions?.origin).toBe("https://example.com");
+    expect(structured(r).origin).toBe("https://example.com");
+  });
+
+  test("a dead connection on the clear branch returns connection_lost", async () => {
+    const port = await fresh();
+    port.alive = false;
+    const r = await permissions.handler({ permissions: [] });
+    expect(r.isError).toBe(true);
+    expect(structured(r).code).toBe("connection_lost");
+  });
+});
+
+describe("puppeteer emulation adapter — grantPermissions branch", () => {
+  // Structural stand-in for the slice of puppeteer's Page this function touches.
+  function fakePage(): { page: Parameters<typeof adapterGrantPermissions>[0]; calls: string[] } {
+    const calls: string[] = [];
+    const context = {
+      overridePermissions: async (origin: string, perms: string[]): Promise<void> => {
+        calls.push(`override:${origin}:${perms.join(",")}`);
+      },
+      clearPermissionOverrides: async (): Promise<void> => {
+        calls.push("clear");
+      },
+    };
+    const page = { browserContext: () => context, url: () => "https://active.example/" };
+    return { page: page as unknown as Parameters<typeof adapterGrantPermissions>[0], calls };
+  }
+
+  test("an empty list calls clearPermissionOverrides, never overridePermissions(origin, []) (a deny-all override)", async () => {
+    const { page, calls } = fakePage();
+    await adapterGrantPermissions(page, { permissions: [] });
+    expect(calls).toEqual(["clear"]);
+  });
+
+  test("a non-empty list overrides for the given origin, defaulting to the active page", async () => {
+    const { page, calls } = fakePage();
+    await adapterGrantPermissions(page, { permissions: ["geolocation"] });
+    await adapterGrantPermissions(page, { permissions: ["camera", "microphone"], origin: "https://other.example" });
+    expect(calls).toEqual([
+      "override:https://active.example/:geolocation",
+      "override:https://other.example:camera,microphone",
+    ]);
   });
 });
 

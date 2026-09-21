@@ -28,8 +28,13 @@ when_to_use: >-
 
 Persistent Chrome/CDP control via puppeteer-core. The primary interaction model
 is snapshot → stable ref → action. Selectors and coordinates are fallbacks only.
-Large outputs (screenshots, DOM, AX trees, HAR, traces) are always written to
-disk — the tool returns a file path, never raw bytes.
+Output size decides where a read lands: at or above the server's inline
+threshold (`PAYLOAD_THRESHOLD_BYTES` in `mcp-browser/src/lib/payload.ts`) the
+payload is written to a temp file and the tool returns the path; below it the
+payload comes back inline with `written: false` and no path. Handle both cases —
+see `references/interaction.md` in this skill directory for the per-tool result
+fields. Screenshots, PDFs, traces, HAR, Lighthouse reports, and saved storage
+state are always files, however small.
 
 ## Prerequisites
 
@@ -45,17 +50,33 @@ browser_click(ref=...)    → act on the ref (also: browser_type, browser_hover,
 browser_snapshot          → verify the new state
 ```
 
-A `stale_ref` error means the page changed; take a new snapshot. Selector/coordinate
-targeting is the fallback when a ref is unavailable.
+Refs last until the next `browser_snapshot`, which invalidates every earlier ref.
+Re-snapshot after navigation or DOM changes. `stale_ref` means the ref predates
+the current snapshot or its element left the DOM; `interaction_failed` means the
+element resolved but the action itself failed (hidden, no layout box, re-rendered
+mid-action). Both recover the same way: take a new snapshot and retry.
+Selector/coordinate targeting is the fallback when a ref is unavailable; a
+selector must resolve to exactly one element (refinements and `ambiguous_match`
+in `references/interaction.md` in this skill directory).
 
 ## Screenshot, DOM, and AX — route to a subagent when available
 
-Screenshots, DOM trees, and accessibility trees are large (50 KB–5 MB).
-Loading them directly bloats the main context. Use the host's subagent tool
-when available: dispatch a small reviewer that reads the file path and returns
-a text summary, so the artifact never enters this conversation. If the host has
-no subagent surface, summarize inline only when the artifact is small enough;
-otherwise use local deterministic tools or ask how to proceed.
+Screenshots, DOM trees, and accessibility trees usually run far past the inline
+threshold, and a full-page capture can be very large. Loading them directly
+bloats the main context. Use the host's subagent tool when available: dispatch
+a small reviewer that reads the file path and returns a text summary, so the
+artifact never enters this conversation. If the host has no subagent surface,
+summarize inline only when the artifact is small enough; otherwise use local
+deterministic tools or ask how to proceed.
+
+One read may not cover a large artifact. Shrink it at capture time first —
+`selector` on `browser_screenshot` and `browser_dom`, `max_depth`/`max_nodes` on
+`browser_snapshot` — and check `bytes` (and a screenshot's `width`/`height`,
+which drive image read cost) before dispatching. For a file that is still large,
+tell the reviewer to search it or read it in chunks rather than assume a single
+read saw the whole thing.
+
+Claude Code dispatch shape (other hosts: see Compatibility below):
 
 ```
 Dispatch Agent:
@@ -63,7 +84,8 @@ Dispatch Agent:
   description: "browser: analyze [screenshot|dom|accessibility]"
   prompt: |
     The browser tool wrote an artifact to: <PATH>
-    Read that file with the Read tool.
+    Read that file with the Read tool. If it is too large for one read,
+    search it or read it in chunks until the question is answered.
     Return a concise text summary: what the page shows, key elements,
     errors or state, and the specific answer to: <USER_QUESTION>
     Return text only — no raw HTML, JSON, or image data.
@@ -75,7 +97,10 @@ Tools that produce large artifacts: `browser_screenshot`, `browser_dom`,
 
 ## Navigation and waiting
 
-`browser_navigate` accepts http/https only. After navigation, use `browser_wait`
+`browser_navigate` accepts http/https by default. `allow_internal=true` also
+permits `file:` and `about:` URLs (a local HTML file, `about:blank`);
+`javascript:` and every other scheme stay blocked (`blocked_url`) regardless.
+After navigation, use `browser_wait`
 (strategy `navigation` or `selector`) to confirm the page settled before
 interacting. For text-triggered flows use `browser_wait_for_text`.
 
@@ -101,4 +126,13 @@ planning work in that group.
 | Performance trace | file path from `browser_performance_stop_trace` | No — analyze via `browser_analyze_insight` |
 | PDF | file path from `browser_pdf` | Prefer subagent; inline only if small enough |
 | Subagent text summary | returned text | Yes |
-| Direct tool output (small) | inlined in result | Yes |
+| Sub-threshold output (`written: false`, no path) | inlined in result | Yes |
+
+## Compatibility
+
+Tool names here are the server's short names (`browser_click`, `browser_snapshot`, …).
+Claude Code exposes them under its plugin-prefixed MCP naming; on Codex or another
+host, use that host's equivalent name for the same mcp-browser tool. The dispatch
+block above is Claude Code's shape, including its `model` value: elsewhere,
+substitute the host's subagent call with a small, cheap model, or read the artifact
+inline when the host has no subagent surface and the artifact is small enough.

@@ -57,9 +57,18 @@ export async function setGeolocation(page: Page, opts: GeolocationOpts): Promise
  * Grant browser permissions for the page's origin (or a supplied origin).
  * Permission names have already been validated against the allowlist at the
  * tool barricade before this is called.
+ *
+ * An empty list clears every override in the context (Browser.resetPermissions).
+ * It is NOT forwarded to overridePermissions: CDP's grantPermissions means "grant
+ * these and reject all others", so [] there would be a deny-all override for the
+ * origin, not a revoke.
  */
 export async function grantPermissions(page: Page, opts: PermissionsOpts): Promise<void> {
   const context = page.browserContext();
+  if (opts.permissions.length === 0) {
+    await context.clearPermissionOverrides();
+    return;
+  }
   const origin = opts.origin ?? page.url();
   // Puppeteer's BrowserContext.overridePermissions takes a list of permissions.
   // We pass them as-is since barricade validation has already run.

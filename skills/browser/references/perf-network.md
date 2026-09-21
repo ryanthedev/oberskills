@@ -10,7 +10,7 @@ Capture Core Web Vitals by tracing across a navigation.
 
 | Tool | Step | What it does |
 |---|---|---|
-| `browser_performance_start_trace` | 1 | Starts the Chrome performance trace. A second start before stop returns `trace_already_running`. |
+| `browser_performance_start_trace` | 1 | Starts the Chrome performance trace (`screenshots=true` adds frames to the trace — heavier output). A second start before stop returns `trace_already_running`. |
 | `browser_performance_stop_trace` | 2 | Stops the trace and writes to `/tmp`, returning `{ trace_path, bytes }`. Never inlines trace bytes — route the path to `browser_analyze_insight`. |
 | `browser_analyze_insight` | 3 | Extracts a Core Web Vital from the most recent captured trace: `LCP`, `INP`, `CLS`, `TTFB`, or `FCP`. Returns the metric value; no captured trace → `no_trace_running`. |
 
@@ -33,7 +33,7 @@ HAR capture is always active while the server is running — the buffer accumula
 | Tool | What it does |
 |---|---|
 | `browser_export_har` | Writes the captured network traffic to a HAR 1.2 file, returns `{ path, entry_count, empty }`. An empty buffer yields a valid but empty HAR (`empty=true`). Route the path to a subagent — HAR files are large. |
-| `browser_route` | Arms request interception from a rule list: `block`, `abort`, `stub`, or `modify` matched requests. Pass `clear=true` (or an empty rules list) to disarm all interception. Malformed rules are rejected at the barricade, not silently ignored. |
+| `browser_route` | Arms request interception from a rule list: `block`, `abort`, `stub`, or `modify` matched requests. Each rule is `url_pattern` (a substring, or a glob when it contains `*`) plus `action`; `stub` and `modify` also require `status` and take optional `body` (size-capped by the server), `content_type`, and `headers`. Pass `clear=true` (or an empty rules list) to disarm all interception. Malformed rules are rejected at the barricade with `invalid_route_rule`, not silently ignored. |
 
 ---
 

@@ -412,6 +412,8 @@ export class FakePort implements BrowserPort {
   cannedRestoreResult: { restored: string[]; skipped: string[] } = { restored: [], skipped: [] };
   /** When set, restoreStorageState throws storage_state_invalid. */
   restoreError: string | null = null;
+  /** The validated state the last restoreStorageState() call received (null = never reached the port). */
+  lastRestoredState: StorageState | null = null;
 
   /** Recorded emulateDevice calls. */
   lastDeviceProfile: DeviceProfile | null = null;
@@ -468,7 +470,8 @@ export class FakePort implements BrowserPort {
     return { path: this.cannedStorageStatePath };
   }
 
-  async restoreStorageState(_state: StorageState): Promise<{ restored: string[]; skipped: string[] }> {
+  async restoreStorageState(state: StorageState): Promise<{ restored: string[]; skipped: string[] }> {
+    this.lastRestoredState = state;
     if (this.restoreError !== null) {
       throw new BrowserError("storage_state_invalid", this.restoreError, "use the JSON from browser_storage_state_save");
     }

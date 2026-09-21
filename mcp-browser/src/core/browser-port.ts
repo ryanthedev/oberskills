@@ -309,7 +309,8 @@ export interface BrowserPort {
   setGeolocation(opts: GeolocationOpts): Promise<void>;
 
   /**
-   * Grant (or revoke) browser permissions for the active page origin.
+   * Grant browser permissions for an origin (default: the active page's), or — with
+   * an empty list — clear every permission override in the browser context.
    * Throws permission_unknown for unrecognized names.
    */
   grantPermissions(opts: PermissionsOpts): Promise<void>;
@@ -511,7 +512,10 @@ export type GeolocationOpts = {
 };
 
 export type PermissionsOpts = {
-  /** Permission names to grant. Unknown names are rejected at the barricade. */
+  /**
+   * Permission names to grant. Unknown names are rejected at the barricade. An empty
+   * list clears every permission override in the browser context (origin ignored).
+   */
   permissions: string[];
   /** Origin to grant permissions for (default: active page origin). */
   origin?: string;

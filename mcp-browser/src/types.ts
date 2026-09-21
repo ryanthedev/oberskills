@@ -201,7 +201,9 @@ export const FillFormInputSchema = {
 };
 
 export const NavigateInputSchema = {
-  url: z.string().describe("http(s) URL to navigate the active page to. Validated at the barricade."),
+  url: z
+    .string()
+    .describe("URL to navigate the active page to: http(s), or file:/about: with allow_internal. Validated at the barricade."),
   allow_internal: z
     .boolean()
     .default(false)
@@ -240,6 +242,7 @@ export type NavResultOut = {
 };
 
 export type ScreenshotOut = {
+  /** Always a real file path — the PNG is force-written regardless of the payload threshold. */
   path: string;
   bytes: number;
   /**
@@ -318,18 +321,27 @@ export const FormInputSchema = {
 
 // --- Output DTOs ------------------------------------------------------------
 
+/**
+ * browser_dom result. Below PAYLOAD_THRESHOLD_BYTES the HTML is inlined IN FULL
+ * (`inlined` present, `path` "", written:false) — never a clipped preview, the
+ * same correctness rule as ExtractOut. At/above threshold it spills to /tmp
+ * (`path` + a tool-sliced `preview`, `inlined` absent, written:true).
+ */
 export type DomOut = {
   path: string;
   bytes: number;
-  inlined_preview?: string;
   written: boolean;
+  inlined?: string;
+  preview?: string;
 };
 
+/** browser_accessibility result. Same inline/spill contract as DomOut. */
 export type AccessibilityOut = {
   path: string;
   bytes: number;
-  inlined_preview?: string;
   written: boolean;
+  inlined?: string;
+  preview?: string;
 };
 
 /**
@@ -614,12 +626,27 @@ export const StorageInputSchema = {
 
 export const StorageSaveInputSchema = {};
 
+/** Max size of a storage-state file read via `path` (barricade: bounds the read). */
+export const STORAGE_STATE_MAX_BYTES = 16 * 1024 * 1024;
+
+/**
+ * Exactly one of `path` / `state_json` is required. The cross-field rule is enforced
+ * in the handler (the barricade), not here — see the note at the top of this file.
+ */
 export const StorageRestoreInputSchema = {
+  path: z
+    .string()
+    .optional()
+    .describe(
+      "Preferred: absolute path of the file written by browser_storage_state_save (its returned path). The " +
+        "server reads it, so the credentials never enter the conversation. Mutually exclusive with state_json.",
+    ),
   state_json: z
     .string()
+    .optional()
     .describe(
-      "JSON string of the storage state previously saved by browser_storage_state_save. " +
-        "Validated against StorageStateSchema at the restore boundary — malformed or wrong-origin state is rejected.",
+      "Alternative: the storage state as a JSON string. Mutually exclusive with path. Either way the state is " +
+        "validated against StorageStateSchema at the restore boundary — malformed or wrong-origin state is rejected.",
     ),
 };
 
@@ -670,12 +697,14 @@ export const KNOWN_PERMISSIONS = new Set([
 export const PermissionsInputSchema = {
   permissions: z
     .array(z.string())
-    .min(1)
-    .describe("Permission names to grant. Use an empty list to revoke all."),
+    .describe(
+      "Permission names to grant. An empty list clears EVERY permission override in the browser context " +
+        "(all origins), returning permissions to the browser defaults.",
+    ),
   origin: z
     .string()
     .optional()
-    .describe("Origin to grant permissions for (default: active page origin)."),
+    .describe("Origin to grant permissions for (default: active page origin). Ignored when permissions is empty."),
 };
 
 // --- pdf tool ---

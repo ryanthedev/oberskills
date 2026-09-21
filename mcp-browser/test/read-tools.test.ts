@@ -79,7 +79,7 @@ describe("dom tool (DW-3.2)", () => {
     expect(structured(r).code).toBe("connection_lost");
   });
 
-  test("small DOM below threshold returns inline (path empty or not present, inlinedPreview set)", async () => {
+  test("small DOM below threshold returns inline (path empty, full content in text)", async () => {
     const port = await fresh();
     port.cannedDom = "<p>tiny</p>"; // well below threshold
     const r = await dom.handler({});
@@ -395,6 +395,82 @@ describe("extract inlined regression (DW-1.4)", () => {
     expect(typeof s.path).toBe("string");
     expect((s.path as string).length).toBeGreaterThan(0);
     expect(s.inlined).toBeUndefined();
+    rmSync(s.path as string, { force: true });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// dom + accessibility inline regression — the DW-1.4 extract fix, applied to the
+// two tools that still clipped a sub-threshold result to a preview and returned
+// path:"" (leaving the remainder unreachable).
+// ---------------------------------------------------------------------------
+
+describe("dom / accessibility inlined-in-full regression", () => {
+  afterEach(() => resetSession());
+
+  test("dom below threshold returns the FULL html inline — longer than the old 512-char preview", async () => {
+    const port = await fresh();
+    const html = `<main>${"a".repeat(1500)}<p id="tail">END-OF-DOM</p></main>`;
+    expect(Buffer.byteLength(html)).toBeLessThan(PAYLOAD_THRESHOLD_BYTES);
+    expect(html.length).toBeGreaterThan(512);
+    port.cannedDom = html;
+    const r = await dom.handler({});
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(false);
+    expect(s.path).toBe("");
+    expect(s.inlined).toBe(html);
+    expect(s.preview).toBeUndefined();
+    expect(s.inlined_preview).toBeUndefined();
+    expect(s.bytes).toBe(Buffer.byteLength(html));
+    // Text-only clients get the whole thing too — the tail must survive.
+    expect(r.content[0]?.text).toContain("END-OF-DOM");
+  });
+
+  test("dom at/above threshold spills: path + a clipped preview, no inline copy", async () => {
+    const port = await fresh();
+    const html = `<main>${"b".repeat(PAYLOAD_THRESHOLD_BYTES)}</main>`;
+    port.cannedDom = html;
+    const r = await dom.handler({});
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(true);
+    expect(existsSync(s.path as string)).toBe(true);
+    expect(s.inlined).toBeUndefined();
+    expect(s.preview).toBe(html.slice(0, 512));
+    // The spilled branch keeps the payload out of the text result.
+    expect((r.content[0]?.text ?? "").length).toBeLessThan(512);
+    rmSync(s.path as string, { force: true });
+  });
+
+  test("accessibility below threshold returns the FULL tree inline — longer than the old 256-char preview", async () => {
+    const port = await fresh();
+    const nodes = Array.from({ length: 20 }, (_, i) => ({ role: "button", name: `control-${i}` }));
+    const axJson = JSON.stringify([...nodes, { role: "link", name: "LAST-AX-NODE" }]);
+    expect(Buffer.byteLength(axJson)).toBeLessThan(PAYLOAD_THRESHOLD_BYTES);
+    expect(axJson.length).toBeGreaterThan(256);
+    port.cannedAxJson = axJson;
+    const r = await accessibility.handler({});
+    expect(r.isError).toBeUndefined();
+    const s = structured(r);
+    expect(s.written).toBe(false);
+    expect(s.path).toBe("");
+    expect(s.inlined).toBe(axJson);
+    expect(JSON.parse(s.inlined as string)).toHaveLength(21);
+    expect(s.preview).toBeUndefined();
+    expect(s.inlined_preview).toBeUndefined();
+    expect(r.content[0]?.text).toContain("LAST-AX-NODE");
+  });
+
+  test("accessibility at/above threshold spills: path + a clipped preview, no inline copy", async () => {
+    const port = await fresh();
+    const axJson = "[" + JSON.stringify({ role: "button", name: "x" }) + "]" + " ".repeat(PAYLOAD_THRESHOLD_BYTES);
+    port.cannedAxJson = axJson;
+    const r = await accessibility.handler({});
+    const s = structured(r);
+    expect(s.written).toBe(true);
+    expect(s.inlined).toBeUndefined();
+    expect(s.preview).toBe(axJson.slice(0, 256));
     rmSync(s.path as string, { force: true });
   });
 });
