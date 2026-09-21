@@ -73,7 +73,7 @@ First question: is the target a thinking-enabled Claude model?
 | Condition | Check | Severity |
 |---|---|---|
 | Thinking-enabled Claude | CoT incantations present ("think step by step", hand-written step plans) | WARN — remove; steer with effort and brief nudges (claude-models.md). General instructions beat prescriptive steps |
-| Fable 5 target | "Show/explain/transcribe your thinking" instructions | FAIL — `reasoning_extraction` refusal hazard (claude-models.md) |
+| Fable 5.1 / 5 target | "Show/explain/transcribe your thinking" instructions | FAIL — `reasoning_extraction` refusal hazard (claude-models.md) |
 | Any Claude | Manual `<thinking>` tag scaffolds duplicating what adaptive thinking does | WARN — delete and re-test |
 | Non-Claude or thinking off | CoD/SoT/compressed-reasoning checks | Apply porting.md (exemplars mandatory for compressed formats) |
 | Any | Output schema demands lengthy reasoning transcripts | WARN — brief task-level evidence fields instead (design.md §4) |
@@ -132,7 +132,7 @@ Condition: chained dispatch briefs that follow the agent skill's four-part contr
 
 Over-constraint symptoms: robotic or over-literal output, hallucinated contradiction-satisfying, MUST/CRITICAL density, rules restating what the model does by default, instructions that exist to fight failure modes of older models.
 
-**Removal test** (canonical home — the Sunk Cost Test). For prompts with many constraints:
+**Removal test** (canonical home — the Sunk Cost Test; the thresholds are house heuristics — rules of thumb, not research numbers). For prompts with many constraints:
 
 1. Remove 50% of constraints (random selection OR by perceived importance).
 2. Run against 10 test cases.
@@ -189,7 +189,7 @@ Premature-stop scaffolds are model-specific: on Claude use context-awareness pro
 |---|---|---|
 | Prefill present | Prefilled assistant turns 400-error on Claude ≥4.6 | FAIL — migrate (claude-models.md table) |
 | Over-prompting | Aggressive triggers ("CRITICAL: You MUST…"), anti-laziness nudges, blanket defaults ("if in doubt, use the tool"), interim-progress scaffolds ("after every 3 tool calls, summarize") | WARN — de-prompting checklist (claude-models.md) |
-| Reasoning echo | Echo/transcribe/explain-your-reasoning instructions targeting Fable 5 | FAIL — `reasoning_extraction` hazard |
+| Reasoning echo | Echo/transcribe/explain-your-reasoning instructions targeting Fable 5.1 / 5 | FAIL — `reasoning_extraction` hazard |
 | Schema ordering | Answer field precedes rationale/evidence field | WARN; FAIL if the schema drives an optimization or grading loop (design.md §4) |
 | Self-assessment scaffolds | The reviewed artifact contains anti-rationalization tables or self-assessed compliance templates ("did I follow the workflow Y/N") | WARN — replace with external checks or deterministic gates; mirrors the skill-eval validator lint |
 | Stale model assumptions | Prompt names defunct models or budgets `budget_tokens` | WARN — migrate (claude-models.md) |
@@ -201,7 +201,7 @@ Premature-stop scaffolds are model-specific: on Claude use context-awareness pro
 | Constraint handcuffs | Robotic output; hallucinations to satisfy contradictions | #1, #3 | Removal test (§6); delete rules without an observed failure |
 | Over-prompting | Tool/skill overtriggering; forced thoroughness | #3 | De-prompting checklist (claude-models.md) |
 | Prefill reliance | 400 errors on current Claude | #7 | Migration table (claude-models.md) |
-| Reasoning echo | `stop_reason: "refusal"` on Fable 5 | #6 | Delete echo instructions; read thinking blocks instead |
+| Reasoning echo | `stop_reason: "refusal"` on Fable 5.1 / 5 | #6 | Delete echo instructions; read thinking blocks instead |
 | Context collapse | Accumulated context rewritten into a stub; accuracy drops | #4 | Incremental delta updates (context.md) |
 | Self-validation | False confidence; structural defects invisible | #8 | Structurally separate verifier |
 | Prompt-only security | Injection reaches the model as instructions | #9 | Architectural separation (safety.md) |

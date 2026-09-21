@@ -66,7 +66,7 @@ Caveats — state these alongside the table whenever you add examples:
 
 Order rationale before answer: a schema with `final_answer` before the reasoning field cripples accuracy — in VISTA (2603.18388), GEPA dropped from 23.81% to 13.50% from that one wrong ordering, because the answer field was committed before reasoning could influence it.
 
-On thinking-enabled Claude, deliberation happens in thinking blocks, so keep output rationale fields brief and task-level — `evidence`, `quotes`, `justification` — and never phrase them as "transcribe your thinking" or "show your reasoning step by step", which triggers `reasoning_extraction` refusals on Fable 5 (claude-models.md).
+On thinking-enabled Claude, deliberation happens in thinking blocks, so keep output rationale fields brief and task-level — `evidence`, `quotes`, `justification` — and never phrase them as "transcribe your thinking" or "show your reasoning step by step", which triggers `reasoning_extraction` refusals on Fable 5.1 and Fable 5 (claude-models.md).
 
 For strict formats prefer structured outputs or a tool with an enum field over prose instructions (claude-models.md, prefill migration).
 
